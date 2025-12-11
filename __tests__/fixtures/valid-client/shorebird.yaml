@@ -1,0 +1,5 @@
+# Shorebird configuration for test-client
+# Learn more at https://docs.shorebird.dev
+
+app_id: test-app-id-12345
+auto_update: true

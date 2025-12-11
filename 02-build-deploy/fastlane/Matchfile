@@ -1,0 +1,56 @@
+# Fastlane Match Configuration
+# Manages iOS certificates and provisioning profiles
+
+# Git repository to store certificates (uses loyalty-credentials repo)
+git_url(ENV['MATCH_GIT_URL'] || "git@github.com:devloyaltyhub/loyalty-credentials.git")
+
+# Git branch
+git_branch("main")
+
+# Storage mode
+storage_mode("git")
+
+# Custom paths for certificates and profiles
+# Certificates (shared across all clients) go to shared/ios/
+# Profiles (per-client) will need to be organized separately
+# Note: Match doesn't natively support per-client profile folders,
+# so we'll use a post-processing script to organize them
+
+# Apple Developer Team ID
+team_id(ENV['APPLE_TEAM_ID'] || "84LT77P2DM")
+
+
+# Bundle identifiers for all white-label apps
+# Automatically discovered from clients/*/config.json
+require 'json'
+
+def discover_bundle_ids
+  clients_dir = File.expand_path('../../../clients', __dir__)
+  bundle_ids = []
+
+  if Dir.exist?(clients_dir)
+    Dir.glob(File.join(clients_dir, '*', 'config.json')).each do |config_file|
+      begin
+        config = JSON.parse(File.read(config_file))
+        bundle_id = config['bundleId']
+        bundle_ids << bundle_id if bundle_id
+      rescue => e
+        # Skip invalid config files
+        UI.important("Warning: Could not parse #{config_file}: #{e.message}") if defined?(UI)
+      end
+    end
+  end
+
+  # Fallback to demo if no clients found
+  bundle_ids << "lv.club.loyaltyhub.demo" if bundle_ids.empty?
+
+  bundle_ids.uniq
+end
+
+app_identifier(discover_bundle_ids)
+
+# Username (optional when using API key, but required for some operations)
+# username(ENV['APPLE_DEVELOPER_EMAIL'])
+
+# For all available options run `fastlane match --help`
+# More information: https://docs.fastlane.tools/actions/match/

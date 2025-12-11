@@ -1,0 +1,18 @@
+// ============================================================================
+// ARQUIVO GERADO AUTOMATICAMENTE - NÃO EDITE MANUALMENTE
+// Gerado por: automation/01-client-setup/steps/setup-white-label.js
+// Fonte: clients/{{clientCode}}/config.json
+// ============================================================================
+
+enum BusinessType { coffee, beer, sportfood }
+
+class UserConfigs {
+  UserConfigs._();
+
+  static const String companyHint = '{{companyHint}}';
+  static const String companyName = '{{appName}}';
+  static const String androidStoreUrl = '{{storeUrls.android}}';
+  static const String iosStoreUrl = '{{storeUrls.ios}}';
+
+  static const BusinessType businessType = BusinessType.{{businessType}};
+}

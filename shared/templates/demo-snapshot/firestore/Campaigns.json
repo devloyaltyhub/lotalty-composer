@@ -1,0 +1,23 @@
+{
+  "_metadata": {
+    "collection": "Campaigns",
+    "exportedAt": "2025-11-26T16:18:40.331Z",
+    "documentCount": 3
+  },
+  "documents": {
+    "campaign-1": {
+      "id": "campaign-1",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120439_523_feliz_dia_do_caf.jpg?alt=media&token=4ad68aa5-5436-498c-896d-9de143e7fe98",
+      "url": ""
+    },
+    "campaign-2": {
+      "id": "campaign-2",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_230047_64_promoo_cerveja.jpg?alt=media&token=65558bd5-fe68-4b7e-99c8-e97dc652d4d7"
+    },
+    "campaign-3": {
+      "id": "campaign-3",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120553_633_promo.jpg?alt=media&token=0578f67d-c70f-4dfd-8e5e-ac65d70489c7",
+      "url": ""
+    }
+  }
+}

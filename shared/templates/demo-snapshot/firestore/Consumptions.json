@@ -1,0 +1,91 @@
+{
+  "_metadata": {
+    "collection": "Consumptions",
+    "exportedAt": "2025-11-26T16:18:40.814Z",
+    "documentCount": 5
+  },
+  "documents": {
+    "2a741ce7-7e11-495b-aa28-8afacc85e546": {
+      "amount": 19,
+      "clubCoinsExpiration": {
+        "_type": "timestamp",
+        "_value": "2026-01-25T00:00:00.000Z"
+      },
+      "clubCoinsPercentage": 2,
+      "clubCoinsPoints": 42,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:03:57.201Z"
+      },
+      "id": "2a741ce7-7e11-495b-aa28-8afacc85e546",
+      "userClubId": "FE07",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "userName": "Loyalty Hub User"
+    },
+    "5aa1dc73-0433-4a26-83fb-bdfc79956bcc": {
+      "amount": 180,
+      "clubCoinsExpiration": {
+        "_type": "timestamp",
+        "_value": "2026-01-25T00:00:00.000Z"
+      },
+      "clubCoinsPercentage": 2,
+      "clubCoinsPoints": 400,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:04:13.701Z"
+      },
+      "id": "5aa1dc73-0433-4a26-83fb-bdfc79956bcc",
+      "userClubId": "FE07",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "userName": "Loyalty Hub User"
+    },
+    "6ccaa4dc-cc99-47d5-a6b3-4134ef3cdf87": {
+      "amount": 14,
+      "clubCoinsExpiration": {
+        "_type": "timestamp",
+        "_value": "2026-01-25T00:00:00.000Z"
+      },
+      "clubCoinsPercentage": 2,
+      "clubCoinsPoints": 31,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:04:29.677Z"
+      },
+      "id": "6ccaa4dc-cc99-47d5-a6b3-4134ef3cdf87",
+      "userClubId": "FE07",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "userName": "Loyalty Hub User"
+    },
+    "b06647ac-586c-470e-9b29-3749e5ef5382": {
+      "amount": 0,
+      "clubCoinsExpiration": null,
+      "clubCoinsPercentage": 0,
+      "clubCoinsPoints": -555,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:04:41.810Z"
+      },
+      "id": "b06647ac-586c-470e-9b29-3749e5ef5382",
+      "userClubId": "FE07",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "userName": "Loyalty Hub User"
+    },
+    "dff04e49-10d5-4230-b556-5ffb9c18b8c5": {
+      "amount": 100,
+      "clubCoinsExpiration": {
+        "_type": "timestamp",
+        "_value": "2026-01-25T00:00:00.000Z"
+      },
+      "clubCoinsPercentage": 2,
+      "clubCoinsPoints": 222,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:03:44.074Z"
+      },
+      "id": "dff04e49-10d5-4230-b556-5ffb9c18b8c5",
+      "userClubId": "FE07",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "userName": "Loyalty Hub User"
+    }
+  }
+}

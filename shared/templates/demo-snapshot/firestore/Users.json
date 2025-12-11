@@ -1,0 +1,48 @@
+{
+  "_metadata": {
+    "collection": "Users",
+    "exportedAt": "2025-11-26T16:18:41.395Z",
+    "documentCount": 1
+  },
+  "documents": {
+    "2GJwqHeoKGgYJTCEjYrbbnydflg1": {
+      "creationTime": "2025-11-25T15:27:42.139Z",
+      "softDeleted": false,
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "lastSignInTime": "2025-11-25T15:27:42.139Z",
+      "email": "contato@loyaltyhub.club",
+      "name": "Loyalty Hub User",
+      "referral": {
+        "inviterClubId": "739A"
+      },
+      "emailVerified": true,
+      "acceptanceTermsIp": "123.45.678.90",
+      "cpf": "260.370.830-96",
+      "birthday": "25/11/2000",
+      "dietaryAttributes": [
+        "lactoseFree"
+      ],
+      "gender": "Masculino",
+      "phone": "(22) 22222-2222",
+      "club": {
+        "clubId": "FE07",
+        "totalConsumed": 313,
+        "currentYearConsumption": 313,
+        "totalClubCoins": 140,
+        "clientScore": 795
+      },
+      "fcmToken": "eg2eChvRYkQtjBCurppLrr:APA91bE1OlRJO_aGmqtj5NIu8Kbzv5Kfg0RejtR44FTIUIWdyeDTdDVb1qvU4bd0F72LNDTYIeipcwqGgLyUYRIaL5Eay7ul1lbybm07rWbemZBOtvTnugE",
+      "profilePhoto": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/profile_photos%2F2GJwqHeoKGgYJTCEjYrbbnydflg1.jpg?alt=media&token=placeholder",
+      "viewedNotifications": [
+        "purchase_FE07_1764162255558",
+        "purchase_FE07_1764162239097",
+        "purchase_FE07_1764162227423"
+      ],
+      "lastAccess": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T16:08:38.695Z"
+      },
+      "profilePhoto": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/profile_photos%2F2GJwqHeoKGgYJTCEjYrbbnydflg1.jpg?alt=media&token=placeholder"
+    }
+  }
+}

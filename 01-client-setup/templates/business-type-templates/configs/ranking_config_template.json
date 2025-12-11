@@ -1,0 +1,52 @@
+{
+  "rankingTitle": "Top 20 do ano",
+  "rankingSubtitle": "Ranking com base no consumo dos clientes em {year}",
+  "fallbackUserLabel": "Cliente especial",
+  "rankingLabels": [
+    "Posição 1",
+    "Posição 2",
+    "Posição 3",
+    "Posição 4",
+    "Posição 5",
+    "Posição 6",
+    "Posição 7",
+    "Posição 8",
+    "Posição 9",
+    "Posição 10",
+    "Posição 11",
+    "Posição 12",
+    "Posição 13",
+    "Posição 14",
+    "Posição 15",
+    "Posição 16",
+    "Posição 17",
+    "Posição 18",
+    "Posição 19",
+    "Posição 20"
+  ],
+  "defaultFallbackLabel": "Cliente frequente",
+  "tiers": [
+    {
+      "position": 1,
+      "iconName": "emoji_events",
+      "color": "#FFD700",
+      "progressColor": "#4CAF50",
+      "hasBorder": true,
+      "borderColor": "#000000"
+    },
+    {
+      "position": 2,
+      "iconName": "emoji_events",
+      "color": "#C0C0C0",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    },
+    {
+      "position": 3,
+      "iconName": "emoji_events",
+      "color": "#CD7F32",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    }
+  ]
+}

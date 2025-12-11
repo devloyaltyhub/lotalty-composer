@@ -1,0 +1,56 @@
+{
+  "_metadata": {
+    "collection": "Store_Configs",
+    "exportedAt": "2025-11-26T16:18:41.229Z",
+    "documentCount": 1
+  },
+  "documents": {
+    "config": {
+      "address": "Rua Manuel Muniz Falcão, La Playa - Corrêas~|~Petrópolis - RJ~|~25720-075",
+      "clubLevels": [
+        {
+          "clubCoinsExpirationDays": 45,
+          "happyHourMultiplier": 5,
+          "levelName": "starter",
+          "requiredClientScore": 0
+        },
+        {
+          "clubCoinsExpirationDays": 60,
+          "happyHourMultiplier": 7,
+          "levelName": "platinum",
+          "requiredClientScore": 2000
+        },
+        {
+          "clubCoinsExpirationDays": 70,
+          "happyHourMultiplier": 10,
+          "levelName": "gold",
+          "requiredClientScore": 8000
+        },
+        {
+          "clubCoinsExpirationDays": 365,
+          "happyHourMultiplier": 15,
+          "levelName": "black",
+          "requiredClientScore": 20000
+        }
+      ],
+      "globalCashbackPercentage": 2,
+      "latlng": {
+        "latitude": -22.449876522279848,
+        "longitude": -43.14301930976656
+      },
+      "minimumOrderValue": 0,
+      "openingHours": {
+        "0": "Fechado",
+        "1": "09:00 - 22:00",
+        "2": "",
+        "3": "09:00 - 22:00",
+        "4": "09:00 - 22:00",
+        "5": "09:00 - 22:00",
+        "6": "09:00 - 23:00",
+        "7": "09:00 - 22:00"
+      },
+      "storeStatus": true,
+      "whatsappContact": "(22) 12312-3212"
+    }
+  }
+}

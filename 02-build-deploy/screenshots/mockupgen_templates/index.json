@@ -1,0 +1,12 @@
+{
+  "version": "2.0",
+  "description": "Template configurations for screenshot processing (no device frames)",
+  "templates": [
+    {
+      "slug": "iphone15promax",
+      "name": "iPhone 15 Pro Max",
+      "corner_radius": 180,
+      "notes": "Device frame removed in v2.0 - only corner radius is applied"
+    }
+  ]
+}

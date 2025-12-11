@@ -1,0 +1,28 @@
+{
+  "name": "{{APP_DISPLAY_NAME}}",
+  "subtitle": "Loyalty Rewards Program",
+  "promotional_text": "Join our loyalty program and start earning rewards today!",
+  "description": "Welcome to {{CLIENT_NAME}}!\n\nEarn rewards every time you visit {{CLIENT_NAME}}. Our mobile app makes it easy to:\n\n• Earn points with every purchase\n• Redeem rewards and exclusive offers\n• View your points balance and transaction history\n• Get notified about special promotions\n• Order ahead and skip the line\n• Find our location and business hours\n• Stay connected with our latest updates\n\nJoin our loyalty program today and start earning rewards!\n\nDownload the {{CLIENT_NAME}} app now and enjoy exclusive benefits reserved for our most loyal customers.",
+  "keywords": "loyalty,rewards,points,{{CLIENT_NAME}},{{BUSINESS_TYPE}}",
+  "support_url": "{{SUPPORT_URL}}",
+  "marketing_url": "{{WEBSITE_URL}}",
+  "privacy_url": "{{PRIVACY_POLICY_URL}}",
+  "category": "BUSINESS",
+  "screenshots": {
+    "APP_IPHONE_65": ["iPhone65_1.png", "iPhone65_2.png", "iPhone65_3.png"],
+    "APP_IPHONE_55": ["iPhone55_1.png", "iPhone55_2.png", "iPhone55_3.png"],
+    "APP_IPAD_PRO_129": []
+  },
+  "notes": {
+    "name_max_length": 30,
+    "subtitle_max_length": 30,
+    "promotional_text_max_length": 170,
+    "description_max_length": 4000,
+    "keywords_max_length": 100,
+    "keywords_separator": "comma-separated, no spaces after commas",
+    "screenshot_6_5_size": "1242x2688 or 1284x2778",
+    "screenshot_5_5_size": "1242x2208",
+    "screenshot_12_9_size": "2048x2732",
+    "screenshots_count": "At least 1 screenshot per device size, max 10"
+  }
+}

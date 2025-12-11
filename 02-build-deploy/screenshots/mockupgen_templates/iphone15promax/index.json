@@ -1,0 +1,7 @@
+{
+  "iphone15promax": {
+    "name": "iPhone 15 Pro Max",
+    "corner_radius": 180,
+    "notes": "Device frame removed - only corner radius is applied"
+  }
+}

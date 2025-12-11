@@ -1,0 +1,65 @@
+{
+  "_metadata": {
+    "collection": "Clients_Score",
+    "exportedAt": "2025-11-26T16:18:40.675Z",
+    "documentCount": 5
+  },
+  "documents": {
+    "6c4b5548-35cd-405a-b138-685e8c8b14c4": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:03:57.366Z"
+      },
+      "id": "6c4b5548-35cd-405a-b138-685e8c8b14c4",
+      "scorePoints": 42,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "2a741ce7-7e11-495b-aa28-8afacc85e546",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "7d76c62e-dcdb-4f74-a7a1-bed3318b2247": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:03:44.289Z"
+      },
+      "id": "7d76c62e-dcdb-4f74-a7a1-bed3318b2247",
+      "scorePoints": 222,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "dff04e49-10d5-4230-b556-5ffb9c18b8c5",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "JgFAvhcyiCJvXWzFn5bE": {
+      "clubId": "FE07",
+      "description": "Perfil completo",
+      "scorePoints": 100,
+      "scoreType": "profile_completion",
+      "sourceId": "profile_completion",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T14:15:22.456Z"
+      }
+    },
+    "a4dfe5b4-bb47-497b-b75e-a53cf69617c4": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:04:13.855Z"
+      },
+      "id": "a4dfe5b4-bb47-497b-b75e-a53cf69617c4",
+      "scorePoints": 400,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "5aa1dc73-0433-4a26-83fb-bdfc79956bcc",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "d2e7da0d-8e62-4216-8538-752bb20a1bee": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T13:04:29.789Z"
+      },
+      "id": "d2e7da0d-8e62-4216-8538-752bb20a1bee",
+      "scorePoints": 31,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "6ccaa4dc-cc99-47d5-a6b3-4134ef3cdf87",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    }
+  }
+}

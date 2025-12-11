@@ -1,0 +1,52 @@
+{
+  "rankingTitle": "Top 20 \"{loversName}\" do ano",
+  "rankingSubtitle": "Ranking com base no consumo dos clientes em {year}",
+  "fallbackUserLabel": "Fã de IPA gelada",
+  "rankingLabels": [
+    "Rei/Rainha do Lúpulo",
+    "Mestre(a) do Malte",
+    "Degustador(a) de IPA",
+    "Cervejeiro(a) Raiz",
+    "Caçador(a) de Happy Hour",
+    "Rei/Rainha do Copo Americano",
+    "Sommelier de Boteco",
+    "Amante da Weiss",
+    "Pilsen Profissional",
+    "Copo Sempre Cheio",
+    "Só cerveja sem álcool",
+    "Divide a conta e pede água",
+    "Foge do amargor",
+    "Só cheira o copo",
+    "Derruba mais do que bebe",
+    "Acha IPA nome de banda",
+    "Mistura cerveja com gelo",
+    "Pede canudo pro chopp",
+    "Acha que growler é Pokémon",
+    "Só veio pelo amendoim grátis"
+  ],
+  "defaultFallbackLabel": "Quer pagar de cervejeiro",
+  "tiers": [
+    {
+      "position": 1,
+      "iconName": "emoji_events",
+      "color": "#FFD700",
+      "progressColor": "#4CAF50",
+      "hasBorder": true,
+      "borderColor": "#000000"
+    },
+    {
+      "position": 2,
+      "iconName": "emoji_events",
+      "color": "#C0C0C0",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    },
+    {
+      "position": 3,
+      "iconName": "emoji_events",
+      "color": "#CD7F32",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    }
+  ]
+}

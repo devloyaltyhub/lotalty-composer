@@ -1,0 +1,21 @@
+{
+  "clientName": "Test Client",
+  "clientCode": "test-client",
+  "bundleId": "com.test.client",
+  "firebaseProjectId": "test-firebase-project",
+  "adminEmail": "admin@test.com",
+  "businessType": "coffee",
+  "appName": "Test App",
+  "colors": {
+    "primary": "#5D32B3",
+    "secondary": "#FFFFFF"
+  },
+  "storeUrls": {
+    "android": "https://play.google.com/store/apps/details?id=com.test.client",
+    "ios": "https://apps.apple.com/app/test-client/id123456789"
+  },
+  "firebaseOptions": {
+    "apiKey": "test-api-key",
+    "projectId": "test-firebase-project"
+  }
+}

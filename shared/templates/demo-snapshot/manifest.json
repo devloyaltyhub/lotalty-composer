@@ -1,0 +1,79 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-11-26T16:18:48.916Z",
+  "sourceProject": {
+    "projectId": "loyalty-hub-1f47c",
+    "storageBucket": "loyalty-hub-1f47c.firebasestorage.app"
+  },
+  "firestore": {
+    "collections": {
+      "Campaigns": {
+        "documentCount": 3,
+        "filePath": "firestore/Campaigns.json"
+      },
+      "Categories": {
+        "documentCount": 5,
+        "filePath": "firestore/Categories.json"
+      },
+      "Clients_Score": {
+        "documentCount": 5,
+        "filePath": "firestore/Clients_Score.json"
+      },
+      "Consumptions": {
+        "documentCount": 5,
+        "filePath": "firestore/Consumptions.json"
+      },
+      "Happy_Hours": {
+        "documentCount": 2,
+        "filePath": "firestore/Happy_Hours.json"
+      },
+      "Image_Mappings": {
+        "documentCount": 13,
+        "filePath": "firestore/Image_Mappings.json"
+      },
+      "Our_Story": {
+        "documentCount": 1,
+        "filePath": "firestore/Our_Story.json"
+      },
+      "Products": {
+        "documentCount": 4,
+        "filePath": "firestore/Products.json"
+      },
+      "Store_Configs": {
+        "documentCount": 1,
+        "filePath": "firestore/Store_Configs.json"
+      },
+      "Suggestions_Box": {
+        "documentCount": 1,
+        "filePath": "firestore/Suggestions_Box.json"
+      },
+      "Team_Members": {
+        "documentCount": 2,
+        "filePath": "firestore/Team_Members.json"
+      },
+      "Users": {
+        "documentCount": 1,
+        "filePath": "firestore/Users.json"
+      },
+      "Users_Admin": {
+        "documentCount": 1,
+        "filePath": "firestore/Users_Admin.json"
+      }
+    },
+    "totalDocuments": 44
+  },
+  "storage": {
+    "paths": {
+      "gallery": {
+        "fileCount": 13,
+        "totalSizeBytes": 3943687
+      },
+      "profile_photos": {
+        "fileCount": 1,
+        "totalSizeBytes": 32697
+      }
+    },
+    "totalFiles": 14,
+    "totalSizeBytes": 3976384
+  }
+}

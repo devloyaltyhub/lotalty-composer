@@ -1,0 +1,1835 @@
+# Fastfile for LoyaltyHub White-label App Automation
+# This file contains lanes for building and deploying Android and iOS apps
+
+# Set UTF-8 locale to avoid CocoaPods and Fastlane warnings
+ENV['LANG'] = 'en_US.UTF-8'
+ENV['LC_ALL'] = 'en_US.UTF-8'
+
+# Use Homebrew Ruby for CocoaPods compatibility
+ENV['PATH'] = "/usr/local/opt/ruby/bin:/usr/local/lib/ruby/gems/3.4.0/bin:/usr/local/opt/cocoapods/bin:#{ENV['PATH']}"
+ENV['GEM_HOME'] = '/usr/local/lib/ruby/gems/3.4.0'
+ENV['GEM_PATH'] = '/usr/local/lib/ruby/gems/3.4.0'
+
+# Shorebird wrapper script path (handles Ruby/CocoaPods environment)
+SHOREBIRD_WRAPPER = File.expand_path('../scripts/shorebird-wrapper.sh', __dir__)
+
+default_platform(:android)
+
+# ==========================================
+# HELPER FUNCTIONS
+# ==========================================
+
+# Validate that build artifact exists before upload
+def validate_build_artifact(path, platform)
+  expanded = Dir.glob(path).first
+  unless expanded && File.exist?(expanded)
+    UI.user_error!("❌ Build artifact não encontrado para #{platform}: #{path}\n   Execute 'fastlane #{platform.downcase} build' primeiro")
+  end
+  UI.message("✓ Build artifact encontrado: #{expanded}")
+  expanded
+end
+
+# Get Android package name from build.gradle
+def get_android_package_name
+  build_gradle_path = File.join(WHITE_LABEL_APP_PATH, 'android', 'app', 'build.gradle')
+  unless File.exist?(build_gradle_path)
+    UI.user_error!("❌ build.gradle não encontrado: #{build_gradle_path}")
+  end
+
+  content = File.read(build_gradle_path)
+  match = content.match(/applicationId\s*=\s*["']([^"']+)["']/)
+  unless match
+    UI.user_error!("❌ applicationId não encontrado em build.gradle")
+  end
+
+  package_name = match[1]
+  UI.message("📦 Package name: #{package_name}")
+  package_name
+end
+
+# Retry block for network operations
+def with_retry(operation_name, max_retries: 3, &block)
+  retries = 0
+  begin
+    block.call
+  rescue Net::ReadTimeout, Net::OpenTimeout, Errno::ECONNRESET, Errno::ETIMEDOUT, Faraday::TimeoutError => e
+    retries += 1
+    if retries <= max_retries
+      UI.important("⚠️  #{operation_name} falhou (tentativa #{retries}/#{max_retries}): #{e.message}")
+      UI.message("   Aguardando 10 segundos antes de tentar novamente...")
+      sleep(10)
+      retry
+    else
+      UI.error("❌ #{operation_name} falhou após #{max_retries} tentativas")
+      raise e
+    end
+  end
+end
+
+# Check if Shorebird is installed and configured for the current project
+def shorebird_configured?
+  # Check if shorebird CLI is installed
+  unless system("which shorebird > /dev/null 2>&1")
+    return false
+  end
+
+  # Check if shorebird.yaml exists
+  shorebird_yaml_path = "#{WHITE_LABEL_APP_PATH}/shorebird.yaml"
+  unless File.exist?(shorebird_yaml_path)
+    return false
+  end
+
+  # Check if app_id is configured (not a placeholder)
+  shorebird_yaml = File.read(shorebird_yaml_path)
+  if shorebird_yaml.include?('placeholder-')
+    return false
+  end
+
+  true
+end
+
+# Get current app version from pubspec.yaml
+def get_app_version
+  pubspec_path = File.join(WHITE_LABEL_APP_PATH, 'pubspec.yaml')
+  unless File.exist?(pubspec_path)
+    UI.user_error!("❌ pubspec.yaml não encontrado: #{pubspec_path}")
+  end
+
+  content = File.read(pubspec_path)
+  match = content.match(/^version:\s*(.+)$/)
+  unless match
+    UI.user_error!("❌ version não encontrada em pubspec.yaml")
+  end
+
+  match[1].strip
+end
+
+# Get debug symbols path for a client (creates directory if needed)
+# Symbols are stored per version to support Crashlytics stack trace mapping
+def get_debug_symbols_path(client_name, platform)
+  version = get_app_version
+  # Sanitize version for folder name (1.0.0+1 -> 1.0.0_1)
+  version_folder = version.gsub('+', '_')
+
+  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+  FileUtils.mkdir_p(symbols_path)
+
+  UI.message("📁 Debug symbols path: #{symbols_path}")
+  symbols_path
+end
+
+# Flutter flags for Shorebird commands (must come AFTER -- separator)
+# These are passed to the underlying `flutter build` command
+# See: https://docs.shorebird.dev/code-push/release/
+# Note: --obfuscate is NOT supported on iOS with Shorebird (Issue #1619)
+def shorebird_flutter_flags(symbols_path)
+  "--split-debug-info=#{symbols_path} --obfuscate"
+end
+
+# Legacy function for standard Flutter builds (not Shorebird)
+def obfuscation_flags(symbols_path)
+  "--obfuscate --split-debug-info=#{symbols_path}"
+end
+
+# Validate that debug symbols were generated after build
+# Returns true if symbols exist, false if not (warning only for Shorebird builds)
+# Note: Shorebird may not correctly pass --split-debug-info to Flutter build
+def validate_debug_symbols!(symbols_path, platform, fail_on_missing: false)
+  symbol_files = Dir.glob(File.join(symbols_path, '*.symbols'))
+
+  if symbol_files.empty?
+    UI.important("⚠️  Debug symbols não foram gerados")
+    UI.message("   Path esperado: #{symbols_path}")
+    UI.message("   Platform: #{platform}")
+    UI.message("")
+    UI.message("   Crashlytics não conseguirá decodificar stack traces para esta versão.")
+    UI.message("   Nota: Shorebird pode não suportar --split-debug-info corretamente.")
+
+    if fail_on_missing
+      UI.user_error!("Build falhou: símbolos de debug não foram gerados")
+    else
+      UI.important("   Continuando sem símbolos de debug...")
+      return false
+    end
+  end
+
+  UI.success("✅ Debug symbols gerados: #{symbol_files.length} arquivo(s)")
+  symbol_files.each { |f| UI.message("   • #{File.basename(f)}") }
+  true
+end
+
+# Get Firebase App ID from firebase_options.dart
+# Platform should be 'android' or 'ios'
+def get_firebase_app_id(platform)
+  firebase_options_path = File.join(WHITE_LABEL_APP_PATH, 'lib', 'firebase_options.dart')
+  unless File.exist?(firebase_options_path)
+    UI.important("⚠️  firebase_options.dart não encontrado, pulando upload de símbolos")
+    return nil
+  end
+
+  content = File.read(firebase_options_path)
+
+  # Match the appId for the specified platform
+  # Format: static const FirebaseOptions android = FirebaseOptions(
+  #           appId: '1:123456:android:abc123',
+  platform_regex = /static\s+const\s+FirebaseOptions\s+#{platform}\s*=\s*FirebaseOptions\([^)]*appId:\s*'([^']+)'/m
+  match = content.match(platform_regex)
+
+  unless match
+    UI.important("⚠️  Firebase App ID para #{platform} não encontrado em firebase_options.dart")
+    return nil
+  end
+
+  app_id = match[1]
+  UI.message("🔥 Firebase App ID (#{platform}): #{app_id}")
+  app_id
+end
+
+# Upload debug symbols to Firebase Crashlytics
+# This enables readable stack traces for obfuscated/split-debug builds
+# Platform-specific implementation:
+# - Android: Uses .symbols files generated by Flutter --split-debug-info
+# - iOS: Uses .dSYM files generated by Xcode (extracted from .xcarchive)
+def upload_crashlytics_symbols(client_name, platform)
+  version = get_app_version
+  version_folder = version.gsub('+', '_')
+  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+
+  UI.message("📤 Preparing Crashlytics symbol upload...")
+  UI.message("   Client: #{client_name}")
+  UI.message("   Platform: #{platform}")
+  UI.message("   Version: #{version}")
+
+  if platform == 'ios'
+    # iOS: Use dSYM files from .xcarchive
+    # The .symbols files generated by Flutter are in ELF format (not Mach-O)
+    # and cannot be processed by Firebase Crashlytics on iOS
+    UI.message("   Platform: iOS - Looking for dSYM files from Xcode build...")
+
+    # Path to the .xcarchive generated by Flutter build
+    xcarchive_path = File.join(WHITE_LABEL_APP_PATH, 'build', 'ios', 'archive', 'Runner.xcarchive')
+    dsyms_dir = File.join(xcarchive_path, 'dSYMs')
+
+    unless File.exist?(dsyms_dir)
+      UI.important("⚠️  dSYMs não encontrados no .xcarchive: #{dsyms_dir}")
+      UI.important("   Isso é normal para builds com Shorebird ou quando upload_symbols_to_crashlytics está habilitado")
+      UI.important("   Os símbolos serão enviados automaticamente pelo TestFlight ou já estão incluídos no IPA")
+      UI.important("   Pulando upload manual de símbolos...")
+      return true
+    end
+
+    # Count dSYM files
+    dsym_files = Dir.glob(File.join(dsyms_dir, '*.dSYM'))
+    if dsym_files.empty?
+      UI.important("⚠️  Nenhum dSYM encontrado em: #{dsyms_dir}")
+      UI.important("   Pulando upload de símbolos...")
+      return true
+    end
+
+    UI.success("✅ dSYMs encontrados: #{dsym_files.length} arquivo(s)")
+    dsym_files.each { |f| UI.message("   • #{File.basename(f)}") }
+
+    # Copy dSYMs to debug-symbols directory for archival
+    UI.message("📁 Copiando dSYMs para arquivo de símbolos...")
+    FileUtils.mkdir_p(symbols_path)
+    dsym_files.each do |dsym|
+      dsym_name = File.basename(dsym)
+      dest = File.join(symbols_path, dsym_name)
+      FileUtils.cp_r(dsym, dest, remove_destination: true)
+      UI.message("   ✓ #{dsym_name}")
+    end
+
+    app_id = get_firebase_app_id(platform)
+    unless app_id
+      UI.important("⚠️  Firebase App ID não encontrado para iOS")
+      UI.important("   dSYMs foram copiados para: #{symbols_path}")
+      UI.important("   Pulando upload de símbolos")
+      return true
+    end
+
+    UI.message("")
+    UI.message("📤 Uploading dSYMs to Firebase Crashlytics...")
+    UI.message("   App ID: #{app_id}")
+
+    begin
+      # Use Firebase Crashlytics native upload-symbols script (not Firebase CLI)
+      # The native script properly converts Mach-O dSYMs to cSYM format
+      # This uploads all dSYMs: Runner.app and all frameworks (Firebase, plugins, etc)
+      upload_script = File.join(WHITE_LABEL_APP_PATH, 'ios', 'Pods', 'FirebaseCrashlytics', 'upload-symbols')
+
+      unless File.exist?(upload_script)
+        UI.important("⚠️  Firebase Crashlytics upload-symbols script não encontrado")
+        UI.important("   Path: #{upload_script}")
+        UI.important("   Certifique-se de que pod install foi executado")
+        UI.important("   dSYMs foram copiados para: #{symbols_path}")
+        return true
+      end
+
+      sh("#{upload_script} -ai #{app_id} -p ios -- #{dsyms_dir}")
+      UI.success("✅ dSYM symbols uploaded to Crashlytics!")
+      UI.message("   Stack traces desta versão serão legíveis no console Firebase")
+      UI.message("   Símbolos arquivados em: #{symbols_path}")
+      true
+    rescue => e
+      UI.error("❌ Falha ao enviar dSYMs para Crashlytics: #{e.message}")
+      UI.error("")
+      UI.error("   Comando manual para retry:")
+      upload_script = File.join(WHITE_LABEL_APP_PATH, 'ios', 'Pods', 'FirebaseCrashlytics', 'upload-symbols')
+      UI.error("   #{upload_script} -ai #{app_id} -p ios -- #{dsyms_dir}")
+      UI.error("")
+      UI.important("⚠️  Deploy continuará, mas faça upload manual dos símbolos se necessário!")
+      UI.important("   dSYMs foram copiados para: #{symbols_path}")
+      false
+    end
+  else
+    # Android: Use .symbols files from Flutter --split-debug-info
+    UI.message("   Symbols path: #{symbols_path}")
+
+    # CRITICAL: Fail if symbols directory doesn't exist
+    unless File.exist?(symbols_path)
+      UI.error("❌ ERRO CRÍTICO: Diretório de símbolos não encontrado!")
+      UI.error("   Path: #{symbols_path}")
+      UI.error("")
+      UI.error("   Isso significa que o build não gerou símbolos de debug.")
+      UI.error("   O Crashlytics NÃO conseguirá decodificar stack traces desta versão.")
+      UI.error("")
+      UI.error("   Possíveis causas:")
+      UI.error("   1. O build não usou --split-debug-info corretamente")
+      UI.error("   2. O build falhou antes de gerar os símbolos")
+      UI.error("   3. O path do cliente está incorreto")
+      UI.user_error!("Deploy abortado: símbolos de debug não encontrados")
+    end
+
+    # CRITICAL: Fail if no symbol files exist
+    symbol_files = Dir.glob(File.join(symbols_path, '*.symbols'))
+    if symbol_files.empty?
+      UI.error("❌ ERRO CRÍTICO: Nenhum arquivo .symbols encontrado!")
+      UI.error("   Path: #{symbols_path}")
+      UI.error("")
+      UI.error("   O diretório existe mas está vazio.")
+      UI.error("   O Crashlytics NÃO conseguirá decodificar stack traces desta versão.")
+      UI.user_error!("Deploy abortado: arquivos .symbols não encontrados")
+    end
+
+    UI.success("✅ Símbolos encontrados: #{symbol_files.length} arquivo(s)")
+    symbol_files.each { |f| UI.message("   • #{File.basename(f)} (#{(File.size(f) / 1024.0 / 1024.0).round(2)} MB)") }
+
+    app_id = get_firebase_app_id(platform)
+    unless app_id
+      UI.error("❌ Firebase App ID não encontrado para #{platform}")
+      UI.error("   Verifique se firebase_options.dart está configurado corretamente")
+      UI.user_error!("Deploy abortado: Firebase App ID não encontrado")
+    end
+
+    UI.message("")
+    UI.message("📤 Uploading to Firebase Crashlytics...")
+    UI.message("   App ID: #{app_id}")
+
+    begin
+      # Firebase CLI command to upload Dart symbols
+      sh("firebase crashlytics:symbols:upload --app=#{app_id} #{symbols_path}")
+      UI.success("✅ Debug symbols uploaded to Crashlytics!")
+      UI.message("   Stack traces desta versão serão legíveis no console Firebase")
+      true
+    rescue => e
+      UI.error("❌ Falha ao enviar símbolos para Crashlytics: #{e.message}")
+      UI.error("")
+      UI.error("   Comando manual para retry:")
+      UI.error("   firebase crashlytics:symbols:upload --app=#{app_id} #{symbols_path}")
+      UI.error("")
+      # Don't fail the deploy for upload errors - symbols exist, just upload failed
+      # User can retry manually
+      UI.important("⚠️  Deploy continuará, mas faça upload manual dos símbolos!")
+      false
+    end
+  end
+end
+
+# Check if CocoaPods is properly installed and working
+def cocoapods_working?
+  # Set UTF-8 locale to avoid warnings
+  ENV['LANG'] ||= 'en_US.UTF-8'
+  ENV['LC_ALL'] ||= 'en_US.UTF-8'
+
+  # Try to run pod --version and check if it works
+  result = system("pod --version > /dev/null 2>&1")
+  return false unless result
+
+  # Check if pod can actually execute (Ruby version mismatch issue)
+  # This catches the case where pod is installed but broken due to Ruby conflicts
+  output = `pod --version 2>&1`
+  # Only check for actual errors, ignore WARNING messages
+  if output.include?("ERROR") || output.include?("LoadError")
+    return false
+  end
+  return false if $?.exitstatus != 0
+
+  true
+end
+
+# Validate CocoaPods installation and provide fix instructions
+def validate_cocoapods!
+  return if cocoapods_working?
+
+  UI.error("❌ CocoaPods não está funcionando corretamente!")
+  UI.error("")
+  UI.error("   Isso geralmente acontece quando o CocoaPods foi instalado")
+  UI.error("   com uma versão diferente do Ruby da que está sendo usada.")
+  UI.error("")
+  UI.error("   Para corrigir, execute um dos comandos abaixo:")
+  UI.error("")
+  UI.error("   Opção 1 (recomendado): Reinstalar com o Ruby do sistema")
+  UI.error("   $ sudo gem install cocoapods")
+  UI.error("")
+  UI.error("   Opção 2: Usar Homebrew Ruby (adicione ao ~/.zshrc)")
+  UI.error("   export PATH=\"/usr/local/opt/ruby/bin:$PATH\"")
+  UI.error("")
+  UI.user_error!("CocoaPods precisa ser corrigido antes de continuar")
+end
+
+# ==========================================
+# ANDROID LANES
+# ==========================================
+
+# Path to white_label_app (absolute to avoid working directory issues)
+WHITE_LABEL_APP_PATH = File.expand_path('../../../white_label_app', __dir__)
+
+platform :android do
+  desc "Build Android release AAB (uses Shorebird if configured)"
+  lane :build do |options|
+    client_name = options[:client] || "demo"
+    use_shorebird = options[:shorebird] != false # Default to true
+
+    UI.message("🔨 Building Android release for: #{client_name}")
+
+    # Get debug symbols path for this client/version
+    symbols_path = get_debug_symbols_path(client_name, 'android')
+
+    # Check if Shorebird is available and configured
+    shorebird_available = shorebird_configured?
+
+    if use_shorebird && shorebird_available
+      UI.message("🐦 Using Shorebird for OTA-enabled build")
+      UI.message("🔒 Obfuscation enabled, symbols at: #{symbols_path}")
+
+      # Step 1: Generate debug symbols using Flutter build
+      # Shorebird doesn't correctly pass --split-debug-info to Flutter, so we generate symbols separately
+      UI.message("📦 Generating debug symbols with Flutter build...")
+      absolute_symbols_path = File.expand_path(symbols_path)
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter build appbundle --release #{obfuscation_flags(absolute_symbols_path)}")
+
+      # Validate symbols were generated
+      validate_debug_symbols!(symbols_path, 'android', fail_on_missing: true)
+
+      # Step 2: Run Shorebird release (will rebuild, but we have the symbols)
+      UI.message("🐦 Creating Shorebird release...")
+      sh("cd #{WHITE_LABEL_APP_PATH} && shorebird release android --flutter-version=3.35.5 --no-confirm")
+
+      UI.success("✅ Android Shorebird release completed!")
+      UI.message("   📱 OTA updates enabled for this release")
+      UI.message("   🔒 Code obfuscated, symbols saved to: #{symbols_path}")
+    else
+      if use_shorebird && !shorebird_available
+        UI.important("⚠️  Shorebird not configured, falling back to standard Flutter build")
+        UI.message("   To enable OTA: cd white_label_app && shorebird init")
+      end
+
+      UI.message("🔒 Obfuscation enabled, symbols at: #{symbols_path}")
+
+      # Standard Flutter build with obfuscation
+      absolute_symbols_path = File.expand_path(symbols_path)
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter clean")
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter pub get")
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter build appbundle --release #{obfuscation_flags(absolute_symbols_path)}")
+
+      # Validate symbols were generated (fail build for standard Flutter - symbols should work)
+      validate_debug_symbols!(symbols_path, 'android', fail_on_missing: true)
+
+      UI.success("✅ Android build completed!")
+      UI.message("   🔒 Code obfuscated, symbols saved to: #{symbols_path}")
+    end
+  end
+
+  desc "Deploy Android app to Play Store (Internal Testing)"
+  lane :deploy_internal do |options|
+    client_name = options[:client] || "demo"
+    skip_metadata = options[:skip_metadata] || false
+    skip_symbols = options[:skip_symbols] || false
+
+    UI.message("📤 Deploying Android app to Play Store (Internal Testing)")
+
+    # Validate build artifact exists
+    aab_path = "#{WHITE_LABEL_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+    validate_build_artifact(aab_path, "Android")
+
+    # Check if metadata exists (in white_label_app/metadata/ - copied from clients/)
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Uploading metadata from: #{metadata_path}")
+    else
+      UI.important("⚠️  Skipping metadata upload (not found or disabled)")
+    end
+
+    with_retry("Upload para Play Store (Internal)") do
+      upload_to_play_store(
+        package_name: get_android_package_name,
+        track: 'internal',
+        aab: aab_path,
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        metadata_path: has_metadata && !skip_metadata ? metadata_path : nil,
+        skip_upload_metadata: !has_metadata || skip_metadata,
+        skip_upload_images: !has_metadata || skip_metadata,
+        skip_upload_screenshots: !has_metadata || skip_metadata
+      )
+    end
+
+    # Upload debug symbols to Crashlytics for readable stack traces
+    unless skip_symbols
+      upload_crashlytics_symbols(client_name, 'android')
+    end
+
+    UI.success("✅ Android app deployed to Internal Testing!")
+  end
+
+  desc "Deploy Android app to Play Store (Production)"
+  lane :deploy_production do |options|
+    client_name = options[:client] || "demo"
+    skip_metadata = options[:skip_metadata] || false
+    skip_symbols = options[:skip_symbols] || false
+    auto_release = options[:auto_release] != false # Default to true
+
+    UI.message("📤 Deploying Android app to Play Store (Production)")
+    UI.message("   Auto-release: #{auto_release ? 'enabled' : 'disabled'}")
+
+    # Validate build artifact exists
+    aab_path = "#{WHITE_LABEL_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+    validate_build_artifact(aab_path, "Android")
+
+    # Check if metadata exists (in white_label_app/metadata/ - copied from clients/)
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Uploading metadata from: #{metadata_path}")
+    else
+      UI.important("⚠️  Skipping metadata upload (not found or disabled)")
+    end
+
+    with_retry("Upload para Play Store (Production)") do
+      upload_to_play_store(
+        package_name: get_android_package_name,
+        track: 'production',
+        release_status: auto_release ? 'completed' : 'draft',
+        aab: aab_path,
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        metadata_path: has_metadata && !skip_metadata ? metadata_path : nil,
+        skip_upload_metadata: !has_metadata || skip_metadata,
+        skip_upload_images: !has_metadata || skip_metadata,
+        skip_upload_screenshots: !has_metadata || skip_metadata
+      )
+    end
+
+    # Upload debug symbols to Crashlytics for readable stack traces
+    unless skip_symbols
+      upload_crashlytics_symbols(client_name, 'android')
+    end
+
+    if auto_release
+      UI.success("✅ Android app released to Production!")
+    else
+      UI.success("✅ Android app uploaded to Production (draft)")
+    end
+  end
+
+  desc "Build and deploy Android to Internal Testing"
+  lane :release_internal do |options|
+    build(options)
+    deploy_internal(options)
+  end
+
+  desc "Build and deploy Android to Production"
+  lane :release_production do |options|
+    build(options)
+    deploy_production(options)
+  end
+
+  desc "Upload apenas metadata/screenshots para Play Store (sem build)"
+  lane :upload_metadata_only do |options|
+    client_name = options[:client] || "demo"
+
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'android')
+
+    unless File.exist?(metadata_path)
+      UI.user_error!("❌ Metadata não encontrado: #{metadata_path}\n   Execute 'npm run start' para configurar o cliente primeiro")
+    end
+
+    UI.message("📤 Uploading metadata/screenshots para Play Store...")
+    UI.message("   📦 Package: #{get_android_package_name}")
+    UI.message("   📁 Metadata: #{metadata_path}")
+    UI.message("   ℹ️  Screenshots existentes serão substituídos automaticamente")
+
+    with_retry("Upload metadata para Play Store") do
+      upload_to_play_store(
+        package_name: get_android_package_name,
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        skip_upload_aab: true,
+        skip_upload_apk: true,
+        metadata_path: metadata_path,
+        skip_upload_metadata: false,
+        skip_upload_images: false,
+        skip_upload_screenshots: false
+      )
+    end
+
+    UI.success("✅ Metadata/screenshots atualizados no Play Store!")
+  end
+
+  desc "Promover build existente do Internal Testing para Production (sem nova build)"
+  lane :promote_to_production do |options|
+    client_name = options[:client] || "demo"
+    version_code = options[:version_code]
+    skip_metadata = options[:skip_metadata] || false
+    rollout = options[:rollout] || 1.0 # Default: 100% rollout
+
+    unless version_code
+      UI.user_error!("❌ version_code é obrigatório.\n   Uso: fastlane android promote_to_production client:na-rede version_code:5")
+    end
+
+    package_name = get_android_package_name
+
+    UI.message("📤 Promovendo build do Internal Testing para Production")
+    UI.message("   📦 Package: #{package_name}")
+    UI.message("   🔢 Version code: #{version_code}")
+    UI.message("   📊 Rollout: #{(rollout * 100).to_i}%")
+
+    # Check if metadata exists
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Uploading metadata from: #{metadata_path}")
+    else
+      UI.important("⚠️  Skipping metadata upload (not found or disabled)")
+    end
+
+    begin
+      with_retry("Promote para Production") do
+        # Use supply (upload_to_play_store) with track_promote_to to promote
+        # from internal to production track
+        upload_to_play_store(
+          package_name: package_name,
+          json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+          track: 'internal',
+          track_promote_to: 'production',
+          track_promote_release_status: rollout < 1.0 ? 'inProgress' : 'completed',
+          rollout: rollout < 1.0 ? rollout.to_s : nil,
+          version_code: version_code.to_i,
+          skip_upload_aab: true,
+          skip_upload_apk: true,
+          metadata_path: has_metadata && !skip_metadata ? metadata_path : nil,
+          skip_upload_metadata: !has_metadata || skip_metadata,
+          skip_upload_images: !has_metadata || skip_metadata,
+          skip_upload_screenshots: !has_metadata || skip_metadata
+        )
+      end
+
+      if rollout < 1.0
+        UI.success("✅ Build #{version_code} promovido para Production com #{(rollout * 100).to_i}% rollout!")
+        UI.message("   Use 'fastlane android increase_rollout' para aumentar o rollout")
+      else
+        UI.success("✅ Build #{version_code} promovido para Production!")
+      end
+
+    rescue => e
+      error_message = e.message.to_s
+
+      # Check for common errors
+      if error_message.include?('not found in track') || error_message.include?('INVALID_ARGUMENT')
+        UI.error("❌ Build #{version_code} não encontrado no Internal Testing")
+        UI.error("")
+        UI.error("   Verifique se:")
+        UI.error("   1. O version_code está correto")
+        UI.error("   2. A build foi enviada para Internal Testing")
+        UI.error("   3. A build completou o processamento no Play Console")
+        UI.error("")
+        UI.error("   Para verificar builds disponíveis:")
+        UI.error("   https://play.google.com/console/")
+      else
+        raise e
+      end
+    end
+  end
+end
+
+# ==========================================
+# iOS LANES
+# ==========================================
+
+platform :ios do
+  # ==========================================
+  # SETUP - Runs before all iOS lanes
+  # ==========================================
+  before_all do
+    # CocoaPods validation removed - was causing false positives due to UTF-8 warnings
+    # If CocoaPods is truly broken, the build will fail with a clear error anyway
+
+    # Setup App Store Connect API Key globally for all Apple actions
+    # Only initialize if credentials are available (allows build-only without deploy credentials)
+    if ENV['APP_STORE_CONNECT_API_KEY_ID'] && ENV['APP_STORE_CONNECT_API_ISSUER_ID'] && ENV['APP_STORE_CONNECT_API_KEY']
+      @api_key = app_store_connect_api_key(
+        key_id: ENV['APP_STORE_CONNECT_API_KEY_ID'],
+        issuer_id: ENV['APP_STORE_CONNECT_API_ISSUER_ID'],
+        key_filepath: ENV['APP_STORE_CONNECT_API_KEY']
+      )
+    else
+      UI.important("⚠️  App Store Connect credentials not configured - deploy will not be available")
+    end
+  end
+
+  # ==========================================
+  # APP REGISTRATION - Apple Developer Portal & App Store Connect
+  # ==========================================
+
+  desc "Register app in Apple Developer Portal and App Store Connect"
+  lane :register_app do |options|
+    client_name = options[:client] || "demo"
+    bundle_id = get_bundle_id(client_name)
+    app_name = options[:app_name] || get_app_name(client_name)
+
+    UI.message("🍎 Registering app in Apple ecosystem...")
+    UI.message("   Bundle ID: #{bundle_id}")
+    UI.message("   App Name: #{app_name}")
+
+    begin
+      # Register app using produce (creates both App ID and App Store Connect entry)
+      # Note: produce uses the API key set globally via app_store_connect_api_key in before_all
+      # For produce specifically, we need username-based auth or set via Spaceship
+      produce(
+        app_identifier: bundle_id,
+        app_name: app_name,
+        company_name: "Asied Desenvolvimento Tecnologico LTDA",
+        language: "pt-BR",
+        app_version: "1.0",
+        sku: bundle_id, # Use bundle ID as SKU
+        team_id: ENV['APPLE_TEAM_ID'],
+        itc_team_id: ENV['ITC_TEAM_ID'], # Optional: App Store Connect Team ID if different
+        username: ENV['FASTLANE_USER']
+      )
+
+      UI.success("✅ App registered successfully!")
+      UI.success("   ✓ Bundle ID created in Apple Developer Portal")
+      UI.success("   ✓ App created in App Store Connect")
+
+    rescue => e
+      # Check if error is because app already exists
+      if e.message.include?("already exists") || e.message.include?("identifier already exists")
+        UI.important("⚠️  App already registered in Apple ecosystem")
+        UI.important("   Bundle ID: #{bundle_id}")
+        UI.important("   This is OK - continuing with certificate generation...")
+      else
+        # Re-raise other errors
+        raise e
+      end
+    end
+  end
+
+  # ==========================================
+  # MATCH LANES - Certificate Management
+  # ==========================================
+
+  desc "Sync iOS certificates and provisioning profiles (Development)"
+  lane :sync_certificates_dev do |options|
+    client_name = options[:client] || "demo"
+    bundle_id = get_bundle_id(client_name)
+
+    UI.message("🔐 Syncing development certificates for: #{bundle_id}")
+
+    # Register app first (will skip if already registered)
+    register_app(options)
+
+    match(
+      type: "development",
+      app_identifier: bundle_id,
+      readonly: false,
+      force_for_new_devices: true,
+      api_key: @api_key
+    )
+
+    # Organize profiles into client folders
+    organize_ios_profiles
+
+    UI.success("✅ Development certificates synced!")
+  end
+
+  desc "Sync iOS certificates and provisioning profiles (App Store)"
+  lane :sync_certificates_appstore do |options|
+    client_name = options[:client] || "demo"
+    bundle_id = get_bundle_id(client_name)
+
+    UI.message("🔐 Syncing App Store certificates for: #{bundle_id}")
+
+    # Register app first (will skip if already registered)
+    register_app(options)
+
+    match(
+      type: "appstore",
+      app_identifier: bundle_id,
+      readonly: false,
+      api_key: @api_key
+    )
+
+    # Organize profiles into client folders
+    organize_ios_profiles
+
+    UI.success("✅ App Store certificates synced!")
+  end
+
+  # Helper function to organize profiles by client
+  def organize_ios_profiles
+    script_path = File.join(__dir__, 'scripts', 'organize_ios_profiles.rb')
+
+    unless File.exist?(script_path)
+      UI.important("⚠️  organize_ios_profiles.rb script not found at: #{script_path}")
+      UI.important("    Skipping profile organization")
+      return
+    end
+
+    begin
+      sh("ruby #{script_path}")
+    rescue => e
+      UI.error("❌ Failed to organize iOS profiles: #{e.message}")
+      UI.important("    This is non-critical - continuing...")
+    end
+  end
+
+  desc "Register a new device for development"
+  lane :add_device do |options|
+    device_name = options[:device_name] || UI.input("Enter device name:")
+    device_udid = options[:device_udid] || UI.input("Enter device UDID:")
+
+    UI.message("📱 Registering device: #{device_name} (#{device_udid})")
+
+    register_devices(
+      devices: {
+        device_name => device_udid
+      }
+    )
+
+    UI.success("✅ Device registered! Run sync_certificates_dev to update profiles")
+  end
+
+  desc "Setup code signing for build"
+  lane :setup_signing do |options|
+    client_name = options[:client] || "demo"
+    bundle_id = get_bundle_id(client_name)
+    build_type = options[:type] || "appstore" # development or appstore
+
+    UI.message("🔐 Setting up #{build_type} signing for: #{bundle_id}")
+
+    match(
+      type: build_type,
+      app_identifier: bundle_id,
+      readonly: true,
+      api_key: @api_key
+    )
+
+    UI.success("✅ Code signing configured!")
+  end
+
+  # Helper function to get client config
+  # Reads from clients/{client_name}/config.json dynamically
+  def get_client_config(client_name)
+    config_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'config.json')
+
+    unless File.exist?(config_path)
+      UI.user_error!("❌ Client config not found: #{config_path}\n   Make sure client '#{client_name}' exists in clients/ directory")
+    end
+
+    begin
+      config = JSON.parse(File.read(config_path))
+      config
+    rescue JSON::ParserError => e
+      UI.user_error!("❌ Invalid JSON in config file: #{config_path}\n   Error: #{e.message}")
+    end
+  end
+
+  # Helper function to get bundle ID for client
+  # Reads from clients/{client_name}/config.json dynamically
+  def get_bundle_id(client_name)
+    config = get_client_config(client_name)
+    bundle_id = config['bundleId']
+
+    if bundle_id.nil? || bundle_id.empty?
+      UI.user_error!("❌ bundleId not found in config.json for client: #{client_name}")
+    end
+
+    UI.message("✓ Found bundle ID for #{client_name}: #{bundle_id}")
+    bundle_id
+  end
+
+  # Helper function to get app name for client
+  # Reads from clients/{client_name}/config.json dynamically
+  def get_app_name(client_name)
+    config = get_client_config(client_name)
+    app_name = config['appName'] || config['clientName']
+
+    if app_name.nil? || app_name.empty?
+      UI.user_error!("❌ appName not found in config.json for client: #{client_name}")
+    end
+
+    UI.message("✓ Found app name for #{client_name}: #{app_name}")
+    app_name
+  end
+
+  # ==========================================
+  # BUILD & DEPLOY LANES
+  # ==========================================
+
+  desc "Build iOS release IPA (uses Shorebird if configured)"
+  lane :build do |options|
+    client_name = options[:client] || "demo"
+    use_shorebird = options[:shorebird] != false # Default to true
+
+    UI.message("🔨 Building iOS release for: #{client_name}")
+
+    # Get debug symbols path for this client/version
+    symbols_path = get_debug_symbols_path(client_name, 'ios')
+
+    # Check if Shorebird is available and configured
+    shorebird_available = shorebird_configured?
+
+    if use_shorebird && shorebird_available
+      UI.message("🐦 Using Shorebird for OTA-enabled build")
+
+      # IMPORTANT: iOS does NOT support --obfuscate with Shorebird!
+      # See: https://github.com/shorebirdtech/shorebird/issues/1619
+      # We still generate debug symbols (--split-debug-info) for Crashlytics.
+      UI.important("⚠️  iOS Shorebird: --obfuscate não suportado (Issue #1619)")
+      UI.message("   Debug symbols serão gerados para Crashlytics (sem ofuscação)")
+      UI.message("📁 Symbols path: #{symbols_path}")
+
+      # Step 1: Generate debug symbols using Flutter build (without --obfuscate for iOS)
+      # Shorebird doesn't correctly pass --split-debug-info to Flutter, so we generate symbols separately
+      UI.message("📦 Generating debug symbols with Flutter build...")
+      absolute_symbols_path = File.expand_path(symbols_path)
+      sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 flutter build ipa --release --split-debug-info=#{absolute_symbols_path}")
+
+      # Validate symbols were generated
+      validate_debug_symbols!(symbols_path, 'ios', fail_on_missing: true)
+
+      # Step 2: Run Shorebird release (will rebuild, but we have the symbols)
+      UI.message("🐦 Creating Shorebird release...")
+      sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 shorebird release ios --flutter-version=3.35.5 --no-confirm")
+
+      UI.success("✅ iOS Shorebird release completed!")
+      UI.message("   📱 OTA updates enabled for this release")
+      UI.message("   📁 Debug symbols saved to: #{symbols_path}")
+    else
+      if use_shorebird && !shorebird_available
+        UI.important("⚠️  Shorebird not configured, falling back to standard Flutter build")
+        UI.message("   To enable OTA: cd white_label_app && shorebird init")
+      end
+
+      UI.message("🔒 Obfuscation enabled, symbols at: #{symbols_path}")
+
+      # Standard Flutter build with obfuscation (works without Shorebird)
+      absolute_symbols_path = File.expand_path(symbols_path)
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter clean")
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter pub get")
+      sh("cd #{WHITE_LABEL_APP_PATH} && flutter build ipa --release #{obfuscation_flags(absolute_symbols_path)}")
+
+      # Validate symbols were generated (fail build for standard Flutter - symbols should work)
+      validate_debug_symbols!(symbols_path, 'ios', fail_on_missing: true)
+
+      UI.success("✅ iOS build completed!")
+      UI.message("   🔒 Code obfuscated, symbols saved to: #{symbols_path}")
+    end
+  end
+
+  desc "Deploy iOS app to TestFlight"
+  lane :deploy_testflight do |options|
+    client_name = options[:client] || "demo"
+    skip_metadata = options[:skip_metadata] || false
+    skip_symbols = options[:skip_symbols] || false
+
+    UI.message("📤 Deploying iOS app to TestFlight")
+
+    # Validate build artifact exists and get resolved path
+    ipa_path = "#{WHITE_LABEL_APP_PATH}/build/ios/ipa/*.ipa"
+    ipa_path = validate_build_artifact(ipa_path, "iOS")
+
+    # Check if metadata exists (in white_label_app/metadata/ - copied from clients/)
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'ios')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Using metadata from: #{metadata_path}")
+      UI.important("⚠️  Note: TestFlight doesn't support metadata upload via API")
+      UI.important("    Metadata will be used for App Store submission only")
+    end
+
+    # Upload to TestFlight with retry
+    with_retry("Upload para TestFlight") do
+      upload_to_testflight(
+        ipa: ipa_path,
+        api_key: @api_key,
+        skip_waiting_for_build_processing: true,
+        skip_submission: true
+      )
+    end
+
+    # Upload debug symbols to Crashlytics for readable stack traces
+    unless skip_symbols
+      upload_crashlytics_symbols(client_name, 'ios')
+    end
+
+    UI.success("✅ iOS app uploaded to TestFlight!")
+  end
+
+  desc "Deploy iOS app to App Store"
+  lane :deploy_appstore do |options|
+    client_name = options[:client] || "demo"
+    skip_metadata = options[:skip_metadata] || false
+    skip_symbols = options[:skip_symbols] || false
+    auto_submit = options[:auto_submit] != false # Default to true
+    phased_release = options[:phased_release] != false # Default to true
+
+    UI.message("📤 Deploying iOS app to App Store")
+    UI.message("   Auto-submit for review: #{auto_submit ? 'enabled' : 'disabled'}")
+    UI.message("   Phased release: #{phased_release ? 'enabled' : 'disabled'}")
+
+    # Validate build artifact exists and get resolved path
+    ipa_path = "#{WHITE_LABEL_APP_PATH}/build/ios/ipa/*.ipa"
+    ipa_path = validate_build_artifact(ipa_path, "iOS")
+
+    # Check if metadata exists (in white_label_app/metadata/ - copied from clients/)
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'ios')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Uploading metadata from: #{metadata_path}")
+    else
+      UI.important("⚠️  Skipping metadata upload (not found or disabled)")
+    end
+
+    # Check for app rating config file
+    rating_config_path = File.join(metadata_path, 'app_store_rating_config.json')
+    has_rating_config = File.exist?(rating_config_path)
+
+    if has_rating_config
+      UI.message("📊 Using age rating config from: #{rating_config_path}")
+    end
+
+    # Upload to App Store with auto-submit options and retry
+    # We wrap this in a begin/rescue to handle missing App Store Connect configuration
+    # (Age Rating, Privacy, Pricing) which must be set manually for new apps
+    submission_succeeded = false
+    missing_config_warning = false
+
+    begin
+      with_retry("Upload para App Store") do
+        upload_to_app_store(
+          ipa: ipa_path,
+          api_key: @api_key,
+          metadata_path: has_metadata && !skip_metadata ? metadata_path : nil,
+          screenshots_path: has_metadata && !skip_metadata ? metadata_path : nil,
+          skip_metadata: !has_metadata || skip_metadata,
+          skip_screenshots: !has_metadata || skip_metadata,
+          submit_for_review: auto_submit,
+          automatic_release: auto_submit,
+          phased_release: phased_release,
+          precheck_include_in_app_purchases: false, # API Key doesn't support IAP precheck
+
+          # Age rating configuration (17+ to cover alcohol references)
+          app_rating_config_path: has_rating_config ? rating_config_path : nil,
+
+          # Fixed categories for all clients: Food & Drink + Shopping
+          primary_category: "FOOD_AND_DRINK",
+          secondary_category: "SHOPPING",
+
+          # NOTE: price_tier removed - Apple deprecated the old pricing API
+          # Price must be set manually in App Store Connect (usually already set as Free)
+
+          # Submission information including content rights
+          submission_information: {
+            add_id_info_serves_ads: false,
+            add_id_info_tracks_action: false,
+            add_id_info_tracks_install: false,
+            add_id_info_uses_idfa: false,
+            export_compliance_uses_encryption: false,
+            export_compliance_encryption_updated: false,
+            content_rights_contains_third_party_content: true,
+            content_rights_has_rights: true
+          }
+        )
+      end
+      submission_succeeded = true
+    rescue => e
+      error_message = e.message.to_s
+
+      # Check if error is due to missing App Store Connect configuration
+      # These are settings that MUST be configured manually in the portal for new apps
+      missing_config_patterns = [
+        'horrorOrFearThemes',
+        'unrestrictedWebAccess',
+        'violenceCartoonOrFantasy',
+        'alcoholTobaccoOrDrugUseOrReferences',
+        'matureOrSuggestiveThemes',
+        'medicalOrTreatmentInformation',
+        'sexualContentGraphicAndNudity',
+        'violenceRealisticProlongedGraphicOrSadistic',
+        'profanityOrCrudeHumor',
+        'sexualContentOrNudity',
+        'gamblingSimulated',
+        'violenceRealistic',
+        'data your app collects',
+        'missing required pricing',
+        'not in valid state'
+      ]
+
+      is_missing_config_error = missing_config_patterns.any? { |pattern| error_message.downcase.include?(pattern.downcase) }
+
+      if is_missing_config_error
+        missing_config_warning = true
+        UI.important("")
+        UI.important("=" * 60)
+        UI.important("⚠️  BUILD UPLOADED - MANUAL CONFIGURATION REQUIRED")
+        UI.important("=" * 60)
+        UI.important("")
+        UI.important("The build was uploaded successfully, but automatic submission")
+        UI.important("failed because this app requires manual configuration in")
+        UI.important("App Store Connect (first-time setup).")
+        UI.important("")
+        UI.important("📋 Please configure the following in App Store Connect:")
+        UI.important("")
+
+        if error_message.include?('horrorOrFearThemes') || error_message.include?('violenceCartoonOrFantasy')
+          UI.important("   1. AGE RATING (Classificação Indicativa)")
+          UI.important("      App Store Connect → App → App Information → Age Rating")
+          UI.important("      Answer all content questions (usually 'None' for loyalty apps)")
+          UI.important("")
+        end
+
+        if error_message.downcase.include?('data your app collects')
+          UI.important("   2. APP PRIVACY (Privacidade)")
+          UI.important("      App Store Connect → App → App Privacy")
+          UI.important("      Declare what data your app collects")
+          UI.important("")
+        end
+
+        if error_message.downcase.include?('pricing')
+          UI.important("   3. PRICING (Preços)")
+          UI.important("      App Store Connect → App → Pricing and Availability")
+          UI.important("      Set pricing (usually 'Free')")
+          UI.important("")
+        end
+
+        UI.important("After configuring, you can either:")
+        UI.important("   • Submit manually via App Store Connect")
+        UI.important("   • Run this lane again with auto_submit:true")
+        UI.important("")
+        UI.important("=" * 60)
+      else
+        # Re-raise if it's a different error
+        raise e
+      end
+    end
+
+    # Upload debug symbols to Crashlytics for readable stack traces
+    unless skip_symbols
+      upload_crashlytics_symbols(client_name, 'ios')
+    end
+
+    if auto_submit
+      UI.success("✅ iOS app submitted for App Store review!")
+      UI.message("   The app will be released automatically when approved")
+    else
+      UI.success("✅ iOS app uploaded to App Store (not submitted)")
+    end
+  end
+
+  desc "Build and deploy iOS to TestFlight"
+  lane :release_testflight do |options|
+    build(options)
+    deploy_testflight(options)
+  end
+
+  desc "Build and deploy iOS to App Store"
+  lane :release_appstore do |options|
+    build(options)
+    deploy_appstore(options)
+  end
+
+  desc "Upload apenas metadata/screenshots para App Store (sem build)"
+  lane :upload_metadata_only do |options|
+    client_name = options[:client] || "demo"
+
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'ios')
+
+    unless File.exist?(metadata_path)
+      UI.user_error!("❌ Metadata não encontrado: #{metadata_path}\n   Execute 'npm run start' para configurar o cliente primeiro")
+    end
+
+    UI.message("📤 Uploading metadata/screenshots para App Store...")
+    UI.message("   📁 Metadata: #{metadata_path}")
+    UI.message("   🗑️  Screenshots existentes serão deletados antes do upload (overwrite_screenshots: true)")
+
+    with_retry("Upload metadata para App Store") do
+      upload_to_app_store(
+        api_key: @api_key,
+        skip_binary_upload: true,
+        metadata_path: metadata_path,
+        screenshots_path: metadata_path,
+        skip_metadata: false,
+        skip_screenshots: false,
+        overwrite_screenshots: true,  # DELETA screenshots existentes antes do upload
+        force: true,
+        precheck_include_in_app_purchases: false
+      )
+    end
+
+    UI.success("✅ Metadata/screenshots atualizados no App Store!")
+  end
+
+  desc "Submeter build existente do TestFlight para App Store (sem nova build)"
+  lane :submit_existing_build do |options|
+    client_name = options[:client] || "demo"
+    build_number = options[:build_number]
+    app_version = options[:app_version] || get_app_version.split('+').first # Extract version without build number
+    skip_metadata = options[:skip_metadata] || false
+    auto_submit = options[:auto_submit] != false # Default to true
+    phased_release = options[:phased_release] != false # Default to true
+
+    unless build_number
+      UI.user_error!("❌ build_number é obrigatório.\n   Uso: fastlane ios submit_existing_build client:na-rede build_number:5")
+    end
+
+    # Get bundle ID from client config
+    bundle_id = get_bundle_id(client_name)
+
+    UI.message("📤 Submetendo build existente para App Store")
+    UI.message("   Bundle ID: #{bundle_id}")
+    UI.message("   App version: #{app_version}")
+    UI.message("   Build number: #{build_number}")
+    UI.message("   Auto-submit for review: #{auto_submit ? 'enabled' : 'disabled'}")
+    UI.message("   Phased release: #{phased_release ? 'enabled' : 'disabled'}")
+
+    # Check if metadata exists
+    metadata_path = File.join(WHITE_LABEL_APP_PATH, 'metadata', 'ios')
+    has_metadata = File.exist?(metadata_path)
+
+    if has_metadata && !skip_metadata
+      UI.message("📝 Uploading metadata from: #{metadata_path}")
+    else
+      UI.important("⚠️  Skipping metadata upload (not found or disabled)")
+    end
+
+    # Check for app rating config file
+    rating_config_path = File.join(metadata_path, 'app_store_rating_config.json')
+    has_rating_config = File.exist?(rating_config_path)
+
+    if has_rating_config
+      UI.message("📊 Using age rating config from: #{rating_config_path}")
+    end
+
+    # Submit existing build with metadata
+    submission_succeeded = false
+
+    begin
+      with_retry("Submit para App Store") do
+        upload_to_app_store(
+          api_key: @api_key,
+          app_identifier: bundle_id,  # Bundle ID from client config
+          app_version: app_version,  # Create version if it doesn't exist
+          skip_binary_upload: true,  # Don't upload new binary
+          build_number: build_number.to_s,  # Select existing build from TestFlight
+          metadata_path: has_metadata && !skip_metadata ? metadata_path : nil,
+          screenshots_path: has_metadata && !skip_metadata ? metadata_path : nil,
+          skip_metadata: !has_metadata || skip_metadata,
+          skip_screenshots: !has_metadata || skip_metadata,
+          overwrite_screenshots: true,
+          submit_for_review: auto_submit,
+          automatic_release: auto_submit,
+          phased_release: phased_release,
+          precheck_include_in_app_purchases: false,
+          force: true,
+
+          # Age rating configuration
+          app_rating_config_path: has_rating_config ? rating_config_path : nil,
+
+          # Fixed categories for all clients
+          primary_category: "FOOD_AND_DRINK",
+          secondary_category: "SHOPPING",
+
+          # Submission information
+          submission_information: {
+            add_id_info_serves_ads: false,
+            add_id_info_tracks_action: false,
+            add_id_info_tracks_install: false,
+            add_id_info_uses_idfa: false,
+            export_compliance_uses_encryption: false,
+            export_compliance_encryption_updated: false,
+            content_rights_contains_third_party_content: true,
+            content_rights_has_rights: true
+          }
+        )
+      end
+      submission_succeeded = true
+    rescue => e
+      error_message = e.message.to_s
+
+      # Check if error is due to missing App Store Connect configuration
+      missing_config_patterns = [
+        'horrorOrFearThemes',
+        'unrestrictedWebAccess',
+        'violenceCartoonOrFantasy',
+        'alcoholTobaccoOrDrugUseOrReferences',
+        'matureOrSuggestiveThemes',
+        'medicalOrTreatmentInformation',
+        'sexualContentGraphicAndNudity',
+        'violenceRealisticProlongedGraphicOrSadistic',
+        'profanityOrCrudeHumor',
+        'sexualContentOrNudity',
+        'gamblingSimulated',
+        'violenceRealistic',
+        'data your app collects',
+        'missing required pricing',
+        'not in valid state'
+      ]
+
+      is_missing_config_error = missing_config_patterns.any? { |pattern| error_message.downcase.include?(pattern.downcase) }
+
+      if is_missing_config_error
+        UI.important("")
+        UI.important("=" * 60)
+        UI.important("⚠️  METADATA UPLOADED - MANUAL CONFIGURATION REQUIRED")
+        UI.important("=" * 60)
+        UI.important("")
+        UI.important("Metadata and screenshots were uploaded successfully, but")
+        UI.important("automatic submission failed because this app requires")
+        UI.important("manual configuration in App Store Connect (first-time setup).")
+        UI.important("")
+        UI.important("📋 Please configure in App Store Connect, then submit manually:")
+        UI.important("   https://appstoreconnect.apple.com")
+        UI.important("")
+        UI.important("   1. Select the app")
+        UI.important("   2. Go to 'App Store' tab")
+        UI.important("   3. Select build #{build_number}")
+        UI.important("   4. Configure Age Rating if needed")
+        UI.important("   5. Submit for Review")
+        UI.important("")
+        UI.important("=" * 60)
+      else
+        raise e
+      end
+    end
+
+    if submission_succeeded
+      if auto_submit
+        UI.success("✅ Build #{build_number} submetido para revisão na App Store!")
+        UI.message("   O app será liberado automaticamente quando aprovado")
+      else
+        UI.success("✅ Metadata enviado e build #{build_number} selecionado (não submetido)")
+      end
+    end
+  end
+end
+
+# ==========================================
+# MULTI-PLATFORM LANES
+# ==========================================
+
+desc "Build both Android and iOS"
+lane :build_all do |options|
+  client_name = options[:client] || "demo"
+
+  UI.message("🔨 Building both platforms for: #{client_name}")
+
+  # Build Android
+  android(:build, options)
+
+  # Build iOS (skip if on non-macOS)
+  if RUBY_PLATFORM.include?('darwin')
+    ios(:build, options)
+  else
+    UI.important("⚠️  Skipping iOS build (not on macOS)")
+  end
+
+  UI.success("✅ All builds completed!")
+end
+
+desc "Deploy to internal/testing tracks for both platforms"
+lane :deploy_all_testing do |options|
+  client_name = options[:client] || "demo"
+
+  UI.message("📤 Deploying both platforms to testing tracks")
+
+  # Deploy Android to Internal Testing
+  android(:deploy_internal, options)
+
+  # Deploy iOS to TestFlight (skip if on non-macOS)
+  if RUBY_PLATFORM.include?('darwin')
+    ios(:deploy_testflight, options)
+  else
+    UI.important("⚠️  Skipping iOS deployment (not on macOS)")
+  end
+
+  UI.success("✅ All deployments completed!")
+end
+
+desc "Build and deploy to testing tracks for both platforms"
+lane :release_all_testing do |options|
+  build_all(options)
+  deploy_all_testing(options)
+end
+
+# ==========================================
+# UTILITY LANES
+# ==========================================
+
+desc "Increment build number"
+lane :increment_build do
+  sh("cd .. && npm run increment-build")
+  UI.success("✅ Build number incremented!")
+end
+
+desc "Validate assets"
+lane :validate_assets do
+  sh("cd .. && npm run validate-assets")
+  UI.success("✅ Assets validated!")
+end
+
+desc "Clean project"
+lane :clean do
+  sh("cd #{WHITE_LABEL_APP_PATH} && flutter clean")
+  UI.success("✅ Project cleaned!")
+end
+
+desc "Generate screenshots for app stores"
+lane :screenshots do |options|
+  client_name = options[:client] || "demo"
+  device = options[:device] || "iPhone 14 Pro Max"
+
+  UI.message("📸 Generating screenshots for: #{client_name}")
+  UI.message("   Device: #{device}")
+
+  # Run Flutter integration tests to capture screenshots
+  sh("cd #{WHITE_LABEL_APP_PATH} && flutter test integration_test/app_test.dart -d '#{device}' --verbose")
+
+  UI.success("✅ Screenshots generated!")
+  UI.message("   Raw screenshots saved in: white_label_app/screenshots/")
+  UI.message("   Next: Run frameit to add device frames")
+end
+
+desc "Apply device frames to screenshots"
+lane :frameit_screenshots do |options|
+  client_name = options[:client] || "demo"
+
+  UI.message("🖼️  Applying device frames to screenshots")
+
+  # Check if screenshots directory exists
+  screenshots_path = File.join(WHITE_LABEL_APP_PATH, 'screenshots')
+  unless File.exist?(screenshots_path)
+    UI.error("❌ Screenshots directory not found: #{screenshots_path}")
+    UI.error("   Run 'fastlane screenshots' first to generate screenshots")
+    next
+  end
+
+  # Apply frames using frameit
+  begin
+    frameit(
+      silver: true,
+      path: screenshots_path
+    )
+    UI.success("✅ Device frames applied!")
+  rescue => e
+    UI.important("⚠️  Frameit failed: #{e.message}")
+    UI.important("   Install frameit with: gem install fastlane-plugin-frameit")
+    UI.important("   Or skip framing and use raw screenshots")
+  end
+end
+
+desc "Generate and frame screenshots in one command"
+lane :screenshots_complete do |options|
+  screenshots(options)
+  frameit_screenshots(options)
+end
+
+# ==========================================
+# SHOREBIRD LANES - OTA Updates
+# ==========================================
+
+desc "Criar release Shorebird (para submissão na store)"
+lane :shorebird_release do |options|
+  platform = options[:platform] || "android"
+  client_name = options[:client] || "demo"
+
+  UI.message("🐦 Creating Shorebird release for: #{platform}")
+
+  # Validate shorebird is installed
+  unless system("which shorebird > /dev/null 2>&1")
+    UI.user_error!("❌ Shorebird CLI não instalado.\n   Instale com: curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf | bash")
+  end
+
+  # Validate shorebird.yaml exists and has real app_id
+  shorebird_yaml_path = "#{WHITE_LABEL_APP_PATH}/shorebird.yaml"
+  unless File.exist?(shorebird_yaml_path)
+    UI.user_error!("❌ shorebird.yaml não encontrado em white_label_app/\n   Execute 'shorebird init' ou configure o cliente primeiro")
+  end
+
+  shorebird_yaml = File.read(shorebird_yaml_path)
+  if shorebird_yaml.include?('placeholder-')
+    UI.user_error!("❌ Shorebird não configurado (app_id é placeholder).\n   Execute 'cd white_label_app && shorebird init' para gerar um app_id real")
+  end
+
+  # Get debug symbols path for this client/version
+  symbols_path = get_debug_symbols_path(client_name, platform)
+
+  UI.message("   Executando shorebird release #{platform}...")
+  UI.message("📁 Debug symbols path: #{symbols_path}")
+
+  # Step 1: Generate debug symbols using Flutter build
+  # Shorebird doesn't correctly pass --split-debug-info to Flutter, so we generate symbols separately
+  # --obfuscate is NOT SUPPORTED on iOS!
+  # See: https://github.com/shorebirdtech/shorebird/issues/1619
+  UI.message("📦 Generating debug symbols with Flutter build...")
+  absolute_symbols_path = File.expand_path(symbols_path)
+  if platform == "ios"
+    UI.important("⚠️  iOS Shorebird: --obfuscate não suportado (Issue #1619)")
+    sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 flutter build ipa --release --split-debug-info=#{absolute_symbols_path}")
+  else
+    UI.message("🔒 Obfuscation enabled")
+    sh("cd #{WHITE_LABEL_APP_PATH} && flutter build appbundle --release #{obfuscation_flags(absolute_symbols_path)}")
+  end
+
+  # Validate symbols were generated
+  validate_debug_symbols!(symbols_path, platform, fail_on_missing: true)
+
+  # Step 2: Run Shorebird release (will rebuild, but we have the symbols)
+  UI.message("🐦 Creating Shorebird release...")
+  sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 shorebird release #{platform} --flutter-version=3.35.5 --no-confirm")
+
+  UI.success("✅ Shorebird release criado para #{platform}!")
+  UI.message("   📁 Debug symbols saved to: #{symbols_path}")
+  UI.message("   Próximo passo: Submeta para a store, depois use 'shorebird_patch' para atualizações OTA")
+end
+
+desc "Criar patch Shorebird (correção OTA sem passar pela store)"
+lane :shorebird_patch do |options|
+  platform = options[:platform] || "android"
+  client_name = options[:client] || "demo"
+  release_version = options[:release_version]
+
+  unless release_version
+    UI.user_error!("❌ release_version é obrigatório.\n   Uso: fastlane shorebird_patch platform:android client:demo release_version:1.0.0+45")
+  end
+
+  UI.message("🐦 Creating Shorebird patch for: #{platform}")
+  UI.message("   Release version: #{release_version}")
+
+  # Validate shorebird is installed
+  unless system("which shorebird > /dev/null 2>&1")
+    UI.user_error!("❌ Shorebird CLI não instalado.\n   Instale com: curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf | bash")
+  end
+
+  # Validate shorebird.yaml exists
+  shorebird_yaml_path = "#{WHITE_LABEL_APP_PATH}/shorebird.yaml"
+  unless File.exist?(shorebird_yaml_path)
+    UI.user_error!("❌ shorebird.yaml não encontrado em white_label_app/")
+  end
+
+  # Get debug symbols path - MUST use the same path as the original release
+  # The version folder is derived from release_version parameter
+  version_folder = release_version.gsub('+', '_')
+  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+
+  unless File.exist?(symbols_path)
+    UI.user_error!("❌ Debug symbols não encontrados para esta versão: #{symbols_path}\n   O patch DEVE usar os mesmos símbolos do release original.\n   Verifique se o release foi feito com --split-debug-info e se os símbolos existem.")
+  end
+
+  # Validate symbols exist in the path
+  symbol_files = Dir.glob(File.join(symbols_path, '*.symbols'))
+  if symbol_files.empty?
+    UI.user_error!("❌ Nenhum arquivo .symbols encontrado em: #{symbols_path}\n   O patch DEVE usar os mesmos símbolos do release original.")
+  end
+
+  UI.message("   Executando shorebird patch #{platform}...")
+  UI.message("📁 Using symbols from original release: #{symbols_path}")
+
+  # CRITICAL: Shorebird command syntax
+  # Flutter flags must come AFTER the -- separator
+  # --obfuscate is NOT SUPPORTED on iOS!
+  # Patch MUST use the same flags as the original release
+  absolute_symbols_path = File.expand_path(symbols_path)
+  if platform == "ios"
+    UI.important("⚠️  iOS Shorebird: --obfuscate não suportado (Issue #1619)")
+    sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 shorebird patch ios --flutter-version=3.35.5 --release-version=#{release_version} --no-confirm -- --split-debug-info=#{absolute_symbols_path}")
+  else
+    sh("cd #{WHITE_LABEL_APP_PATH} && LANG=en_US.UTF-8 shorebird patch #{platform} --flutter-version=3.35.5 --release-version=#{release_version} --no-confirm -- #{shorebird_flutter_flags(absolute_symbols_path)}")
+  end
+
+  UI.success("✅ Shorebird patch criado!")
+  UI.message("   O patch será entregue automaticamente aos usuários na próxima abertura do app")
+end
+
+desc "Listar releases Shorebird"
+lane :shorebird_releases do
+  UI.message("🐦 Listando releases Shorebird...")
+
+  unless system("which shorebird > /dev/null 2>&1")
+    UI.user_error!("❌ Shorebird CLI não instalado")
+  end
+
+  sh("cd #{WHITE_LABEL_APP_PATH} && shorebird releases list")
+end
+
+desc "Listar patches de um release Shorebird"
+lane :shorebird_patches do |options|
+  release_version = options[:release_version]
+
+  UI.message("🐦 Listando patches Shorebird...")
+
+  unless system("which shorebird > /dev/null 2>&1")
+    UI.user_error!("❌ Shorebird CLI não instalado")
+  end
+
+  if release_version
+    sh("cd #{WHITE_LABEL_APP_PATH} && shorebird patches list --release-version=#{release_version}")
+  else
+    sh("cd #{WHITE_LABEL_APP_PATH} && shorebird patches list")
+  end
+end
+
+# ==========================================
+# APNs KEY MANAGEMENT
+# ==========================================
+
+desc "Create APNs Authentication Key (.p8) for push notifications"
+lane :create_apns_key do |options|
+  key_name = options[:name] || "LoyaltyHub Push Key"
+  # loyalty-credentials is a sibling repo to loyalty-compose
+  # From: 02-build-deploy/fastlane/ -> ../../../loyalty-credentials/shared/apns
+  output_dir = options[:output_dir] || "../../../loyalty-credentials/shared/apns"
+
+  UI.message("🔔 Creating APNs Authentication Key...")
+  UI.message("   Key Name: #{key_name}")
+  UI.message("   Output: #{output_dir}")
+  UI.message("")
+  UI.important("⚠️  NOTE: APNs Key management requires Apple ID authentication")
+  UI.important("   App Store Connect API Keys cannot be used for this operation")
+  UI.message("")
+
+  require 'spaceship'
+
+  # APNs Key management requires Apple Developer Portal (not App Store Connect API)
+  # This requires username/password authentication
+  username = ENV['APPLE_DEVELOPER_EMAIL']
+  unless username
+    UI.user_error!("APPLE_DEVELOPER_EMAIL environment variable is required")
+  end
+
+  UI.message("   Authenticating as: #{username}")
+  UI.message("   (You may be prompted for password and 2FA code)")
+  UI.message("")
+
+  # Use FASTLANE_SESSION if available for non-interactive mode
+  # Otherwise, this will prompt for password and 2FA
+  Spaceship::Portal.login(username)
+
+  # Check existing keys (Apple allows max 2 APNs keys)
+  UI.message("   Checking existing APNs keys...")
+  existing_keys = Spaceship::Portal::Key.all.select { |k| k.services.include?('APNS') rescue false }
+
+  if existing_keys.length >= 2
+    UI.important("⚠️  You already have #{existing_keys.length} APNs keys (Apple limit is 2)")
+    UI.message("   Existing keys:")
+    existing_keys.each do |k|
+      UI.message("   - #{k.name} (ID: #{k.id})")
+    end
+
+    # Check if we should use existing key
+    use_existing = UI.confirm("Do you want to use an existing key instead of creating a new one?")
+
+    if use_existing
+      # Can't download existing keys - they can only be downloaded once
+      UI.error("❌ Existing keys cannot be downloaded again (Apple security policy)")
+      UI.error("   If you lost the .p8 file, you must revoke and create a new key")
+
+      should_revoke = UI.confirm("Do you want to revoke an existing key to create a new one?")
+      if should_revoke
+        key_to_revoke = UI.select("Select key to revoke:", existing_keys.map { |k| "#{k.name} (#{k.id})" })
+        selected_key = existing_keys.find { |k| "#{k.name} (#{k.id})" == key_to_revoke }
+
+        UI.message("   Revoking key: #{selected_key.name}...")
+        selected_key.revoke!
+        UI.success("   ✓ Key revoked")
+      else
+        UI.user_error!("Cannot create new key - Apple limit of 2 keys reached")
+      end
+    end
+  end
+
+  # Create new APNs key
+  UI.message("   Creating new APNs key: #{key_name}...")
+
+  begin
+    new_key = Spaceship::Portal::Key.create(name: key_name, apns: true)
+
+    # Download the key (can only be done once!)
+    key_content = new_key.download
+    key_id = new_key.id
+
+    # Get Team ID
+    team_id = Spaceship::Portal.client.team_id
+
+    # Ensure output directory exists
+    FileUtils.mkdir_p(output_dir)
+
+    # Save the .p8 file
+    key_filename = "AuthKey_#{key_id}.p8"
+    key_path = File.join(output_dir, key_filename)
+    File.write(key_path, key_content)
+
+    # Update APNS_KEY_INFO.md
+    info_path = File.join(output_dir, 'APNS_KEY_INFO.md')
+    if File.exist?(info_path)
+      info_content = File.read(info_path)
+
+      # Update the status table
+      info_content.gsub!(/\| \*\*Key File\*\* \| `[^`]*` \|/, "| **Key File** | `#{key_filename}` |")
+      info_content.gsub!(/\| \*\*Key ID\*\* \| `[^`]*` \|/, "| **Key ID** | `#{key_id}` |")
+      info_content.gsub!(/\| \*\*Team ID\*\* \| `[^`]*` \|/, "| **Team ID** | `#{team_id}` |")
+      info_content.gsub!(/\| \*\*Created\*\* \| [^\|]* \|/, "| **Created** | #{Time.now.strftime('%Y-%m-%d')} |")
+      info_content.gsub!(/\| \*\*Uploaded to Firebase\*\* \| \[.\] [^\|]* \|/, "| **Uploaded to Firebase** | [ ] Not yet |")
+
+      File.write(info_path, info_content)
+      UI.message("   ✓ Updated APNS_KEY_INFO.md")
+    end
+
+    UI.success("")
+    UI.success("✅ APNs Key created successfully!")
+    UI.success("")
+    UI.message("   📁 Key File: #{key_path}")
+    UI.message("   🔑 Key ID: #{key_id}")
+    UI.message("   👥 Team ID: #{team_id}")
+    UI.success("")
+    UI.important("⚠️  IMPORTANT: This key can only be downloaded ONCE!")
+    UI.important("   Make sure to backup the .p8 file securely.")
+    UI.success("")
+    UI.message("📋 Next step: Upload to Firebase Console")
+    UI.message("   https://console.firebase.google.com/project/YOUR_PROJECT/settings/cloudmessaging")
+
+    # Return key info for programmatic use
+    {
+      key_id: key_id,
+      team_id: team_id,
+      key_path: key_path,
+      key_filename: key_filename
+    }
+
+  rescue => e
+    UI.error("❌ Failed to create APNs key: #{e.message}")
+
+    if e.message.include?("maximum number")
+      UI.error("   Apple allows maximum 2 APNs keys per account")
+      UI.error("   Revoke an existing key first using: fastlane list_apns_keys")
+    end
+
+    raise e
+  end
+end
+
+desc "List existing APNs keys in Apple Developer account"
+lane :list_apns_keys do
+  UI.message("🔑 Listing APNs keys...")
+  UI.message("")
+  UI.important("⚠️  NOTE: APNs Key management requires Apple ID authentication")
+  UI.important("   App Store Connect API Keys cannot be used for this operation")
+  UI.message("")
+
+  require 'spaceship'
+
+  # APNs Key management requires Apple Developer Portal (not App Store Connect API)
+  # This requires username/password authentication
+  username = ENV['APPLE_DEVELOPER_EMAIL']
+  unless username
+    UI.user_error!("APPLE_DEVELOPER_EMAIL environment variable is required")
+  end
+
+  UI.message("   Authenticating as: #{username}")
+  UI.message("   (You may be prompted for password and 2FA code)")
+  UI.message("")
+
+  # Use FASTLANE_SESSION if available for non-interactive mode
+  # Otherwise, this will prompt for password and 2FA
+  Spaceship::Portal.login(username)
+
+  keys = Spaceship::Portal::Key.all
+
+  if keys.empty?
+    UI.message("   No keys found in your Apple Developer account")
+  else
+    UI.message("")
+    UI.message("   Found #{keys.length} key(s):")
+    UI.message("")
+
+    keys.each do |key|
+      services = key.services rescue []
+      is_apns = services.include?('APNS') rescue false
+
+      UI.message("   #{is_apns ? '🔔' : '🔑'} #{key.name}")
+      UI.message("      ID: #{key.id}")
+      UI.message("      Services: #{services.join(', ')}")
+      UI.message("")
+    end
+  end
+end
+
+desc "Revoke an APNs key"
+lane :revoke_apns_key do |options|
+  key_id = options[:key_id]
+
+  unless key_id
+    UI.user_error!("key_id is required. Usage: fastlane revoke_apns_key key_id:XXXXXXXXXX")
+  end
+
+  UI.message("🗑️  Revoking APNs key: #{key_id}")
+  UI.message("")
+  UI.important("⚠️  NOTE: APNs Key management requires Apple ID authentication")
+  UI.message("")
+
+  require 'spaceship'
+
+  # APNs Key management requires Apple Developer Portal (not App Store Connect API)
+  username = ENV['APPLE_DEVELOPER_EMAIL']
+  unless username
+    UI.user_error!("APPLE_DEVELOPER_EMAIL environment variable is required")
+  end
+
+  UI.message("   Authenticating as: #{username}")
+  Spaceship::Portal.login(username)
+
+  key = Spaceship::Portal::Key.find(key_id)
+
+  if key.nil?
+    UI.error("❌ Key not found: #{key_id}")
+    return
+  end
+
+  UI.message("   Found key: #{key.name}")
+
+  if UI.confirm("Are you sure you want to revoke this key? This cannot be undone!")
+    key.revoke!
+    UI.success("✅ Key revoked successfully")
+  else
+    UI.message("   Cancelled")
+  end
+end
+
+# Error handling
+error do |lane, exception|
+  UI.error("❌ Error in lane '#{lane}':")
+  UI.error(exception.message)
+end

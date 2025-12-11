@@ -1,0 +1,142 @@
+[
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "48m 25s",
+    "timestamp": "2025-11-20T23:17:39.065Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "4m 54s",
+    "timestamp": "2025-11-20T22:27:08.078Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "4m 30s",
+    "timestamp": "2025-11-20T22:22:09.383Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "4m 36s",
+    "timestamp": "2025-11-20T22:14:16.260Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "1m 39s",
+    "timestamp": "2025-11-20T22:08:13.980Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "4m 53s",
+    "timestamp": "2025-11-20T21:52:16.600Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "3m 0s",
+    "timestamp": "2025-11-20T21:46:21.477Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "2m 11s",
+    "timestamp": "2025-11-20T21:42:52.086Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "1m 20s",
+    "timestamp": "2025-11-20T21:37:41.364Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "7m 43s",
+    "timestamp": "2025-11-20T21:36:17.124Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "1m 55s",
+    "timestamp": "2025-11-20T21:20:58.997Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "2m 19s",
+    "timestamp": "2025-11-20T21:15:49.194Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "1m 57s",
+    "timestamp": "2025-11-20T21:04:03.216Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "8m 20s",
+    "timestamp": "2025-11-20T20:58:07.670Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "49s",
+    "timestamp": "2025-11-20T20:04:17.842Z"
+  },
+  {
+    "name": "Configuração Completa de Cliente",
+    "type": "workflow",
+    "success": false,
+    "duration": "20s",
+    "timestamp": "2025-11-20T19:54:10.350Z"
+  },
+  {
+    "name": "Verificação Pré-voo",
+    "type": "script",
+    "success": true,
+    "duration": "8s",
+    "timestamp": "2025-11-20T19:53:45.461Z"
+  },
+  {
+    "name": "Verificação Pré-voo",
+    "type": "script",
+    "success": true,
+    "duration": "5s",
+    "timestamp": "2025-11-20T19:52:22.314Z"
+  },
+  {
+    "name": "Verificação Pré-voo",
+    "type": "script",
+    "success": false,
+    "duration": "9s",
+    "timestamp": "2025-11-20T19:49:51.510Z"
+  },
+  {
+    "name": "Verificação Pré-voo",
+    "type": "script",
+    "success": false,
+    "duration": "8s",
+    "timestamp": "2025-11-20T19:39:19.750Z"
+  }
+]

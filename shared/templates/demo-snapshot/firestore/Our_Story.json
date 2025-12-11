@@ -1,0 +1,21 @@
+{
+  "_metadata": {
+    "collection": "Our_Story",
+    "exportedAt": "2025-11-26T16:18:41.101Z",
+    "documentCount": 1
+  },
+  "documents": {
+    "story": {
+      "description": "Ao adentrar a \"Grão & Aroma\", o cliente é imediatamente envolvido por uma atmosfera acolhedora. O ambiente mescla a rusticidade de tijolos à vista e madeira maciça com o conforto de poltronas aconchegantes e uma iluminação suave. O som suave de jazz de fundo se mistura ao sibilar da máquina espresso e ao murmúrio das conversas. Na vitrine, expostos como joias, estão os grãos de diversas regiões do Brasil e do mundo, enquanto o balcão de madeira clara exibe uma impressionante variedade de bolos caseiros, pães de queijo recém-saídos do forno e croissants dourados. Cada xícara servida é uma celebração, preparada por baristas que não apenas dominam a técnica, mas também têm uma história para contar sobre a origem daquele grão específico, transformando cada gole em uma verdadeira viagem sensorial.",
+      "introduction": "Num país onde o café é muito mais que uma simples bebida, mas um verdadeiro ritual de acolhimento e um símbolo de identidade nacional, as cafeterias se tornaram templos modernos para celebrar essa paixão. Elas são o ponto de encontro para negócios, o cenário para conversas entre amigos e o refúgio silencioso para quem busca um momento de pausa acompanhado de um bom livro. Mais do que vender café, esses espaços buscam oferecer uma experiência sensorial completa, onde o aroma inconfundível dos grãos torrados é o primeiro convite para uma pausa revigorante no dia. Teste",
+      "lastUpdated": "2025-11-26T11:25:08.817602",
+      "photos": [
+        "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112409_333_loja_1.jpg?alt=media&token=ff612b7c-3d85-42af-bd0c-81aa3ae6a126",
+        "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112435_65_loja_2.jpg?alt=media&token=f5e01843-cddc-48e4-8821-70291fc913b9",
+        "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120222_66_caf_em_dobro.jpg?alt=media&token=482be582-4410-4b9c-87fb-44fbe9ebd307"
+      ],
+      "title": "Nossa História",
+      "videoUrl": null
+    }
+  }
+}

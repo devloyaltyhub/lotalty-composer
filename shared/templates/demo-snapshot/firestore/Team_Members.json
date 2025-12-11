@@ -1,0 +1,27 @@
+{
+  "_metadata": {
+    "collection": "Team_Members",
+    "exportedAt": "2025-11-26T16:18:41.339Z",
+    "documentCount": 2
+  },
+  "documents": {
+    "1754934241139": {
+      "description": "Paula exerce a função de confeiteira com expertise e dedicação! A experiência no setor é evidente em cada fatia das nossas deliciosas tortas. Não deixe de experimentar a red velvet que sai fresquinha todos os dias as 10 horas, e se quiser, tome um café e conheça a Paula. ",
+      "enabled": true,
+      "funFact": "Pianista desde os 7 anos, que tal um concerto um dia? ",
+      "id": "1754934241139",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080136_923_paula.jpg?alt=media&token=8a7bb0d4-7f76-451b-8016-7ee4b1d4cc9d",
+      "name": "Paula Moraes",
+      "role": "Confeiteira"
+    },
+    "1763723181859": {
+      "description": "Como atendente, Ricardo demonstra habilidades excepcionais e dedicação incomparável! O tipo de profissional que sempre supera as expectativas. Converse com ele e você irá se surpreender, sempre prestativo, rápido e não esquece o pedido de ninguém! ",
+      "enabled": true,
+      "funFact": "Já fez parte dos juniores do Flamengo, joga bola como ninguém! ",
+      "id": "1763723181859",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080451_649_ricardo.jpg?alt=media&token=69c67dca-56a5-4bb6-b472-8c3cb9b7f0d5",
+      "name": "Ricardo Tostes",
+      "role": "Atendente"
+    }
+  }
+}

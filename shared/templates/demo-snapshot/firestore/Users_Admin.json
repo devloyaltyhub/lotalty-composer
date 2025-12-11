@@ -1,0 +1,65 @@
+{
+  "_metadata": {
+    "collection": "Users_Admin",
+    "exportedAt": "2025-11-26T16:18:41.435Z",
+    "documentCount": 1
+  },
+  "documents": {
+    "default_superadmin": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T12:30:07.296Z"
+      },
+      "createdBy": null,
+      "email": "admin@loyaltyhub.club",
+      "id": "default_superadmin",
+      "isActive": true,
+      "lastLoginAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T14:23:06.887Z"
+      },
+      "name": "Administrador",
+      "passwordHash": "849821949b0eb640265a3a20873369673e2ad47d9f8cc6bb8fe9d5c1e92c6c64",
+      "permissions": [
+        "viewStoreConfigs",
+        "editStoreConfigs",
+        "viewProducts",
+        "createProducts",
+        "editProducts",
+        "deleteProducts",
+        "viewConsumptions",
+        "createConsumptions",
+        "editConsumptions",
+        "deleteConsumptions",
+        "viewOrders",
+        "updateOrderStatus",
+        "viewTeamMembers",
+        "createTeamMembers",
+        "editTeamMembers",
+        "deleteTeamMembers",
+        "viewDashboardReport",
+        "viewConsumptionsReport",
+        "viewClientsReport",
+        "viewAgeismReport",
+        "viewCampaigns",
+        "editCampaigns",
+        "deleteCampaigns",
+        "viewHappyHours",
+        "createHappyHours",
+        "editHappyHours",
+        "deleteHappyHours",
+        "viewSuggestions",
+        "createSuggestions",
+        "validateSuggestions",
+        "deleteSuggestions",
+        "viewOurStory",
+        "editOurStory",
+        "manageAdminUsers",
+        "viewUsers",
+        "editUsers",
+        "deleteUsers"
+      ],
+      "role": "superAdmin"
+    }
+  }
+}

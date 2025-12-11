@@ -1,0 +1,52 @@
+{
+  "rankingTitle": "Top 20 \"{loversName}\" do ano",
+  "rankingSubtitle": "Ranking com base no consumo dos clientes em {year}",
+  "fallbackUserLabel": "Fã de café extra-forte",
+  "rankingLabels": [
+    "Lenda do Espresso",
+    "Mestre(a) do Latte",
+    "Rei/Rainha do Cappuccino",
+    "Fanático(a) por Coado",
+    "Aventureiro(a) do Cold Brew",
+    "Viciado(a) em Mocha",
+    "Barista Honorário(a)",
+    "Só compra em grãos",
+    "Colecionador(a) de xícaras",
+    "Palestrinha sobre Café",
+    "Coloca açúcar no café",
+    "Só toma café de máquina",
+    "Esquece a colher dentro da xícara",
+    "Diz que café dá dor de barriga",
+    "Prefere chá, mas tá aqui",
+    "Acha espresso 'amargo demais'",
+    "Coloca leite condensado no café",
+    "Fã de cappuccino de sachê",
+    "Escreve espresso com X",
+    "Só veio pelo Wi-Fi grátis grátis"
+  ],
+  "defaultFallbackLabel": "Quer pagar de maneiro",
+  "tiers": [
+    {
+      "position": 1,
+      "iconName": "emoji_events",
+      "color": "#FFD700",
+      "progressColor": "#4CAF50",
+      "hasBorder": true,
+      "borderColor": "#000000"
+    },
+    {
+      "position": 2,
+      "iconName": "emoji_events",
+      "color": "#C0C0C0",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    },
+    {
+      "position": 3,
+      "iconName": "emoji_events",
+      "color": "#CD7F32",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    }
+  ]
+}

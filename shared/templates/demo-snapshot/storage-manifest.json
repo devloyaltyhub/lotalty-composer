@@ -1,0 +1,103 @@
+{
+  "exportedAt": "2025-11-26T16:18:41.574Z",
+  "sourceProject": "loyalty-hub-1f47c",
+  "sourceBucket": "loyalty-hub-1f47c.firebasestorage.app",
+  "totalFiles": 14,
+  "totalSizeBytes": 3976384,
+  "paths": {
+    "gallery": {
+      "fileCount": 13,
+      "totalSizeBytes": 3943687
+    },
+    "profile_photos": {
+      "fileCount": 1,
+      "totalSizeBytes": 32697
+    }
+  },
+  "files": [
+    {
+      "path": "gallery/img_20251001_105138_783_espresso.jpg",
+      "localPath": "storage/gallery/img_20251001_105138_783_espresso.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 48320
+    },
+    {
+      "path": "gallery/img_20251001_110604_865_frape_capuccino.jpg",
+      "localPath": "storage/gallery/img_20251001_110604_865_frape_capuccino.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 799251
+    },
+    {
+      "path": "gallery/img_20251001_110900_867_iced_coffee.jpg",
+      "localPath": "storage/gallery/img_20251001_110900_867_iced_coffee.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 40706
+    },
+    {
+      "path": "gallery/img_20251001_230047_64_promoo_cerveja.jpg",
+      "localPath": "storage/gallery/img_20251001_230047_64_promoo_cerveja.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 155872
+    },
+    {
+      "path": "gallery/img_20251020_220812_866_aa.jpg",
+      "localPath": "storage/gallery/img_20251020_220812_866_aa.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 26400
+    },
+    {
+      "path": "gallery/img_20251121_080136_923_paula.jpg",
+      "localPath": "storage/gallery/img_20251121_080136_923_paula.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 755885
+    },
+    {
+      "path": "gallery/img_20251121_080451_649_ricardo.jpg",
+      "localPath": "storage/gallery/img_20251121_080451_649_ricardo.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 778609
+    },
+    {
+      "path": "gallery/img_20251125_120118_989_hotdog.jpg",
+      "localPath": "storage/gallery/img_20251125_120118_989_hotdog.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 106264
+    },
+    {
+      "path": "gallery/img_20251125_120222_66_caf_em_dobro.jpg",
+      "localPath": "storage/gallery/img_20251125_120222_66_caf_em_dobro.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 37596
+    },
+    {
+      "path": "gallery/img_20251125_120439_523_feliz_dia_do_caf.jpg",
+      "localPath": "storage/gallery/img_20251125_120439_523_feliz_dia_do_caf.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 20726
+    },
+    {
+      "path": "gallery/img_20251125_120553_633_promo.jpg",
+      "localPath": "storage/gallery/img_20251125_120553_633_promo.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 187594
+    },
+    {
+      "path": "gallery/img_20251126_112409_333_loja_1.jpg",
+      "localPath": "storage/gallery/img_20251126_112409_333_loja_1.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 150254
+    },
+    {
+      "path": "gallery/img_20251126_112435_65_loja_2.jpg",
+      "localPath": "storage/gallery/img_20251126_112435_65_loja_2.jpg",
+      "contentType": "application/octet-stream",
+      "sizeBytes": 836210
+    },
+    {
+      "path": "profile_photos/2GJwqHeoKGgYJTCEjYrbbnydflg1.jpg",
+      "localPath": "storage/profile_photos/2GJwqHeoKGgYJTCEjYrbbnydflg1.jpg",
+      "contentType": "image/jpeg",
+      "sizeBytes": 32697
+    }
+  ]
+}

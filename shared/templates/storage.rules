@@ -1,0 +1,62 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             firestore.exists(/databases/(default)/documents/Users_Admin/$(request.auth.uid));
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*') &&
+             request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // === PROFILE PHOTOS (usuário gerencia própria) ===
+    match /profile_photos/{userId} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
+    }
+
+    // === CONTEÚDO ADMIN ===
+    match /gallery/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /Team_Members/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /Happy_Hours/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /Campaigns/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    match /Products/{fileName} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidImage();
+      allow delete: if isAdmin();
+    }
+
+    // === DEFAULT DENY ===
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,0 +1,28 @@
+# Fastlane Appfile
+# Configuration for app identifiers and team IDs
+
+# For more information about the Appfile, see:
+# https://docs.fastlane.tools/advanced/#appfile
+
+# ==========================================
+# iOS Configuration
+# ==========================================
+# Uncomment and set your Apple Team ID
+# apple_id ENV["APPLE_ID"]
+# itc_team_id ENV["ITC_TEAM_ID"]
+# team_id ENV["TEAM_ID"]
+
+# ==========================================
+# Android Configuration
+# ==========================================
+# Android package name will be set dynamically per client
+# via the white-label setup script
+
+# json_key_file ENV["GOOGLE_PLAY_JSON_KEY"]
+
+# ==========================================
+# Notes
+# ==========================================
+# - App identifiers are configured per client in package_rename_config.yaml
+# - iOS certificates managed via Fastlane Match (optional)
+# - Android signing configured in white_label_app/android/key.properties

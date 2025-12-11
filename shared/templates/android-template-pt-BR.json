@@ -1,0 +1,26 @@
+{
+  "title": "{{APP_DISPLAY_NAME}}",
+  "short_description": "{{CLIENT_NAME}} - Seu Rewards Hub",
+  "full_description": "Bem-vindo ao {{CLIENT_NAME}}!\n\nGanhe recompensas toda vez que você visitar o {{CLIENT_NAME}}. Nosso aplicativo móvel facilita:\n\n✓ Ganhar pontos a cada compra\n✓ Resgatar recompensas e ofertas exclusivas\n✓ Ver seu saldo de pontos e histórico de transações\n✓ Receber notificações sobre promoções especiais\n✓ Fazer pedidos antecipados e evitar filas\n✓ Encontrar nossa localização e horário de funcionamento\n✓ Manter-se conectado com nossas últimas atualizações\n\nParticipe do nosso Rewards Hub hoje e comece a ganhar recompensas!\n\nBaixe o aplicativo {{CLIENT_NAME}} agora e aproveite benefícios exclusivos reservados para nossos clientes mais fiéis.",
+  "video": "",
+  "contact_email": "{{ADMIN_EMAIL}}",
+  "contact_phone": "",
+  "contact_website": "{{WEBSITE_URL}}",
+  "privacy_policy_url": "{{PRIVACY_POLICY_URL}}",
+  "category": "BUSINESS",
+  "images": {
+    "icon": "icon.png",
+    "featureGraphic": "featureGraphic.png",
+    "phoneScreenshots": ["01_home_mockup.png", "02_product_details_mockup.png", "03_club_card_mockup.png", "04_account_statement_mockup.png", "05_my_profile_mockup.png", "06_team_mockup.png", "07_store_hours_mockup.png", "08_happy_hours_mockup.png"],
+    "tenInchScreenshots": ["01_home_mockup.png", "02_product_details_mockup.png", "03_club_card_mockup.png", "04_account_statement_mockup.png", "05_my_profile_mockup.png", "06_team_mockup.png", "07_store_hours_mockup.png", "08_happy_hours_mockup.png"]
+  },
+  "notes": {
+    "title_max_length": 30,
+    "short_description_max_length": 80,
+    "full_description_max_length": 4000,
+    "icon_size": "512x512 (PNG 32-bit)",
+    "feature_graphic_size": "1024x500 (PNG 24-bit ou JPEG)",
+    "phone_screenshots_size": "Mín 320px, Máx 3840px (proporção 16:9 ou 9:16)",
+    "screenshots_count": "2-8 imagens obrigatórias"
+  }
+}

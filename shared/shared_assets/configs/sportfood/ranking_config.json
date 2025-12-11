@@ -1,0 +1,52 @@
+{
+  "rankingTitle": "Top 20 \"{loversName}\" do ano",
+  "rankingSubtitle": "Ranking com base no consumo e participação dos clientes em {year}",
+  "fallbackUserLabel": "Fã de açaí com granola",
+  "rankingLabels": [
+    "Lenda do Açaí",
+    "Mito das Quadras",
+    "Craque do Futevôlei",
+    "Mestre do Copo Americano",
+    "Rei do Happy Hour",
+    "Profissional da Cerveja Gelada",
+    "Devorador de Salgadinhos",
+    "Freguês do Açaí Turbinado",
+    "Joga Pra Beber",
+    "Sempre na Mesma Mesa",
+    "Só vem pela cervejinha",
+    "Derruba mais açaí do que toma",
+    "Pede café no copo de açaí",
+    "Fã de paçoquita",
+    "Foge da areia quente",
+    "Só vem olhar o movimento",
+    "Degustador de YoPRO",
+    "Fã de açaí xaropudo",
+    "Prefere sorvete de açaí",
+    "Só veio pelo Wi-Fi grátis"
+  ],
+  "defaultFallbackLabel": "Quer pagar de atleta",
+  "tiers": [
+    {
+      "position": 1,
+      "iconName": "emoji_events",
+      "color": "#FFD700",
+      "progressColor": "#4CAF50",
+      "hasBorder": true,
+      "borderColor": "#000000"
+    },
+    {
+      "position": 2,
+      "iconName": "emoji_events",
+      "color": "#C0C0C0",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    },
+    {
+      "position": 3,
+      "iconName": "emoji_events",
+      "color": "#CD7F32",
+      "progressColor": "#4CAF50",
+      "hasBorder": false
+    }
+  ]
+}

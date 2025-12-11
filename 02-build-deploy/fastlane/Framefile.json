@@ -1,0 +1,65 @@
+{
+  "default": {
+    "keyword": {
+      "font": "./fonts/Arial-Bold.ttf",
+      "color": "#FFFFFF"
+    },
+    "title": {
+      "font": "./fonts/Arial-Bold.ttf",
+      "color": "#FFFFFF",
+      "text": "Your Loyalty Rewards"
+    },
+    "background": "#1E3A8A",
+    "padding": 50,
+    "show_complete_frame": false,
+    "stack_title": false,
+    "title_below_image": true
+  },
+  "data": [
+    {
+      "filter": "01_home",
+      "keyword": {
+        "text": "DISCOVER"
+      },
+      "title": {
+        "text": "Browse products and earn rewards"
+      }
+    },
+    {
+      "filter": "02_club_card",
+      "keyword": {
+        "text": "LOYALTY"
+      },
+      "title": {
+        "text": "Your digital membership card"
+      }
+    },
+    {
+      "filter": "03_account_statement",
+      "keyword": {
+        "text": "TRACK"
+      },
+      "title": {
+        "text": "Monitor your rewards and transactions"
+      }
+    },
+    {
+      "filter": "04_product_details",
+      "keyword": {
+        "text": "EXPLORE"
+      },
+      "title": {
+        "text": "Detailed product information"
+      }
+    },
+    {
+      "filter": "05_my_profile",
+      "keyword": {
+        "text": "PERSONALIZE"
+      },
+      "title": {
+        "text": "Manage your account preferences"
+      }
+    }
+  ]
+}

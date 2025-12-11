@@ -1,0 +1,159 @@
+{
+  "_metadata": {
+    "collection": "Products",
+    "exportedAt": "2025-11-26T16:18:41.172Z",
+    "documentCount": 4
+  },
+  "documents": {
+    "18293": {
+      "alternatives": [
+        {
+          "alternativeValues": [
+            {
+              "clubCoins": null,
+              "id": "07e76259-ce54-4ed5-9660-a9a98e163d25",
+              "inventory": 0,
+              "label": "Leite Em Pó",
+              "price": 4
+            },
+            {
+              "clubCoins": null,
+              "id": "0d187ef9-1694-4172-87af-29872c88e1bc",
+              "inventory": 0,
+              "label": "Nutella",
+              "price": 6
+            },
+            {
+              "clubCoins": null,
+              "id": "7d272d16-699c-4284-b505-0c5446107d8e",
+              "inventory": 0,
+              "label": "Paçoca",
+              "price": 2
+            },
+            {
+              "clubCoins": null,
+              "id": "a5982034-2625-4792-ad70-7496f0748d1e",
+              "inventory": 0,
+              "label": "Leite Condensado",
+              "price": 3
+            }
+          ],
+          "canSelectMultiple": true,
+          "id": "42e5eb35-7491-4000-a4e1-725f49ee3e7b",
+          "sectionTitle": "Toppings"
+        }
+      ],
+      "categories": [
+        {
+          "id": "sorvetes",
+          "name": "Sorvetes"
+        }
+      ],
+      "clubCoins": 0,
+      "description": "Açaí no Copo 300ML - a essência de pré-treino em sua forma mais deliciosa! Preparado com  ingredientes selecionados e muita qualidade. Produto vegano, sem lactose e sem glúten.",
+      "dietaryAttributes": [
+        "vegan",
+        "lactoseFree",
+        "glutenFree"
+      ],
+      "enabled": true,
+      "id": "18293",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251020_220812_866_aa.jpg?alt=media&token=ec71ca52-5470-4046-9977-f62b0e2b4681",
+      "price": 15,
+      "title": "Açaí no Copo 300ML"
+    },
+    "123213": {
+      "alternatives": [
+        {
+          "alternativeValues": [
+            {
+              "clubCoins": null,
+              "id": "3e998567-2156-4950-9f80-da0370deeeb3",
+              "inventory": 1000,
+              "label": "Com leite",
+              "price": 12
+            },
+            {
+              "clubCoins": null,
+              "id": "726384b9-c0bb-42d7-a62a-047d5736dec8",
+              "inventory": 100,
+              "label": "Leite e baunilha",
+              "price": 14
+            },
+            {
+              "clubCoins": null,
+              "id": "6938810c-fe12-42ce-a382-9dfbcc0b40d4",
+              "inventory": 1000,
+              "label": "Espuma de leite",
+              "price": 12
+            }
+          ],
+          "canSelectMultiple": false,
+          "id": "82c10fee-b0e7-4ec6-ac8b-d51465ca7182",
+          "sectionTitle": "Tipos"
+        }
+      ],
+      "categories": [
+        {
+          "id": "2",
+          "name": "Bebidas"
+        }
+      ],
+      "clubCoins": 0,
+      "description": "O Iced Coffee chegou para redefinir Bebidas! Sabor marcante e qualidade superior em cada detalhe. Produto vegano e sem lactose.",
+      "dietaryAttributes": [
+        "vegan",
+        "lactoseFree",
+        "glutenFree"
+      ],
+      "enabled": true,
+      "id": "123213",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_110900_867_iced_coffee.jpg?alt=media&token=17b2ae32-fc84-4ca8-8919-0c37ab8d3631",
+      "price": 0,
+      "promotion": null,
+      "title": "Iced Coffee Drink"
+    },
+    "123456": {
+      "alternatives": [],
+      "categories": [
+        {
+          "id": "1",
+          "name": "Cafés"
+        }
+      ],
+      "clubCoins": 0,
+      "description": "Café espresso duplo servido com biscoitos amanteigados ",
+      "dietaryAttributes": [
+        "vegan",
+        "lactoseFree",
+        "glutenFree"
+      ],
+      "enabled": true,
+      "id": "123456",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_105138_783_espresso.jpg?alt=media&token=7befc4e0-c540-421c-9ade-dbee302b92af",
+      "price": 8,
+      "promotion": null,
+      "title": "Café espresso"
+    },
+    "3123213": {
+      "alternatives": [],
+      "categories": [
+        {
+          "id": "1",
+          "name": "Cafés"
+        }
+      ],
+      "clubCoins": 0,
+      "description": "O nosso queridinho, o frapê capuccino é uma explosão de sabores. Com chantilly, espuma de leite vaporizado, uma dose generosa de espresso e com um toque de canela é irresistível!",
+      "dietaryAttributes": [
+        "glutenFree"
+      ],
+      "id": "3123213",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_110604_865_frape_capuccino.jpg?alt=media&token=fdab0882-667c-494b-b65e-779a69d0f980",
+      "price": 10,
+      "promotion": null,
+      "title": "Frapê Capuccino",
+      "enabled": true
+    }
+  }
+}

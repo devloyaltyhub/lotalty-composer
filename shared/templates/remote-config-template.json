@@ -1,0 +1,29 @@
+{
+  "conditions": [],
+  "parameters": {
+    "featureFlags": {
+      "defaultValue": {
+        "value": "{\"delivery\":{{DELIVERY}},\"club\":{{CLUB}},\"happyHour\":{{HAPPY_HOUR}},\"campaigns\":{{CAMPAIGNS}},\"storeHours\":{{STORE_HOURS}},\"pushNotifications\":{{PUSH_NOTIFICATIONS}},\"suggestionBox\":{{SUGGESTION_BOX}},\"clarity\":{{CLARITY}},\"ourStory\":{{OUR_STORY}}}"
+      },
+      "valueType": "STRING",
+      "description": "Feature flags controlling which features are enabled in the app"
+    },
+    "clarityProjectId": {
+      "defaultValue": {
+        "value": "{{CLARITY_PROJECT_ID}}"
+      },
+      "valueType": "STRING",
+      "description": "Microsoft Clarity project ID for analytics tracking"
+    },
+    "versionarte": {
+      "defaultValue": {
+        "value": "{\"android\":{\"version\":{\"minimum\":\"1.0.0\",\"latest\":\"0.0.1\"},\"download_url\":\"\",\"status\":{\"active\":true,\"message\":{\"pt\":\"O Aplicativo está em manutenção. Por favor, tente mais tarde.\"}}},\"ios\":{\"version\":{\"minimum\":\"1.0.0\",\"latest\":\"0.0.1\"},\"download_url\":\"\",\"status\":{\"active\":true,\"message\":{\"pt\":\"O Aplicativo está em manutenção. Por favor, tente mais tarde.\"}}}}"
+      },
+      "valueType": "STRING",
+      "description": "Version control and maintenance status for Android and iOS platforms"
+    }
+  },
+  "version": {
+    "description": "Initial Remote Config setup via automation"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "_metadata": {
+    "collection": "Image_Mappings",
+    "exportedAt": "2025-11-26T16:18:40.987Z",
+    "documentCount": 13
+  },
+  "documents": {
+    "gallery_img_20251001_105138_783_espresso": {
+      "createdAt": "2025-10-01T10:51:43.654458",
+      "displayName": "espresso",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_105138_783_espresso.jpg?alt=media&token=7befc4e0-c540-421c-9ade-dbee302b92af",
+      "id": "gallery_img_20251001_105138_783_espresso"
+    },
+    "gallery_img_20251001_110604_865_frape_capuccino": {
+      "createdAt": "2025-10-01T11:06:08.742450",
+      "displayName": "frape capuccino",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_110604_865_frape_capuccino.jpg?alt=media&token=fdab0882-667c-494b-b65e-779a69d0f980",
+      "id": "gallery_img_20251001_110604_865_frape_capuccino"
+    },
+    "gallery_img_20251001_110900_867_iced_coffee": {
+      "createdAt": "2025-10-01T11:09:04.401611",
+      "displayName": "Iced Coffee",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_110900_867_iced_coffee.jpg?alt=media&token=17b2ae32-fc84-4ca8-8919-0c37ab8d3631",
+      "id": "gallery_img_20251001_110900_867_iced_coffee"
+    },
+    "gallery_img_20251001_230047_64_promoo_cerveja": {
+      "createdAt": "2025-10-01T23:00:50.493182",
+      "displayName": "promoção cerveja",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_230047_64_promoo_cerveja.jpg?alt=media&token=65558bd5-fe68-4b7e-99c8-e97dc652d4d7",
+      "id": "gallery_img_20251001_230047_64_promoo_cerveja"
+    },
+    "gallery_img_20251020_220812_866_aa": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-10-21T01:08:15.721Z"
+      },
+      "displayName": "Açaí",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251020_220812_866_aa.jpg?alt=media&token=ec71ca52-5470-4046-9977-f62b0e2b4681",
+      "id": "gallery_img_20251020_220812_866_aa"
+    },
+    "gallery_img_20251121_080136_923_paula": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-21T11:02:00.038Z"
+      },
+      "displayName": "paula",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080136_923_paula.jpg?alt=media&token=8a7bb0d4-7f76-451b-8016-7ee4b1d4cc9d",
+      "id": "gallery_img_20251121_080136_923_paula"
+    },
+    "gallery_img_20251121_080451_649_ricardo": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-21T11:05:14.008Z"
+      },
+      "displayName": "ricardo",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080451_649_ricardo.jpg?alt=media&token=69c67dca-56a5-4bb6-b472-8c3cb9b7f0d5",
+      "id": "gallery_img_20251121_080451_649_ricardo"
+    },
+    "gallery_img_20251125_120118_989_hotdog": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-25T15:01:26.509Z"
+      },
+      "displayName": "hotdog",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120118_989_hotdog.jpg?alt=media&token=434b7883-eed0-4239-910e-fcc62f10b82e",
+      "id": "gallery_img_20251125_120118_989_hotdog"
+    },
+    "gallery_img_20251125_120222_66_caf_em_dobro": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-25T15:02:28.606Z"
+      },
+      "displayName": "café em dobro",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120222_66_caf_em_dobro.jpg?alt=media&token=482be582-4410-4b9c-87fb-44fbe9ebd307",
+      "id": "gallery_img_20251125_120222_66_caf_em_dobro"
+    },
+    "gallery_img_20251125_120439_523_feliz_dia_do_caf": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-25T15:04:45.366Z"
+      },
+      "displayName": "feliz dia do café",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120439_523_feliz_dia_do_caf.jpg?alt=media&token=4ad68aa5-5436-498c-896d-9de143e7fe98",
+      "id": "gallery_img_20251125_120439_523_feliz_dia_do_caf"
+    },
+    "gallery_img_20251125_120553_633_promo": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-25T15:06:02.138Z"
+      },
+      "displayName": "promo",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120553_633_promo.jpg?alt=media&token=0578f67d-c70f-4dfd-8e5e-ac65d70489c7",
+      "id": "gallery_img_20251125_120553_633_promo"
+    },
+    "gallery_img_20251126_112409_333_loja_1": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T14:24:19.493Z"
+      },
+      "displayName": "loja 1",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112409_333_loja_1.jpg?alt=media&token=ff612b7c-3d85-42af-bd0c-81aa3ae6a126",
+      "id": "gallery_img_20251126_112409_333_loja_1"
+    },
+    "gallery_img_20251126_112435_65_loja_2": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-26T14:24:52.808Z"
+      },
+      "displayName": "loja 2",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112435_65_loja_2.jpg?alt=media&token=f5e01843-cddc-48e4-8821-70291fc913b9",
+      "id": "gallery_img_20251126_112435_65_loja_2"
+    }
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "_metadata": {
+    "collection": "Happy_Hours",
+    "exportedAt": "2025-11-26T16:18:40.930Z",
+    "documentCount": 2
+  },
+  "documents": {
+    "1760455485635": {
+      "clubLevels": [
+        "black",
+        "platinum",
+        "gold",
+        "starter"
+      ],
+      "date": null,
+      "days": [
+        2,
+        3
+      ],
+      "enabled": true,
+      "endTime": "11:00",
+      "id": "1760455485635",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120222_66_caf_em_dobro.jpg?alt=media&token=482be582-4410-4b9c-87fb-44fbe9ebd307",
+      "isRecurring": true,
+      "regulation": "Bora aproveitar! Café em dose dupla acontece nos dias terça-feira e quarta-feira das 09:00 às 11:00. Venha nos visitar!",
+      "startTime": "09:00",
+      "title": "Café em dose dupla"
+    },
+    "1764082930773": {
+      "clubLevels": [
+        "starter",
+        "platinum",
+        "gold",
+        "black"
+      ],
+      "date": null,
+      "days": [
+        1,
+        2
+      ],
+      "enabled": true,
+      "endTime": "22:00",
+      "id": "1764082930773",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120118_989_hotdog.jpg?alt=media&token=434b7883-eed0-4239-910e-fcc62f10b82e",
+      "isRecurring": true,
+      "regulation": "Anota no celular! Hot Dog em dobro! acontece nos dias segunda-feira e terça-feira das 19:00 às 22:00. Vem aproveitar!",
+      "startTime": "19:00",
+      "title": "Hot Dog em dobro!"
+    }
+  }
+}

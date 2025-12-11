@@ -1,0 +1,20 @@
+name: white_label_app
+description: A white label loyalty app
+
+flutter:
+  assets:
+    - assets/animations/coffee/
+    - assets/animations/beer/
+    - assets/animations/sportfood/
+    - assets/images/coffee/
+    - assets/images/beer/
+    - assets/images/sportfood/
+    - assets/configs/coffee/
+    - assets/configs/beer/
+    - assets/client_specific_assets/
+    - assets/fonts/
+
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora/Sora-Regular.ttf

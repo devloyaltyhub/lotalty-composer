@@ -1,0 +1,29 @@
+# Sensitive files
+test-output/
+steps/test-output/
+**/admin-credentials.txt
+*.keystore
+keystore.properties
+
+# Logs
+logs/
+*.log
+error.log
+
+# Backups
+backup/
+**/backup_*/
+
+# Temporary files
+*.tmp
+.DS_Store
+
+# Environment files
+.env
+.env.local
+*.credentials
+
+# Generated certificates
+*.p12
+*.pem
+*.mobileprovision

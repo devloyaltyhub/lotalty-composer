@@ -1,0 +1,150 @@
+{
+  "Categories": {
+    "cat_001": {
+      "id": "cat_001",
+      "name": "Bebidas"
+    },
+    "cat_002": {
+      "id": "cat_002",
+      "name": "Lanches"
+    },
+    "cat_003": {
+      "id": "cat_003",
+      "name": "Sobremesas"
+    }
+  },
+  "Products": {
+    "prod_001": {
+      "id": "prod_001",
+      "title": "Café Expresso",
+      "description": "Café expresso tradicional",
+      "price": 5.0,
+      "categories": [
+        {
+          "id": "cat_001",
+          "name": "Bebidas"
+        }
+      ],
+      "image": "",
+      "enabled": true,
+      "inventory": 100
+    },
+    "prod_002": {
+      "id": "prod_002",
+      "title": "Cappuccino",
+      "description": "Cappuccino cremoso com chocolate",
+      "price": 8.0,
+      "categories": [
+        {
+          "id": "cat_001",
+          "name": "Bebidas"
+        }
+      ],
+      "image": "",
+      "enabled": true,
+      "inventory": 100
+    },
+    "prod_003": {
+      "id": "prod_003",
+      "title": "Sanduíche Natural",
+      "description": "Sanduíche natural de frango",
+      "price": 12.0,
+      "categories": [
+        {
+          "id": "cat_002",
+          "name": "Lanches"
+        }
+      ],
+      "image": "",
+      "enabled": true,
+      "inventory": 50
+    },
+    "prod_004": {
+      "id": "prod_004",
+      "title": "Pão de Queijo",
+      "description": "Pão de queijo mineiro tradicional",
+      "price": 6.0,
+      "categories": [
+        {
+          "id": "cat_002",
+          "name": "Lanches"
+        }
+      ],
+      "image": "",
+      "enabled": true,
+      "inventory": 80
+    },
+    "prod_005": {
+      "id": "prod_005",
+      "title": "Brownie",
+      "description": "Brownie de chocolate com nozes",
+      "price": 9.0,
+      "categories": [
+        {
+          "id": "cat_003",
+          "name": "Sobremesas"
+        }
+      ],
+      "image": "",
+      "enabled": true,
+      "inventory": 40
+    }
+  },
+  "Store_Configs": {
+    "main": {
+      "id": "main",
+      "storeStatus": true,
+      "minimumOrderValue": 0,
+      "address": "Rua Exemplo, 123, São Paulo - SP, 00000-000, Brasil",
+      "latlng": {
+        "_latitude": -23.5505,
+        "_longitude": -46.6333
+      },
+      "openingHours": {
+        "0": "09:00 - 13:00",
+        "1": "08:00 - 18:00",
+        "2": "08:00 - 18:00",
+        "3": "08:00 - 18:00",
+        "4": "08:00 - 18:00",
+        "5": "08:00 - 20:00",
+        "6": "09:00 - 15:00"
+      },
+      "globalClubCoinsPercentage": 5,
+      "clubLevels": [
+        {
+          "levelName": "starter",
+          "requiredClientScore": 0,
+          "clubCoinsExpirationDays": 44,
+          "happyHourMultiplier": 5
+        },
+        {
+          "levelName": "platinum",
+          "requiredClientScore": 1000,
+          "clubCoinsExpirationDays": 59,
+          "happyHourMultiplier": 7
+        },
+        {
+          "levelName": "gold",
+          "requiredClientScore": 5000,
+          "clubCoinsExpirationDays": 69,
+          "happyHourMultiplier": 10
+        },
+        {
+          "levelName": "black",
+          "requiredClientScore": 10000,
+          "clubCoinsExpirationDays": 89,
+          "happyHourMultiplier": 15
+        }
+      ]
+    }
+  },
+  "Our_Story": {
+    "main": {
+      "introduction": "Nossa História",
+      "description": "Somos uma empresa dedicada a oferecer os melhores produtos e serviços aos nossos clientes. Nossa missão é proporcionar experiências memoráveis através de produtos de qualidade e atendimento excepcional.",
+      "photos": [],
+      "videoUrl": null,
+      "lastUpdated": "{{TIMESTAMP}}"
+    }
+  }
+}

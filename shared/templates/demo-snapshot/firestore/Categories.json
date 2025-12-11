@@ -1,0 +1,29 @@
+{
+  "_metadata": {
+    "collection": "Categories",
+    "exportedAt": "2025-11-26T16:18:40.502Z",
+    "documentCount": 5
+  },
+  "documents": {
+    "2025-10-01 10:54:26.836315": {
+      "id": "2025-10-01 10:54:26.836315",
+      "name": "Tortas"
+    },
+    "2025-10-01 10:57:29.711732": {
+      "id": "2025-10-01 10:57:29.711732",
+      "name": "Biscoitos"
+    },
+    "bhaSTmUMhQ8F5tTkrvBK": {
+      "name": "Cafés",
+      "id": "1"
+    },
+    "nbvdxXLRtGl4He0SdQ8W": {
+      "name": "Bebidas",
+      "id": "2"
+    },
+    "sorvetes": {
+      "id": "sorvetes",
+      "name": "Sorvetes"
+    }
+  }
+}
