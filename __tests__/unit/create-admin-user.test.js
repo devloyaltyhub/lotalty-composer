@@ -19,16 +19,24 @@ jest.mock('fs', () => ({
 }));
 
 const mockAdd = jest.fn().mockResolvedValue({ id: 'test-user-id' });
+const mockSet = jest.fn().mockResolvedValue();
+const mockDoc = jest.fn(() => ({ set: mockSet }));
 
 jest.mock('firebase-admin', () => {
   const mockFirestore = {
     collection: jest.fn(() => ({
       add: mockAdd,
+      doc: mockDoc,
     })),
+  };
+
+  const mockAuth = {
+    createUser: jest.fn().mockResolvedValue({ uid: 'test-uid-123' }),
   };
 
   const mockAdmin = {
     firestore: jest.fn(() => mockFirestore),
+    auth: jest.fn(() => mockAuth),
   };
 
   // Add FieldValue.serverTimestamp to firestore
@@ -41,6 +49,7 @@ jest.mock('firebase-admin', () => {
 
 jest.mock('../../shared/utils/logger', () => ({
   startSpinner: jest.fn(),
+  updateSpinner: jest.fn(),
   succeedSpinner: jest.fn(),
   failSpinner: jest.fn(),
   info: jest.fn(),
@@ -131,7 +140,8 @@ describe('AdminUserCreator', () => {
       const result = await creator.createAdminUser('admin@test.com', 'Admin', 'demo');
 
       expect(result.success).toBe(true);
-      expect(result.userId).toBe('test-user-id');
+      // userId now comes from Firebase Auth uid, not Firestore doc id
+      expect(result.userId).toBe('test-uid-123');
       expect(result.email).toBe('admin@test.com');
       expect(result.password).toBeDefined();
     });
@@ -156,7 +166,7 @@ describe('AdminUserCreator', () => {
     });
 
     test('handles Firestore error', async () => {
-      mockAdd.mockRejectedValueOnce(new Error('Firestore error'));
+      mockSet.mockRejectedValueOnce(new Error('Firestore error'));
 
       await expect(creator.createAdminUser('admin@test.com', 'Admin', 'demo')).rejects.toThrow();
       expect(logger.failSpinner).toHaveBeenCalled();

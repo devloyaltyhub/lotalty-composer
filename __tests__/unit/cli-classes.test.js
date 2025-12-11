@@ -42,7 +42,7 @@ jest.mock('inquirer', () => ({
   },
 }));
 
-jest.mock('../../../automation/cli/config', () => ({
+jest.mock('../../cli/config', () => ({
   SCRIPTS: {
     CREATE_CLIENT: {
       name: 'Create Client',
@@ -433,7 +433,7 @@ describe('CommandRunner', () => {
       const runner = new CommandRunner(mockConfigManager);
 
       expect(runner.configManager).toBe(mockConfigManager);
-      expect(runner.automationDir).toContain('automation');
+      expect(runner.automationDir).toContain('loyalty-compose');
     });
   });
 
