@@ -25,6 +25,8 @@
     "shorebird": "node 02-build-deploy/cli/shorebird.js",
     "shorebird:release": "node 02-build-deploy/cli/shorebird.js release",
     "shorebird:patch": "node 02-build-deploy/cli/shorebird.js patch",
+    "deploy-admin": "node 02-build-deploy/cli/deploy-admin.js",
+    "build-admin": "node 02-build-deploy/cli/deploy-admin.js --build-only",
     "increment-build": "node 02-build-deploy/increment-version.js build",
     "bump-patch": "node 02-build-deploy/increment-version.js patch",
     "bump-minor": "node 02-build-deploy/increment-version.js minor",

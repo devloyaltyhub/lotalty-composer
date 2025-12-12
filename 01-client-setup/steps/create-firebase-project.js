@@ -260,6 +260,11 @@ class FirebaseProjectCreator {
     }
   }
 
+  // Admin App bundle ID (used by loyalty-admin-main for Android/macOS/Windows)
+  static get ADMIN_BUNDLE_ID() {
+    return 'club.loyaltyhub.admin';
+  }
+
   // Add Web app to Firebase project (used for Web and Windows)
   async addWebApp(appNickname) {
     logger.startSpinner('Adding Web app to Firebase (for Web and Windows)...');
@@ -315,6 +320,181 @@ class FirebaseProjectCreator {
       // Don't fail entirely if Web app creation fails
       logger.warn('Web app creation failed, but continuing...');
       return false;
+    }
+  }
+
+  // Add Admin Android app to Firebase project (for loyalty-admin-main)
+  async addAdminAndroidApp() {
+    const bundleId = FirebaseProjectCreator.ADMIN_BUNDLE_ID;
+    logger.startSpinner(`Adding Admin Android app (${bundleId}) to Firebase...`);
+
+    try {
+      // First, try to check if the app already exists
+      try {
+        const appsJson = this.exec(`firebase apps:list android --project ${this.projectId} --json`);
+        const apps = JSON.parse(appsJson);
+
+        if (apps.result && apps.result.length > 0) {
+          const existingApp = apps.result.find((app) => app.packageName === bundleId);
+          if (existingApp) {
+            logger.succeedSpinner(`Admin Android app already exists: ${existingApp.displayName || bundleId}`);
+            return { success: true, appId: existingApp.appId };
+          }
+        }
+      } catch (listError) {
+        const errorMsg = listError.message.toLowerCase();
+        if (!errorMsg.includes('not found') && !errorMsg.includes('404')) {
+          throw listError;
+        }
+      }
+
+      // App doesn't exist, create it
+      this.exec(
+        `firebase apps:create android "Loyalty Admin (Android)" --package-name ${bundleId} --project ${this.projectId}`,
+        { timeout: 60000 }
+      );
+
+      // Get the newly created app ID
+      const appsJson = this.exec(`firebase apps:list android --project ${this.projectId} --json`);
+      const apps = JSON.parse(appsJson);
+      const adminApp = apps.result?.find((app) => app.packageName === bundleId);
+
+      logger.succeedSpinner('Admin Android app added to Firebase');
+      return { success: true, appId: adminApp?.appId };
+    } catch (error) {
+      logger.failSpinner('Failed to add Admin Android app');
+
+      const errorMsg = error.message.toLowerCase();
+      if (
+        errorMsg.includes('already exists') ||
+        errorMsg.includes('already_exists') ||
+        errorMsg.includes('entity already exists')
+      ) {
+        logger.warn(`Admin Android app appears to already exist, continuing...`);
+        return { success: true, appId: null };
+      }
+
+      logger.warn('Admin Android app creation failed, but continuing...');
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Add Admin Web app to Firebase project (for loyalty-admin-main on Windows/macOS)
+  async addAdminWebApp() {
+    logger.startSpinner('Adding Admin Web app to Firebase (for Windows/macOS)...');
+
+    try {
+      // First, try to check if the app already exists
+      try {
+        const appsJson = this.exec(`firebase apps:list web --project ${this.projectId} --json`);
+        const apps = JSON.parse(appsJson);
+
+        if (apps.result && apps.result.length > 0) {
+          const existingApp = apps.result.find(
+            (app) => app.displayName && app.displayName.includes('Loyalty Admin')
+          );
+          if (existingApp) {
+            logger.succeedSpinner(`Admin Web app already exists: ${existingApp.displayName}`);
+            return { success: true, appId: existingApp.appId };
+          }
+        }
+      } catch (listError) {
+        const errorMsg = listError.message.toLowerCase();
+        if (!errorMsg.includes('not found') && !errorMsg.includes('404')) {
+          throw listError;
+        }
+      }
+
+      // App doesn't exist, create it
+      this.exec(
+        `firebase apps:create web "Loyalty Admin (Web)" --project ${this.projectId}`,
+        { timeout: 60000 }
+      );
+
+      // Get the newly created app ID
+      const appsJson = this.exec(`firebase apps:list web --project ${this.projectId} --json`);
+      const apps = JSON.parse(appsJson);
+      const adminApp = apps.result?.find(
+        (app) => app.displayName && app.displayName.includes('Loyalty Admin')
+      );
+
+      logger.succeedSpinner('Admin Web app added to Firebase');
+      return { success: true, appId: adminApp?.appId };
+    } catch (error) {
+      logger.failSpinner('Failed to add Admin Web app');
+
+      const errorMsg = error.message.toLowerCase();
+      if (
+        errorMsg.includes('already exists') ||
+        errorMsg.includes('already_exists') ||
+        errorMsg.includes('entity already exists')
+      ) {
+        logger.warn(`Admin Web app appears to already exist, continuing...`);
+        return { success: true, appId: null };
+      }
+
+      logger.warn('Admin Web app creation failed, but continuing...');
+      return { success: false, error: error.message };
+    }
+  }
+
+  // Get Admin app credentials from Firebase
+  async getAdminAppCredentials() {
+    logger.startSpinner('Retrieving Admin app credentials...');
+
+    try {
+      const adminCredentials = {};
+
+      // Get Admin Android app credentials
+      try {
+        const appsJson = this.exec(`firebase apps:list android --project ${this.projectId} --json`);
+        const apps = JSON.parse(appsJson);
+        const adminApp = apps.result?.find(
+          (app) => app.packageName === FirebaseProjectCreator.ADMIN_BUNDLE_ID
+        );
+
+        if (adminApp) {
+          const configJson = this.exec(
+            `firebase apps:sdkconfig android ${adminApp.appId} --project ${this.projectId} --json`
+          );
+          const config = JSON.parse(configJson);
+          if (config.result) {
+            adminCredentials.adminAndroidAppId = config.result.appId;
+            adminCredentials.adminAndroidApiKey = config.result.apiKey;
+          }
+        }
+      } catch (e) {
+        logger.warn(`Could not get Admin Android credentials: ${e.message}`);
+      }
+
+      // Get Admin Web app credentials
+      try {
+        const appsJson = this.exec(`firebase apps:list web --project ${this.projectId} --json`);
+        const apps = JSON.parse(appsJson);
+        const adminApp = apps.result?.find(
+          (app) => app.displayName && app.displayName.includes('Loyalty Admin')
+        );
+
+        if (adminApp) {
+          const configJson = this.exec(
+            `firebase apps:sdkconfig web ${adminApp.appId} --project ${this.projectId} --json`
+          );
+          const config = JSON.parse(configJson);
+          if (config.result) {
+            adminCredentials.adminWebAppId = config.result.appId;
+            adminCredentials.adminWebApiKey = config.result.apiKey;
+          }
+        }
+      } catch (e) {
+        logger.warn(`Could not get Admin Web credentials: ${e.message}`);
+      }
+
+      logger.succeedSpinner('Admin app credentials retrieved');
+      return adminCredentials;
+    } catch (error) {
+      logger.failSpinner('Failed to retrieve Admin app credentials');
+      logger.warn(`Error: ${error.message}`);
+      return {};
     }
   }
 
@@ -795,6 +975,12 @@ class FirebaseProjectCreator {
       // Step 5: Add Web app (used for Web and Windows platforms)
       await this.addWebApp(`${appName} (Web)`);
 
+      // Step 5b: Add Admin Android app (for loyalty-admin-main)
+      await this.addAdminAndroidApp();
+
+      // Step 5c: Add Admin Web app (for loyalty-admin-main on Windows/macOS)
+      await this.addAdminWebApp();
+
       // Step 6: Enable Firestore
       await this.enableFirestore();
 
@@ -814,6 +1000,10 @@ class FirebaseProjectCreator {
 
       // Step 10: Parse firebase options
       const firebaseOptions = this.parseFirebaseOptions(optionsPath);
+
+      // Step 10b: Get Admin app credentials and merge into firebaseOptions
+      const adminCredentials = await this.getAdminAppCredentials();
+      Object.assign(firebaseOptions, adminCredentials);
 
       // Step 11: Grant Firestore permissions to the service account
       this.grantFirestorePermissions();

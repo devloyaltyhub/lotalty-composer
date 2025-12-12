@@ -1828,6 +1828,170 @@ lane :revoke_apns_key do |options|
   end
 end
 
+# ==========================================
+# ADMIN LANES - Loyalty Hub Admin Panel
+# ==========================================
+
+# Path to loyalty-admin-main (sibling to loyalty-compose)
+ADMIN_APP_PATH = File.expand_path('../../../../loyalty-admin-main', __dir__)
+
+platform :admin do
+  desc "Build Admin Android release AAB (uses Shorebird)"
+  lane :build do
+    UI.message("🔨 Building Admin Android release")
+    UI.message("   Path: #{ADMIN_APP_PATH}")
+
+    # Get debug symbols path
+    version = get_admin_version
+    version_folder = version.gsub('+', '_')
+    symbols_path = File.join(ADMIN_APP_PATH, 'build', 'debug-symbols', version_folder, 'android')
+    FileUtils.mkdir_p(symbols_path)
+
+    UI.message("🔒 Obfuscation enabled, symbols at: #{symbols_path}")
+
+    # Check if Shorebird is available
+    shorebird_yaml = File.join(ADMIN_APP_PATH, 'shorebird.yaml')
+    use_shorebird = File.exist?(shorebird_yaml) && system("which shorebird > /dev/null 2>&1")
+
+    if use_shorebird
+      UI.message("🐦 Using Shorebird for OTA-enabled build")
+
+      # Step 1: Generate debug symbols
+      UI.message("📦 Generating debug symbols...")
+      sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
+
+      # Step 2: Shorebird release
+      UI.message("🐦 Creating Shorebird release...")
+      sh("cd #{ADMIN_APP_PATH} && shorebird release android --flutter-version=3.35.5 --no-confirm")
+
+      UI.success("✅ Admin Android Shorebird release completed!")
+    else
+      UI.important("⚠️  Shorebird not available, using standard Flutter build")
+      sh("cd #{ADMIN_APP_PATH} && flutter clean")
+      sh("cd #{ADMIN_APP_PATH} && flutter pub get")
+      sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
+      UI.success("✅ Admin Android build completed!")
+    end
+  end
+
+  desc "Deploy Admin to Play Store (Internal Testing)"
+  lane :deploy_internal do
+    UI.message("📤 Deploying Admin to Play Store (Internal Testing)")
+
+    aab_path = "#{ADMIN_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+    validate_build_artifact(aab_path, "Admin Android")
+
+    metadata_path = File.join(ADMIN_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    with_retry("Upload Admin para Play Store (Internal)") do
+      upload_to_play_store(
+        package_name: 'club.loyaltyhub.admin',
+        track: 'internal',
+        aab: aab_path,
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        metadata_path: has_metadata ? metadata_path : nil,
+        skip_upload_metadata: !has_metadata,
+        skip_upload_images: !has_metadata,
+        skip_upload_screenshots: !has_metadata
+      )
+    end
+
+    UI.success("✅ Admin deployed to Internal Testing!")
+  end
+
+  desc "Deploy Admin to Play Store (Production)"
+  lane :deploy_production do |options|
+    auto_release = options[:auto_release] != false
+
+    UI.message("📤 Deploying Admin to Play Store (Production)")
+    UI.message("   Auto-release: #{auto_release ? 'enabled' : 'disabled'}")
+
+    aab_path = "#{ADMIN_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+    validate_build_artifact(aab_path, "Admin Android")
+
+    metadata_path = File.join(ADMIN_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    with_retry("Upload Admin para Play Store (Production)") do
+      upload_to_play_store(
+        package_name: 'club.loyaltyhub.admin',
+        track: 'production',
+        release_status: auto_release ? 'completed' : 'draft',
+        aab: aab_path,
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        metadata_path: has_metadata ? metadata_path : nil,
+        skip_upload_metadata: !has_metadata,
+        skip_upload_images: !has_metadata,
+        skip_upload_screenshots: !has_metadata
+      )
+    end
+
+    UI.success("✅ Admin #{auto_release ? 'released to' : 'uploaded to'} Production!")
+  end
+
+  desc "Build and deploy Admin to Internal Testing"
+  lane :release_internal do
+    build
+    deploy_internal
+  end
+
+  desc "Build and deploy Admin to Production"
+  lane :release_production do |options|
+    build
+    deploy_production(options)
+  end
+
+  desc "Promote Admin build from Internal to Production"
+  lane :promote_to_production do |options|
+    version_code = options[:version_code]
+
+    unless version_code
+      UI.user_error!("❌ version_code é obrigatório.\n   Uso: fastlane admin promote_to_production version_code:5")
+    end
+
+    UI.message("📤 Promoting Admin build #{version_code} to Production")
+
+    metadata_path = File.join(ADMIN_APP_PATH, 'metadata', 'android')
+    has_metadata = File.exist?(metadata_path)
+
+    with_retry("Promote Admin para Production") do
+      upload_to_play_store(
+        package_name: 'club.loyaltyhub.admin',
+        json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+        track: 'internal',
+        track_promote_to: 'production',
+        track_promote_release_status: 'completed',
+        version_code: version_code.to_i,
+        skip_upload_aab: true,
+        skip_upload_apk: true,
+        metadata_path: has_metadata ? metadata_path : nil,
+        skip_upload_metadata: !has_metadata,
+        skip_upload_images: !has_metadata,
+        skip_upload_screenshots: !has_metadata
+      )
+    end
+
+    UI.success("✅ Admin build #{version_code} promoted to Production!")
+  end
+end
+
+# Helper: Get Admin app version from pubspec.yaml
+def get_admin_version
+  pubspec_path = File.join(ADMIN_APP_PATH, 'pubspec.yaml')
+  unless File.exist?(pubspec_path)
+    UI.user_error!("❌ Admin pubspec.yaml not found: #{pubspec_path}")
+  end
+
+  content = File.read(pubspec_path)
+  match = content.match(/^version:\s*(.+)$/)
+  unless match
+    UI.user_error!("❌ version not found in Admin pubspec.yaml")
+  end
+
+  match[1].strip
+end
+
 # Error handling
 error do |lane, exception|
   UI.error("❌ Error in lane '#{lane}':")
