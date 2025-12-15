@@ -14,6 +14,7 @@
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const admin = require('firebase-admin');
+const { WHITE_LABEL_APP_ROOT } = require('../shared/utils/paths');
 
 // Coleções que podem ter URLs de imagens
 const COLLECTIONS_WITH_IMAGES = [
@@ -39,7 +40,7 @@ class StorageUrlFixer {
 
   async initialize() {
     // Carrega service account do white_label_app
-    const serviceAccountPath = path.join(__dirname, '../../white_label_app/service-account.json');
+    const serviceAccountPath = path.join(WHITE_LABEL_APP_ROOT, 'service-account.json');
     const serviceAccount = require(serviceAccountPath);
 
     this.app = admin.initializeApp({

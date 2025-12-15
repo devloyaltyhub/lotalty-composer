@@ -40,9 +40,10 @@ const telegram = require('../../shared/utils/telegram');
 const ClientBuilder = require('../build-client');
 const { ScreenshotGenerator, checkExistingScreenshots } = require('./generate-screenshots');
 const { updateVersionarteAfterDeploy } = require('../update-versionarte');
+const { LOYALTY_APP_ROOT, FASTLANE_DIR } = require('../../shared/utils/paths');
 
-// Constants
-const REPO_PATH = path.resolve(__dirname, '../../..');
+// Constants - Use centralized paths
+const REPO_PATH = LOYALTY_APP_ROOT;
 
 /**
  * Client Deployer - Orchestrates the full deployment pipeline
@@ -104,7 +105,7 @@ class ClientDeployer extends ClientBuilder {
    */
   async fetchInternalTestingBuilds() {
     const { execSync } = require('child_process');
-    const fastlanePath = path.resolve(REPO_PATH, 'automation', '02-build-deploy', 'fastlane');
+    const fastlanePath = FASTLANE_DIR;
 
     try {
       // Load client config to get package name (only if not already loaded)
@@ -171,7 +172,7 @@ class ClientDeployer extends ClientBuilder {
    */
   async fetchTestFlightBuilds() {
     const { execSync } = require('child_process');
-    const fastlanePath = path.resolve(REPO_PATH, 'automation', '02-build-deploy', 'fastlane');
+    const fastlanePath = FASTLANE_DIR;
 
     try {
       // Load client config to get bundle ID (only if not already loaded)
@@ -651,7 +652,7 @@ class ClientDeployer extends ClientBuilder {
   submitExistingBuildToAppStore(clientCode, buildNumber) {
     const { execSync } = require('child_process');
     // Fastlane directory contains the Gemfile
-    const fastlanePath = path.resolve(REPO_PATH, 'automation', '02-build-deploy', 'fastlane');
+    const fastlanePath = FASTLANE_DIR;
 
     logger.info(`Submetendo build ${buildNumber} do TestFlight para App Store...`);
     logger.info(`Diretorio: ${fastlanePath}`);
@@ -681,7 +682,7 @@ class ClientDeployer extends ClientBuilder {
   promoteAndroidBuildToProduction(clientCode, versionCode) {
     const { execSync } = require('child_process');
     // Fastlane directory contains the Gemfile
-    const fastlanePath = path.resolve(REPO_PATH, 'automation', '02-build-deploy', 'fastlane');
+    const fastlanePath = FASTLANE_DIR;
 
     logger.info(`Promovendo build ${versionCode} do Internal Testing para Production...`);
     logger.info(`Diretorio: ${fastlanePath}`);

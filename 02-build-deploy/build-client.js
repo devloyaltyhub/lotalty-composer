@@ -1,13 +1,21 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const {
+  COMPOSE_ROOT,
+  LOYALTY_APP_ROOT,
+  WHITE_LABEL_APP_ROOT,
+  WHITE_LABEL_CONFIG,
+  WHITE_LABEL_PUBSPEC,
+  FASTLANE_DIR,
+} = require('../shared/utils/paths');
 
 // Load environment variables from .env
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
-// loyalty-compose root and loyalty-app root (sibling directories)
-const composeRoot = path.resolve(__dirname, '..');
-const loyaltyAppRoot = path.resolve(composeRoot, '../loyalty-app');
+// Use centralized paths
+const composeRoot = COMPOSE_ROOT;
+const loyaltyAppRoot = LOYALTY_APP_ROOT;
 
 // Resolve credential paths (expand $HOME and resolve relative paths)
 const automationRoot = composeRoot;

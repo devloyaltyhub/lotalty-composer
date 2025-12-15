@@ -13,6 +13,7 @@ const fs = require('fs');
 const chalk = require('chalk');
 const IOSCertificateSetup = require('../steps/setup-ios-certificates');
 const { loadEnvWithExpansion } = require('../shared/env-loader');
+const { CLIENTS_DIR, getClientDir, getClientConfigPath } = require('../../shared/utils/paths');
 
 // Load environment variables from automation/.env and expand paths
 loadEnvWithExpansion(__dirname);
@@ -22,10 +23,14 @@ async function main() {
   console.log(chalk.gray('Configure iOS certificates and provisioning profiles for a client\n'));
 
   // Get list of available clients
-  const clientsDir = path.join(__dirname, '../../../clients');
-  const clients = fs.readdirSync(clientsDir).filter((name) => {
-    const clientPath = path.join(clientsDir, name);
-    const configPath = path.join(clientPath, 'config.json');
+  if (!fs.existsSync(CLIENTS_DIR)) {
+    console.log(chalk.red('❌ Clients directory not found'));
+    process.exit(1);
+  }
+
+  const clients = fs.readdirSync(CLIENTS_DIR).filter((name) => {
+    const clientPath = getClientDir(name);
+    const configPath = getClientConfigPath(name);
     return fs.statSync(clientPath).isDirectory() && fs.existsSync(configPath);
   });
 
@@ -46,7 +51,7 @@ async function main() {
   ]);
 
   // Load client config to get bundle ID
-  const configPath = path.join(clientsDir, clientCode, 'config.json');
+  const configPath = getClientConfigPath(clientCode);
   let bundleId;
 
   try {

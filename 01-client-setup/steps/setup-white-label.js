@@ -7,9 +7,20 @@ const templateGen = require('./modules/template-generator');
 const keystoreOps = require('./modules/keystore-operations');
 const iosOps = require('./modules/ios-operations');
 const postSetupValidator = require('./modules/post-setup-validator');
+const {
+  COMPOSE_ROOT,
+  LOYALTY_APP_ROOT,
+  LOYALTY_CREDENTIALS_ROOT,
+  CLIENTS_DIR,
+  SHARED_ASSETS_DIR,
+  WHITE_LABEL_APP_ROOT,
+  WHITE_LABEL_ASSETS_DIR,
+  WHITE_LABEL_PUBSPEC,
+  getClientDir,
+} = require('../../shared/utils/paths');
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 // Setup modes
 const SETUP_MODE = {
@@ -17,18 +28,13 @@ const SETUP_MODE = {
   DEPLOY: 'deploy',
 };
 
-// Constants
-// loyalty-compose root directory
-const COMPOSE_ROOT = path.resolve(__dirname, '../..');
-// loyalty-app root (sibling to loyalty-compose)
-const LOYALTY_APP_ROOT = path.resolve(COMPOSE_ROOT, '../loyalty-app');
-const CLIENTS_DIR = path.join(COMPOSE_ROOT, 'clients');
-const TARGET_ROOT = path.join(LOYALTY_APP_ROOT, 'white_label_app');
-const GENERAL_ASSETS_DIR = path.resolve(__dirname, '../../shared/shared_assets');
-const ASSETS_DIR = path.join(TARGET_ROOT, 'assets');
-const PUBSPEC_PATH = path.join(TARGET_ROOT, 'pubspec.yaml');
-const TEMPLATES_DIR = path.resolve(__dirname, '../templates');
-const LOYALTY_CREDENTIALS_PATH = path.resolve(COMPOSE_ROOT, '../loyalty-credentials');
+// Constants derived from centralized paths
+const TARGET_ROOT = WHITE_LABEL_APP_ROOT;
+const GENERAL_ASSETS_DIR = SHARED_ASSETS_DIR;
+const ASSETS_DIR = WHITE_LABEL_ASSETS_DIR;
+const PUBSPEC_PATH = WHITE_LABEL_PUBSPEC;
+const TEMPLATES_DIR = path.join(COMPOSE_ROOT, '01-client-setup', 'templates');
+const LOYALTY_CREDENTIALS_PATH = LOYALTY_CREDENTIALS_ROOT;
 
 let BUSINESS_TYPES = [];
 
@@ -256,13 +262,13 @@ function performAssetCopy(sourceDir, businessType, clientConfig) {
 function processAssets(businessType, clientConfig) {
   console.log('\n🎨 Processing assets...');
 
-  if (!assetOps.runAssetValidation(businessType, PROJECT_ROOT)) {
+  if (!assetOps.runAssetValidation(businessType, COMPOSE_ROOT)) {
     console.error('❌ Asset validation failed. Please check the assets manually.');
     process.exit(1);
   }
 
-  assetOps.compressImages(TARGET_ROOT, PROJECT_ROOT);
-  assetOps.optimizeLottieAnimations(PROJECT_ROOT);
+  assetOps.compressImages(TARGET_ROOT, COMPOSE_ROOT);
+  assetOps.optimizeLottieAnimations(COMPOSE_ROOT);
   assetOps.generateAppIcons(TARGET_ROOT);
 
   // Update splash screen with client's primary color and transparent logo
@@ -271,7 +277,7 @@ function processAssets(businessType, clientConfig) {
   // Pass clientConfig to updatePubspecAssets so it can run updateiOSLaunchScreen
   // AFTER flutter_native_splash:create (which overwrites the storyboard)
   assetOps.updatePubspecAssets(businessType, PUBSPEC_PATH, BUSINESS_TYPES, TARGET_ROOT, clientConfig);
-  assetOps.runFinalAssetValidation(businessType, PROJECT_ROOT);
+  assetOps.runFinalAssetValidation(businessType, COMPOSE_ROOT);
 }
 
 /**

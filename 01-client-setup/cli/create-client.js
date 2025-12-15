@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 
+const path = require('path');
+const { COMPOSE_ROOT, CLIENTS_DIR, getClientDir } = require('../../shared/utils/paths');
+
 // Load environment variables FIRST
-require('dotenv').config({ path: require('path').join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 // Resolve credential paths to absolute paths (relative to automation root)
-const path = require('path');
-const automationRoot = path.resolve(__dirname, '../..');
+const automationRoot = COMPOSE_ROOT;
 
 // Helper function to resolve credential paths
 function resolveCredentialPath(envVar) {
@@ -313,7 +315,7 @@ class ClientCreationWizard {
 
     await telegram.clientCreationStarted(this.config.clientName, this.config.clientCode);
 
-    const clientFolder = path.join(process.cwd(), 'clients', this.config.folderName);
+    const clientFolder = getClientDir(this.config.folderName);
 
     const creator = new FirebaseProjectCreator();
     const result = await creator.setupCompleteProject({
@@ -820,7 +822,7 @@ class ClientCreationWizard {
     logger.section('Registering App Check');
 
     try {
-      const clientsDir = path.join(process.cwd(), 'clients');
+      const clientsDir = CLIENTS_DIR;
 
       // Automatically register SHA-256 fingerprints in Firebase
       logger.info('Registering SHA-256 fingerprints in Firebase...');
@@ -853,7 +855,7 @@ class ClientCreationWizard {
 
       // Fallback: Generate instructions without automation
       try {
-        const clientsDir = path.join(process.cwd(), 'clients');
+        const clientsDir = CLIENTS_DIR;
         const instructionsPath = generateAppCheckInstructions(
           this.config.clientCode,
           this.config.firebaseProjectId,
@@ -967,7 +969,7 @@ class ClientCreationWizard {
     logger.section('Generating Push Notifications Instructions');
 
     const pushEnabled = this.config.featureFlags?.pushNotifications || false;
-    const clientsDir = path.join(process.cwd(), 'clients');
+    const clientsDir = CLIENTS_DIR;
 
     const instructionsPath = generatePushNotificationsInstructions({
       clientCode: this.config.clientCode,
@@ -1216,7 +1218,7 @@ auto_update: true
       // iOS certificate setup needs to read config.json to discover bundle ID
       await this.executeStep('save_local_config', () => {
         this.saveLocalConfig();
-        const clientDir = path.join(process.cwd(), 'clients', this.config.folderName);
+        const clientDir = getClientDir(this.config.folderName);
         this.resourceTracker.trackDirectory(clientDir);
       });
 

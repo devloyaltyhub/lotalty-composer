@@ -18,18 +18,25 @@ const path = require('path');
 const { execSync } = require('child_process');
 const fs = require('fs');
 const inquirer = require('inquirer');
+const {
+  COMPOSE_ROOT,
+  LOYALTY_APP_ROOT,
+  WHITE_LABEL_APP_ROOT,
+  WHITE_LABEL_METADATA_DIR,
+  WHITE_LABEL_CONFIG,
+} = require('../../shared/utils/paths');
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 const logger = require('../../shared/utils/logger');
 const clientSelector = require('../../shared/utils/client-selector');
 const { ScreenshotMetadataCopier, IOS_DEVICES } = require('../utils/screenshot-metadata-copier');
 
-// Constants
-const REPO_PATH = path.resolve(__dirname, '../../..');
-const SCREENSHOTS_DIR = path.join(__dirname, '../screenshots');
-const WHITE_LABEL_APP = path.join(REPO_PATH, 'white_label_app');
+// Constants - Use centralized paths
+const REPO_PATH = LOYALTY_APP_ROOT;
+const SCREENSHOTS_DIR = path.join(COMPOSE_ROOT, '02-build-deploy', 'screenshots');
+const WHITE_LABEL_APP = WHITE_LABEL_APP_ROOT;
 
 /**
  * Check if screenshots already exist in metadata folders

@@ -8,13 +8,14 @@
 const fs = require('fs');
 const path = require('path');
 const glob = require('fast-glob');
+const { LOYALTYHUB_ROOT, SHARED_ASSETS_DIR, WHITE_LABEL_ASSETS_DIR } = require('../utils/paths');
 
-const ROOT_DIR = path.resolve(__dirname, '../../..');
+const ROOT_DIR = LOYALTYHUB_ROOT;
 
-// Directories containing animation files
+// Directories containing animation files (relative to loyalty-composer and loyalty-app)
 const ANIMATION_DIRS = [
-  'automation/shared/shared_assets/animations',
-  'white_label_app/assets/animations',
+  path.join(SHARED_ASSETS_DIR, 'animations'),
+  path.join(WHITE_LABEL_ASSETS_DIR, 'animations'),
 ];
 
 /**

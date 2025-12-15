@@ -3,6 +3,7 @@
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const { WHITE_LABEL_APP_ROOT, WHITE_LABEL_PUBSPEC } = require('../utils/paths');
 
 // Cores para output
 const colors = {
@@ -19,14 +20,14 @@ function log(message, color = 'reset') {
 }
 
 function checkFlutterProject() {
-  const flutterProjectPath = path.join(process.cwd(), 'white_label_app');
+  const flutterProjectPath = WHITE_LABEL_APP_ROOT;
 
   if (!fs.existsSync(flutterProjectPath)) {
     log('❌ Projeto Flutter não encontrado em white_label_app/', 'red');
     process.exit(1);
   }
 
-  const pubspecPath = path.join(flutterProjectPath, 'pubspec.yaml');
+  const pubspecPath = WHITE_LABEL_PUBSPEC;
   if (!fs.existsSync(pubspecPath)) {
     log('❌ pubspec.yaml não encontrado no projeto Flutter', 'red');
     process.exit(1);

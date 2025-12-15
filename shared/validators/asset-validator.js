@@ -3,11 +3,17 @@
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+const {
+  SHARED_ASSETS_DIR: CENTRALIZED_SHARED_ASSETS_DIR,
+  WHITE_LABEL_ASSETS_DIR: CENTRALIZED_WHITE_LABEL_ASSETS_DIR,
+  WHITE_LABEL_CLIENT_ASSETS_DIR,
+  WHITE_LABEL_CONFIG,
+} = require('../utils/paths');
 
-// Constants
-const SHARED_ASSETS_DIR = path.join(__dirname, '../shared_assets');
-const WHITE_LABEL_ASSETS_DIR = path.join(process.cwd(), 'white_label_app/assets');
-const CLIENT_ASSETS_DIR = path.join(process.cwd(), 'white_label_app/assets/client_specific_assets');
+// Constants - Use centralized paths
+const SHARED_ASSETS_DIR = CENTRALIZED_SHARED_ASSETS_DIR;
+const WHITE_LABEL_ASSETS_DIR = CENTRALIZED_WHITE_LABEL_ASSETS_DIR;
+const CLIENT_ASSETS_DIR = WHITE_LABEL_CLIENT_ASSETS_DIR;
 
 // Colors for console output
 const colors = {
@@ -749,10 +755,9 @@ Examples:
 
   // If no business type specified, try to auto-detect from white_label_app/config.json
   if (!options.businessType) {
-    const whiteLabelConfigPath = path.join(process.cwd(), 'white_label_app/config.json');
-    if (fs.existsSync(whiteLabelConfigPath)) {
+    if (fs.existsSync(WHITE_LABEL_CONFIG)) {
       try {
-        const whiteLabelConfig = JSON.parse(fs.readFileSync(whiteLabelConfigPath, 'utf8'));
+        const whiteLabelConfig = JSON.parse(fs.readFileSync(WHITE_LABEL_CONFIG, 'utf8'));
         if (whiteLabelConfig.businessType) {
           options.businessType = whiteLabelConfig.businessType;
           logInfo(

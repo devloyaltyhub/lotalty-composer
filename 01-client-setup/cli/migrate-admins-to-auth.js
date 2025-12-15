@@ -18,9 +18,7 @@ const admin = require('firebase-admin');
 const path = require('path');
 const fs = require('fs');
 const readline = require('readline');
-
-// Possible locations for service account credentials
-const CLIENTS_DIR = path.join(__dirname, '../../../clients');
+const { CLIENTS_DIR, WHITE_LABEL_APP_ROOT } = require('../../shared/utils/paths');
 
 function generateTempPassword() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
@@ -47,7 +45,7 @@ function findServiceAccount(projectId) {
   }
 
   // Also check white_label_app
-  const wlPath = path.join(__dirname, '../../../white_label_app/service-account.json');
+  const wlPath = path.join(WHITE_LABEL_APP_ROOT, 'service-account.json');
   if (fs.existsSync(wlPath)) {
     const sa = JSON.parse(fs.readFileSync(wlPath, 'utf8'));
     if (sa.project_id === projectId) {

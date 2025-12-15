@@ -6,9 +6,10 @@ const logger = require('../../shared/utils/logger');
 const clientSelector = require('../../shared/utils/client-selector');
 const firebaseClient = require('../shared/firebase-manager');
 const { execSync } = require('child_process');
+const { COMPOSE_ROOT } = require('../../shared/utils/paths');
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 /**
  * Client Health Check Script

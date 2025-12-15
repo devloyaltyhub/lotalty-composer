@@ -2,12 +2,13 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const logger = require('./logger');
+const { COMPOSE_ROOT, LOYALTY_APP_ROOT, WHITE_LABEL_APP_ROOT } = require('./paths');
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 // Resolve credential paths to absolute paths (relative to automation root)
-const automationRoot = path.resolve(__dirname, '../..');
+const automationRoot = COMPOSE_ROOT;
 
 // Helper function to resolve credential paths
 function resolveCredentialPath(envVar) {
@@ -611,8 +612,7 @@ Generated: ${new Date().toISOString()}`;
     }
 
     // Check specific client keystores
-    const loyaltyAppRoot = path.resolve(automationRoot, '..');
-    const credentialsRepoPath = path.join(loyaltyAppRoot, '..', 'loyalty-credentials');
+    const { LOYALTY_CREDENTIALS_ROOT: credentialsRepoPath } = require('./paths');
     const androidDir = path.join(credentialsRepoPath, 'clients', clientCode, 'android');
 
     if (!fs.existsSync(androidDir)) {
@@ -682,9 +682,8 @@ Generated: ${new Date().toISOString()}`;
     }
 
     // Check specific client iOS certificates
-    const loyaltyAppRoot = path.resolve(automationRoot, '..');
-    const credentialsRepoPath = path.join(loyaltyAppRoot, '..', 'loyalty-credentials');
-    const iosClientDir = path.join(credentialsRepoPath, 'clients', clientCode, 'ios');
+    const { LOYALTY_CREDENTIALS_ROOT: credentialsRepoPath2 } = require('./paths');
+    const iosClientDir = path.join(credentialsRepoPath2, 'clients', clientCode, 'ios');
 
     if (!fs.existsSync(iosClientDir)) {
       logger.failSpinner(`iOS certificates not found for client: ${clientCode}`);
@@ -715,8 +714,7 @@ Generated: ${new Date().toISOString()}`;
   checkWhiteLabelAppConfig() {
     logger.startSpinner('Checking white_label_app configuration...');
 
-    const loyaltyAppRoot = path.resolve(automationRoot, '..');
-    const whiteLabelPath = path.join(loyaltyAppRoot, 'white_label_app');
+    const whiteLabelPath = WHITE_LABEL_APP_ROOT;
 
     // Required files for deploy
     const requiredFiles = [

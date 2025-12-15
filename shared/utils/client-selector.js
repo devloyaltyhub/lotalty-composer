@@ -2,6 +2,12 @@ const fs = require('fs');
 const path = require('path');
 const inquirer = require('inquirer');
 const logger = require('./logger');
+const {
+  CLIENTS_DIR,
+  LOYALTY_APP_ROOT,
+  getClientDir,
+  getClientConfigPath,
+} = require('./paths');
 
 /**
  * Shared utility for client selection operations
@@ -9,8 +15,8 @@ const logger = require('./logger');
  */
 class ClientSelector {
   constructor() {
-    this.repoPath = process.cwd();
-    this.clientsPath = path.join(this.repoPath, 'clients');
+    this.repoPath = LOYALTY_APP_ROOT;
+    this.clientsPath = CLIENTS_DIR;
   }
 
   /**

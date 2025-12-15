@@ -15,9 +15,10 @@
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
+const { COMPOSE_ROOT, getClientConfigPath } = require('../../shared/utils/paths');
 
 // Load environment variables
-require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
 
 // Colors for console output
 const colors = {
@@ -76,7 +77,7 @@ async function initializeFirebaseAdmin() {
 async function loadClientConfig(clientCode) {
   log(`\n🔍 Loading client config for: ${clientCode}`, colors.cyan);
 
-  const configPath = path.join(__dirname, '../../../clients', clientCode, 'config.json');
+  const configPath = getClientConfigPath(clientCode);
 
   if (!fs.existsSync(configPath)) {
     log(`❌ Client config not found at: ${configPath}`, colors.red);

@@ -2,19 +2,20 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { validateBusinessTypeKey } = require('./input-validator');
+const {
+  COMPOSE_ROOT,
+  LOYALTY_APP_ROOT,
+  CLIENTS_DIR,
+  SHARED_ASSETS_DIR,
+  WHITE_LABEL_APP_ROOT,
+} = require('../../shared/utils/paths');
 
 // ============================================================================
-// CONSTANTS - Using absolute paths based on project root
+// CONSTANTS - Using centralized paths from paths.js
 // ============================================================================
-const PROJECT_ROOT = path.resolve(__dirname, '../../../');
-const SHARED_ASSETS_DIR = path.resolve(__dirname, '../../shared/shared_assets');
-const TEMPLATES_DIR = path.join(__dirname, '../templates/business-type-templates');
-const SETUP_SCRIPT_PATH = path.join(__dirname, '../steps/setup-white-label.js');
-const WHITE_LABEL_USER_CONFIGS = path.join(
-  PROJECT_ROOT,
-  'white_label_app/lib/src/utils/user_configs.dart'
-);
-const CLIENTS_DIR = path.join(PROJECT_ROOT, 'clients');
+const TEMPLATES_DIR = path.join(COMPOSE_ROOT, '01-client-setup', 'templates', 'business-type-templates');
+const SETUP_SCRIPT_PATH = path.join(COMPOSE_ROOT, '01-client-setup', 'steps', 'setup-white-label.js');
+const WHITE_LABEL_USER_CONFIGS = path.join(WHITE_LABEL_APP_ROOT, 'lib', 'src', 'utils', 'user_configs.dart');
 
 // ============================================================================
 // LOGGING UTILITIES - Single Responsibility Principle
@@ -506,8 +507,8 @@ class DartConfigUpdater {
 
   static _updateResourcesConstants(businessTypeKey) {
     const resourcesConstantsPath = path.join(
-      PROJECT_ROOT,
-      'white_label_app/lib/src/utils/resources_constants.dart'
+      WHITE_LABEL_APP_ROOT,
+      'lib/src/utils/resources_constants.dart'
     );
 
     if (!fs.existsSync(resourcesConstantsPath)) {
@@ -753,8 +754,8 @@ class BusinessTypeDeleter {
 
   _removeBusinessTypeFromResourcesConstants(businessTypeKey) {
     const resourcesConstantsPath = path.join(
-      PROJECT_ROOT,
-      'white_label_app/lib/src/utils/resources_constants.dart'
+      WHITE_LABEL_APP_ROOT,
+      'lib/src/utils/resources_constants.dart'
     );
 
     if (!fs.existsSync(resourcesConstantsPath)) {
