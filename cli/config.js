@@ -172,7 +172,20 @@ const SCRIPTS = {
     args: ['doctor'],
   },
 
-  // Admin Web Deploy
+  // Admin Deploy (Android + Web)
+  DEPLOY_ADMIN: {
+    name: 'Deploy Admin Android',
+    description: 'Build com Shorebird e deploy do Admin para Google Play Store',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-admin.js',
+  },
+  BUILD_ADMIN: {
+    name: 'Build Admin Android (sem deploy)',
+    description: 'Compilar Admin Android sem enviar para Play Store',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-admin.js',
+    args: ['--build-only'],
+  },
   DEPLOY_ADMIN_WEB: {
     name: 'Deploy Admin Web',
     description: 'Build Flutter Web e deploy para GitHub Pages (devloyaltyhub.github.io)',
@@ -185,6 +198,14 @@ const SCRIPTS = {
     category: CATEGORIES.BUILD_DEPLOY,
     script: '02-build-deploy/cli/deploy-admin-web.js',
     args: ['--build-only'],
+  },
+
+  // Data Management
+  EXPORT_DEMO_DATA: {
+    name: 'Exportar Dados Demo',
+    description: 'Exportar dados Firestore/Storage para template de demonstração',
+    category: CATEGORIES.CLIENT_OPS,
+    script: '03-data-management/cli/export-demo-data.js',
   },
 };
 
@@ -261,6 +282,35 @@ const WORKFLOWS = {
       { action: 'verify', script: SCRIPTS.VERIFY_CLIENT },
       { action: 'validate-assets', script: SCRIPTS.VALIDATE_ASSETS },
       { action: 'deploy', script: SCRIPTS.DEPLOY_CLIENT },
+    ],
+  },
+  DEPLOY_ADMIN_COMPLETE: {
+    name: '🚀 Deploy Completo Admin (Android + Web)',
+    description: 'Build e deploy do Admin para Play Store e GitHub Pages',
+    category: CATEGORIES.WORKFLOWS,
+    confirmStart: true,
+    steps: [
+      { action: 'preflight', script: SCRIPTS.PREFLIGHT_CHECK },
+      { action: 'deploy-android', script: SCRIPTS.DEPLOY_ADMIN },
+      { action: 'deploy-web', script: SCRIPTS.DEPLOY_ADMIN_WEB },
+    ],
+  },
+  DEPLOY_ADMIN_ANDROID: {
+    name: '📱 Deploy Admin Android',
+    description: 'Build com Shorebird → Deploy para Google Play Store',
+    category: CATEGORIES.WORKFLOWS,
+    confirmStart: true,
+    steps: [
+      { action: 'preflight', script: SCRIPTS.PREFLIGHT_CHECK },
+      { action: 'deploy', script: SCRIPTS.DEPLOY_ADMIN },
+    ],
+  },
+  DEPLOY_ADMIN_WEB_WORKFLOW: {
+    name: '🌐 Deploy Admin Web',
+    description: 'Build Flutter Web → Deploy para GitHub Pages',
+    category: CATEGORIES.WORKFLOWS,
+    steps: [
+      { action: 'deploy', script: SCRIPTS.DEPLOY_ADMIN_WEB },
     ],
   },
 };
