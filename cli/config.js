@@ -171,6 +171,21 @@ const SCRIPTS = {
     script: '02-build-deploy/cli/shorebird.js',
     args: ['doctor'],
   },
+
+  // Admin Web Deploy
+  DEPLOY_ADMIN_WEB: {
+    name: 'Deploy Admin Web',
+    description: 'Build Flutter Web e deploy para GitHub Pages (devloyaltyhub.github.io)',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-admin-web.js',
+  },
+  BUILD_ADMIN_WEB: {
+    name: 'Build Admin Web (sem deploy)',
+    description: 'Compilar Flutter Web sem enviar para GitHub Pages',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-admin-web.js',
+    args: ['--build-only'],
+  },
 };
 
 // ============================================================================

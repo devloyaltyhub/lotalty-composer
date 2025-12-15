@@ -27,6 +27,8 @@
     "shorebird:patch": "node 02-build-deploy/cli/shorebird.js patch",
     "deploy-admin": "node 02-build-deploy/cli/deploy-admin.js",
     "build-admin": "node 02-build-deploy/cli/deploy-admin.js --build-only",
+    "deploy-admin-web": "node 02-build-deploy/cli/deploy-admin-web.js",
+    "build-admin-web": "node 02-build-deploy/cli/deploy-admin-web.js --build-only",
     "increment-build": "node 02-build-deploy/increment-version.js build",
     "bump-patch": "node 02-build-deploy/increment-version.js patch",
     "bump-minor": "node 02-build-deploy/increment-version.js minor",
