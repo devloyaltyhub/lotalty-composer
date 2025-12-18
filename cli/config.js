@@ -179,6 +179,12 @@ const SCRIPTS = {
     category: CATEGORIES.BUILD_DEPLOY,
     script: '02-build-deploy/cli/deploy-admin-menu.js',
   },
+  GENERATE_SCREENSHOTS_ADMIN: {
+    name: 'Gerar Screenshots Admin',
+    description: 'Capturar screenshots Android (phone + tablet) para Google Play Store',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/generate-screenshots-admin.js',
+  },
   DEPLOY_ADMIN_ANDROID: {
     name: 'Deploy Admin Android',
     description: 'Build com Shorebird e deploy do Admin para Google Play Store',

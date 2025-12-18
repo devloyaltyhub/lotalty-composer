@@ -171,6 +171,124 @@ class AdminBuilder {
   }
 
   /**
+   * Get dart-define flags for Android/iOS builds
+   * Reads sensitive config from .env.local file or .env variables
+   */
+  getDartDefines() {
+    const defines = [];
+
+    // Try to read from .env.local file first
+    const envLocalFile = path.join(this.adminRoot, '.env.local');
+    let envLocal = '';
+    if (fs.existsSync(envLocalFile)) {
+      envLocal = fs.readFileSync(envLocalFile, 'utf8');
+    }
+
+    // Master Firebase email (required)
+    let masterEmail = null;
+    if (envLocal) {
+      const match = envLocal.match(/^MASTER_FIREBASE_EMAIL=(.+)$/m);
+      if (match && match[1].trim()) {
+        masterEmail = match[1].trim();
+        logger.info('MASTER_FIREBASE_EMAIL loaded from .env.local');
+      }
+    }
+    if (!masterEmail && process.env.MASTER_FIREBASE_EMAIL) {
+      masterEmail = process.env.MASTER_FIREBASE_EMAIL;
+      logger.info('MASTER_FIREBASE_EMAIL loaded from environment');
+    }
+    if (masterEmail) {
+      defines.push(`--dart-define=MASTER_FIREBASE_EMAIL=${masterEmail}`);
+    } else {
+      logger.warning('MASTER_FIREBASE_EMAIL not set');
+    }
+
+    // Master Firebase password (required)
+    let masterPassword = null;
+    if (envLocal) {
+      const match = envLocal.match(/^MASTER_FIREBASE_PASSWORD=(.+)$/m);
+      if (match && match[1].trim()) {
+        masterPassword = match[1].trim();
+        logger.info('MASTER_FIREBASE_PASSWORD loaded from .env.local');
+      }
+    }
+    if (!masterPassword && process.env.MASTER_FIREBASE_PASSWORD) {
+      masterPassword = process.env.MASTER_FIREBASE_PASSWORD;
+      logger.info('MASTER_FIREBASE_PASSWORD loaded from environment');
+    }
+    if (masterPassword) {
+      defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${masterPassword}`);
+    } else {
+      logger.warning('MASTER_FIREBASE_PASSWORD not set');
+    }
+
+    // Cloud Service API Key (optional)
+    let cloudServiceApiKey = null;
+    if (envLocal) {
+      const match = envLocal.match(/^CLOUD_SERVICE_API_KEY=(.+)$/m);
+      if (match && match[1].trim()) {
+        cloudServiceApiKey = match[1].trim();
+        logger.info('CLOUD_SERVICE_API_KEY loaded from .env.local');
+      }
+    }
+    if (!cloudServiceApiKey && process.env.CLOUD_SERVICE_API_KEY) {
+      cloudServiceApiKey = process.env.CLOUD_SERVICE_API_KEY;
+      logger.info('CLOUD_SERVICE_API_KEY loaded from environment');
+    }
+    if (cloudServiceApiKey) {
+      defines.push(`--dart-define=CLOUD_SERVICE_API_KEY=${cloudServiceApiKey}`);
+    }
+
+    return defines.length > 0 ? ' ' + defines.join(' ') : '';
+  }
+
+  /**
+   * Temporarily remove integration_test from pubspec.yaml
+   * This is required because integration_test SDK registers in GeneratedPluginRegistrant.java
+   * but isn't available in release builds, causing compilation errors.
+   */
+  removeIntegrationTestFromPubspec() {
+    const pubspecPath = path.join(this.adminRoot, 'pubspec.yaml');
+    let pubspec = fs.readFileSync(pubspecPath, 'utf8');
+
+    // Check if integration_test exists
+    if (!pubspec.includes('integration_test:')) {
+      return false; // Nothing to remove
+    }
+
+    // Remove integration_test dependency (handles both indentation styles)
+    const patterns = [
+      /\s*integration_test:\s*\n\s*sdk:\s*flutter\s*\n?/g,
+      /\s*integration_test:\s*\n\s*sdk:\s*flutter/g,
+    ];
+
+    let modified = pubspec;
+    for (const pattern of patterns) {
+      modified = modified.replace(pattern, '\n');
+    }
+
+    if (modified !== pubspec) {
+      fs.writeFileSync(pubspecPath, modified, 'utf8');
+      logger.info('Temporarily removed integration_test from pubspec.yaml');
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Restore integration_test to pubspec.yaml after build
+   */
+  restoreIntegrationTestToPubspec() {
+    // Simply restore from git to get the original file
+    try {
+      this.exec('git checkout pubspec.yaml', { silent: true });
+      logger.info('Restored pubspec.yaml from git');
+    } catch {
+      // If git restore fails, the file was already correct
+    }
+  }
+
+  /**
    * Build Android with Shorebird
    */
   buildAndroid() {
@@ -181,15 +299,30 @@ class AdminBuilder {
     const symbolsPath = path.join(this.adminRoot, 'build', 'debug-symbols', version.replace('+', '_'), 'android');
     fs.mkdirSync(symbolsPath, { recursive: true });
 
-    // Step 1: Generate debug symbols
-    logger.info('Generating debug symbols...');
-    this.exec(`flutter build appbundle --release --obfuscate --split-debug-info=${symbolsPath}`);
+    // Remove integration_test to prevent release build errors
+    const removedIntegrationTest = this.removeIntegrationTestFromPubspec();
 
-    // Step 2: Shorebird release
-    logger.info('Creating Shorebird release...');
-    this.exec('shorebird release android --flutter-version=3.35.5 --no-confirm');
+    try {
+      // Get dart-define flags for sensitive environment variables
+      const dartDefines = this.getDartDefines();
 
-    logger.success('Android build completed');
+      // Step 1: Generate debug symbols
+      logger.info('Generating debug symbols...');
+      this.exec(`flutter build appbundle --release --obfuscate --split-debug-info=${symbolsPath}${dartDefines}`);
+
+      // Step 2: Shorebird release (note: dart-defines must be passed separately)
+      logger.info('Creating Shorebird release...');
+      const shorebirdArgs = dartDefines ? ` --${dartDefines.trim().replace(/--/g, '')}` : '';
+      this.exec(`shorebird release android --flutter-version=3.35.5 --no-confirm${shorebirdArgs}`);
+
+      logger.success('Android build completed');
+    } finally {
+      // Always restore pubspec.yaml after build
+      if (removedIntegrationTest) {
+        this.restoreIntegrationTestToPubspec();
+      }
+    }
+
     return { symbolsPath };
   }
 
@@ -199,7 +332,7 @@ class AdminBuilder {
   deployAndroid(track = 'internal') {
     logger.info(`Deploying Android to ${track}...`);
 
-    const lane = track === 'production' ? 'admin:deploy_production' : 'admin:deploy_internal';
+    const lane = track === 'production' ? 'admin deploy_production' : 'admin deploy_internal';
     this.exec(`bundle exec fastlane ${lane}`, { cwd: FASTLANE_PATH });
 
     logger.success(`Android deployed to ${track}`);
@@ -220,7 +353,7 @@ class AdminBuilder {
    * Full build and deploy pipeline
    */
   async buildAndDeploy(options = {}) {
-    const { track = 'internal', skipBuild = false } = options;
+    const { track = 'internal', skipBuild = false, versionAlreadySet = false } = options;
     this.startTime = Date.now();
 
     try {
@@ -234,9 +367,11 @@ class AdminBuilder {
       logger.keyValue('Current version', versionInfo.full);
 
       if (!skipBuild) {
-        // Increment and build
-        const { newVersion } = this.incrementBuildNumber();
-        logger.keyValue('New version', newVersion);
+        // Only increment if version wasn't manually set
+        if (!versionAlreadySet) {
+          const { newVersion } = this.incrementBuildNumber();
+          logger.keyValue('New version', newVersion);
+        }
 
         await telegram.buildStarted('admin', ['android']);
         this.buildAndroid();

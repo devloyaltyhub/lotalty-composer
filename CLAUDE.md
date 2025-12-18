@@ -55,8 +55,12 @@ npm run reset-to-dev         # Reset to demo environment
 ```bash
 npm run build-only           # Build without deploying
 npm run deploy               # Full build and deploy
-npm run screenshots          # Generate app store screenshots
+npm run screenshots          # Generate app store screenshots (mobile app)
+npm run screenshots-admin    # Generate screenshots for Admin (Android)
 npm run update-screenshots   # Update existing screenshots
+npm run deploy-admin         # Deploy Admin to Google Play Store
+npm run build-admin          # Build Admin Android (no deploy)
+npm run deploy-admin-web     # Deploy Admin Web to GitHub Pages
 ```
 
 ### Version Management

@@ -25,6 +25,7 @@
     "shorebird": "node 02-build-deploy/cli/shorebird.js",
     "shorebird:release": "node 02-build-deploy/cli/shorebird.js release",
     "shorebird:patch": "node 02-build-deploy/cli/shorebird.js patch",
+    "screenshots-admin": "node 02-build-deploy/cli/generate-screenshots-admin.js",
     "deploy-admin": "node 02-build-deploy/cli/deploy-admin.js",
     "build-admin": "node 02-build-deploy/cli/deploy-admin.js --build-only",
     "deploy-admin-web": "node 02-build-deploy/cli/deploy-admin-web.js",

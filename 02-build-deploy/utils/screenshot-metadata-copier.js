@@ -3,6 +3,57 @@ const path = require('path');
 const logger = require('../../shared/utils/logger');
 
 /**
+ * Project configuration for screenshot copying.
+ *
+ * Implements Open/Closed Principle (SOLID):
+ * - Each project has its own configuration
+ * - New projects can be added without modifying existing code
+ */
+const PROJECT_CONFIGS = {
+  /**
+   * loyalty-app (white label mobile app)
+   * Generates screenshots for both iOS and Android stores
+   */
+  app: {
+    name: 'Loyalty App (Mobile)',
+    screenshotsDir: (repoPath) => path.join(repoPath, 'loyalty-app', 'white_label_app', 'screenshots'),
+    mockupsDir: (repoPath) => path.join(repoPath, 'loyalty-app', 'white_label_app', 'screenshots', 'mockups'),
+    metadataDir: (repoPath) => path.join(repoPath, 'loyalty-app', 'white_label_app', 'metadata'),
+    generateIos: true,
+    generateAndroid: true,
+    cleanupAfterCopy: true, // Remove screenshots folder after copying to metadata
+  },
+
+  /**
+   * loyalty-admin-main (merchant admin panel)
+   * Only generates screenshots for Android (Google Play)
+   */
+  admin: {
+    name: 'Loyalty Admin (Merchant Panel)',
+    screenshotsDir: (repoPath) => path.join(repoPath, 'loyalty-admin-main', 'screenshots'),
+    mockupsDir: (repoPath) => path.join(repoPath, 'loyalty-admin-main', 'screenshots', 'mockups'),
+    metadataDir: (repoPath) => path.join(repoPath, 'loyalty-admin-main', 'metadata'),
+    generateIos: false, // Admin is not on iOS App Store
+    generateAndroid: true,
+    cleanupAfterCopy: false, // Keep screenshots for reference
+  },
+};
+
+/**
+ * Get project configuration by key
+ * @param {string} projectKey - Project key ('app' or 'admin')
+ * @returns {Object} Project configuration
+ */
+function getProjectConfig(projectKey) {
+  const config = PROJECT_CONFIGS[projectKey];
+  if (!config) {
+    const available = Object.keys(PROJECT_CONFIGS).join(', ');
+    throw new Error(`Unknown project: '${projectKey}'. Available: ${available}`);
+  }
+  return config;
+}
+
+/**
  * iOS device configurations for App Store screenshots
  *
  * IMPORTANT: Fastlane auto-detects device type by IMAGE RESOLUTION, not by folder structure.
@@ -70,26 +121,39 @@ const SOURCE_FOLDER_MAPPING = {
 /**
  * Screenshot copier for multi-device store metadata
  *
- * Copies mockup images to white_label_app/metadata/ for Fastlane submission.
- * Source mockups: white_label_app/screenshots/mockups/
- * Destination: white_label_app/metadata/
+ * Copies mockup images to metadata folders for Fastlane submission.
+ * Supports multiple projects through PROJECT_CONFIGS (SOLID Open/Closed Principle).
  *
- * Note: Text metadata (description, title, etc) is already in white_label_app/metadata/
- * from the white-label setup step. This class only handles screenshot/mockup images.
+ * Usage:
+ *   // Default (loyalty-app)
+ *   const copier = new ScreenshotMetadataCopier(clientCode, repoPath);
+ *
+ *   // Specific project
+ *   const copier = new ScreenshotMetadataCopier(clientCode, repoPath, 'admin');
  */
 class ScreenshotMetadataCopier {
   /**
    * @param {string} clientCode - Client identifier
-   * @param {string} repoPath - Repository root path
+   * @param {string} repoPath - Repository root path (loyaltyhub/)
+   * @param {string} projectKey - Project key ('app' or 'admin')
    */
-  constructor(clientCode, repoPath = process.cwd()) {
+  constructor(clientCode, repoPath = process.cwd(), projectKey = 'app') {
     this.clientCode = clientCode;
     this.repoPath = repoPath;
-    this.screenshotsDir = path.join(repoPath, 'white_label_app', 'screenshots');
-    this.mockupsDir = path.join(this.screenshotsDir, 'mockups');
-    // Source and destination for metadata is the same: white_label_app/metadata
-    // Text metadata is already copied there by white-label setup
-    this.outputMetadataDir = path.join(repoPath, 'white_label_app', 'metadata');
+    this.projectKey = projectKey;
+
+    // Get project configuration
+    this.projectConfig = getProjectConfig(projectKey);
+
+    // Set directories based on project config
+    this.screenshotsDir = this.projectConfig.screenshotsDir(repoPath);
+    this.mockupsDir = this.projectConfig.mockupsDir(repoPath);
+    this.outputMetadataDir = this.projectConfig.metadataDir(repoPath);
+
+    // Feature flags from project config
+    this.generateIos = this.projectConfig.generateIos;
+    this.generateAndroid = this.projectConfig.generateAndroid;
+    this.cleanupAfterCopy = this.projectConfig.cleanupAfterCopy;
   }
 
   /**
@@ -325,29 +389,29 @@ class ScreenshotMetadataCopier {
   /**
    * Copy mockup screenshots to all platforms
    *
-   * Structure created:
+   * Structure created (depending on project config):
    * - Android: metadata/android/pt-BR/images/phoneScreenshots/*.png
    *            metadata/android/pt-BR/images/tenInchScreenshots/*.png
    * - iOS:     metadata/ios/pt-BR/*.png (ALL screenshots in locale folder, Fastlane detects device by resolution)
    *
-   * Note: Text metadata (description, title, etc) is already in white_label_app/metadata
-   * from the white-label setup step. This class only handles screenshot/mockup images.
+   * Note: Text metadata (description, title, etc) is already in metadata folder
+   * from the setup step. This class only handles screenshot/mockup images.
    *
    * @returns {Object} Complete results
    */
   copyAll() {
-    logger.section('Copiando Screenshots para white_label_app/metadata');
+    logger.section(`Copiando Screenshots para ${this.projectConfig.name}`);
 
     // Copy mockups (screenshots) to metadata folders
     if (!fs.existsSync(this.mockupsDir)) {
       logger.error(`Diretorio de mockups nao encontrado: ${this.mockupsDir}`);
-      logger.info('Execute "npm run screenshots" primeiro para gerar os screenshots');
+      logger.info('Execute o pipeline de screenshots primeiro para gerar os mockups');
       return { android: { count: 0 }, ios: {} };
     }
 
     const results = {
-      android: this.copyToAndroid(),
-      ios: this.copyToIos(),
+      android: this.generateAndroid ? this.copyToAndroid() : { skipped: true },
+      ios: this.generateIos ? this.copyToIos() : { skipped: true },
     };
 
     // Summary
@@ -355,30 +419,42 @@ class ScreenshotMetadataCopier {
     logger.info('Screenshots copiados:');
 
     // Android summary
-    for (const [deviceKey, device] of Object.entries(ANDROID_DEVICES)) {
-      const count = results.android[deviceKey]?.count || 0;
-      logger.keyValue(`  Android ${device.name}`, `${count} arquivos`);
-    }
-    if (results.android.featureGraphic?.copied) {
-      logger.keyValue(`  Android Feature Graphic`, `1 arquivo (1024x500)`);
+    if (this.generateAndroid) {
+      for (const [deviceKey, device] of Object.entries(ANDROID_DEVICES)) {
+        const count = results.android[deviceKey]?.count || 0;
+        logger.keyValue(`  Android ${device.name}`, `${count} arquivos`);
+      }
+      if (results.android.featureGraphic?.copied) {
+        logger.keyValue(`  Android Feature Graphic`, `1 arquivo (1024x500)`);
+      }
+    } else {
+      logger.info('  Android: ignorado (projeto não gera iOS)');
     }
 
     // iOS summary (screenshots are in locale folder, not device subfolders)
-    const iosTotal = Object.values(results.ios).reduce((sum, r) => sum + (r?.count || 0), 0);
-    logger.keyValue(`  iOS (pt-BR/)`, `${iosTotal} arquivos`);
-    for (const [deviceKey, device] of Object.entries(IOS_DEVICES)) {
-      const count = results.ios[deviceKey]?.count || 0;
-      if (count > 0) {
-        logger.keyValue(`    - ${device.name}`, `${count} arquivos`);
+    if (this.generateIos) {
+      const iosTotal = Object.values(results.ios).reduce((sum, r) => sum + (r?.count || 0), 0);
+      logger.keyValue(`  iOS (pt-BR/)`, `${iosTotal} arquivos`);
+      for (const [deviceKey, device] of Object.entries(IOS_DEVICES)) {
+        const count = results.ios[deviceKey]?.count || 0;
+        if (count > 0) {
+          logger.keyValue(`    - ${device.name}`, `${count} arquivos`);
+        }
       }
+    } else {
+      logger.info('  iOS: ignorado (projeto não gera iOS)');
     }
 
     logger.blank();
     logger.info(`Destino: ${this.outputMetadataDir}`);
-    logger.info(`iOS: Screenshots em metadata/ios/pt-BR/ (Fastlane detecta device por resolucao)`);
+    if (this.generateIos) {
+      logger.info(`iOS: Screenshots em metadata/ios/pt-BR/ (Fastlane detecta device por resolucao)`);
+    }
 
-    // Clean up temporary screenshots directory after successful copy
-    this.cleanupScreenshotsDir();
+    // Clean up temporary screenshots directory after successful copy (if enabled)
+    if (this.cleanupAfterCopy) {
+      this.cleanupScreenshotsDir();
+    }
 
     return results;
   }
@@ -438,4 +514,6 @@ module.exports = {
   ScreenshotMetadataCopier,
   IOS_DEVICES,
   ANDROID_DEVICES,
+  PROJECT_CONFIGS,
+  getProjectConfig,
 };

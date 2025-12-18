@@ -123,6 +123,63 @@ class AdminWebBuilder {
   }
 
   /**
+   * Get dart-define flags for web build
+   * Reads sensitive config from .master_password file or environment variables
+   */
+  getDartDefines() {
+    const defines = [];
+
+    // Master Firebase password (required for web builds)
+    // Priority: 1) .master_password file in admin root, 2) .env variable
+    let masterPassword = null;
+
+    // Try to read from .master_password file first (same as Flutter app does)
+    const masterPasswordFile = path.join(this.adminRoot, '.master_password');
+    if (fs.existsSync(masterPasswordFile)) {
+      masterPassword = fs.readFileSync(masterPasswordFile, 'utf8').trim();
+      if (masterPassword) {
+        logger.info('MASTER_FIREBASE_PASSWORD loaded from .master_password file');
+      }
+    }
+
+    // Fallback to environment variable
+    if (!masterPassword && process.env.MASTER_FIREBASE_PASSWORD) {
+      masterPassword = process.env.MASTER_FIREBASE_PASSWORD;
+      logger.info('MASTER_FIREBASE_PASSWORD loaded from environment');
+    }
+
+    if (masterPassword) {
+      defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${masterPassword}`);
+    } else {
+      logger.warning('MASTER_FIREBASE_PASSWORD not set - login will fail on web');
+      logger.warning('Create .master_password file in loyalty-admin-main or set MASTER_FIREBASE_PASSWORD in .env');
+    }
+
+    // Cloud Service API Key (optional)
+    // Priority: 1) .cloud_service_api_key file, 2) .env variable
+    let cloudServiceApiKey = null;
+
+    const apiKeyFile = path.join(this.adminRoot, '.cloud_service_api_key');
+    if (fs.existsSync(apiKeyFile)) {
+      cloudServiceApiKey = fs.readFileSync(apiKeyFile, 'utf8').trim();
+      if (cloudServiceApiKey) {
+        logger.info('CLOUD_SERVICE_API_KEY loaded from .cloud_service_api_key file');
+      }
+    }
+
+    if (!cloudServiceApiKey && process.env.CLOUD_SERVICE_API_KEY) {
+      cloudServiceApiKey = process.env.CLOUD_SERVICE_API_KEY;
+      logger.info('CLOUD_SERVICE_API_KEY loaded from environment');
+    }
+
+    if (cloudServiceApiKey) {
+      defines.push(`--dart-define=CLOUD_SERVICE_API_KEY=${cloudServiceApiKey}`);
+    }
+
+    return defines.length > 0 ? ' ' + defines.join(' ') : '';
+  }
+
+  /**
    * Build Flutter Web
    */
   buildWeb() {
@@ -141,7 +198,10 @@ class AdminWebBuilder {
     // Release mode automatically minifies the code
     // Note: --web-renderer was removed in Flutter 3.35+, CanvasKit is now the default
     logger.info('Building web release...');
-    this.exec('flutter build web --release --base-href "/" --no-source-maps --no-wasm-dry-run');
+
+    // Get dart-define flags for sensitive environment variables
+    const dartDefines = this.getDartDefines();
+    this.exec(`flutter build web --release --base-href "/" --no-source-maps --no-wasm-dry-run${dartDefines}`);
 
     // Verify build output exists
     if (!fs.existsSync(this.buildOutput)) {

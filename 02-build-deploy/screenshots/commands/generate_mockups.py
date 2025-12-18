@@ -12,12 +12,13 @@ import sys
 import os
 import json
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, TYPE_CHECKING
 import logging
 
 # Import services and configuration
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from config.screenshot_config import MockupConfig, PathConfig, AppleStoreConfig, GooglePlayConfig, FeatureGraphicConfig
+from config.project_config import ProjectConfig, LoyaltyAppConfig, get_project_config
 from services.imagemagick import ImageMagickService, ImageMagickError
 
 
@@ -125,7 +126,20 @@ class DeviceType:
 
 
 class MockupGenerator:
-    """Generates mockups from screenshots"""
+    """
+    Generates mockups from screenshots.
+
+    Supports multiple projects through ProjectConfig (SOLID Open/Closed Principle).
+    Each project can have different directory structures and feature flags.
+
+    Usage:
+        # Default (loyalty-app)
+        generator = MockupGenerator()
+
+        # With project config
+        config = get_project_config('admin')
+        generator = MockupGenerator(project_config=config)
+    """
 
     # Console colors
     RED = '\033[0;31m'
@@ -138,44 +152,63 @@ class MockupGenerator:
 
     def __init__(
         self,
+        project_config: Optional[ProjectConfig] = None,
         screenshots_dir: Optional[Path] = None,
         output_dir: Optional[Path] = None,
         templates_dir: Optional[Path] = None,
-        generate_ipad: bool = True,
-        generate_gplay: bool = True,
-        generate_feature_graphic: bool = True
+        generate_ipad: Optional[bool] = None,
+        generate_gplay: Optional[bool] = None,
+        generate_feature_graphic: Optional[bool] = None
     ):
         """
         Initialize mockup generator
 
         Args:
-            screenshots_dir: Directory containing screenshots
-            output_dir: Output directory for mockups
+            project_config: Project configuration (recommended). If provided,
+                           other path arguments are ignored and flags use project defaults.
+            screenshots_dir: Directory containing screenshots (legacy, use project_config)
+            output_dir: Output directory for mockups (legacy, use project_config)
             templates_dir: Directory containing device templates
-            generate_ipad: Whether to generate iPad versions (Apple)
-            generate_gplay: Whether to generate Google Play versions
-            generate_feature_graphic: Whether to generate Feature Graphic for Google Play
+            generate_ipad: Whether to generate iPad versions (None = use project default)
+            generate_gplay: Whether to generate Google Play versions (None = use project default)
+            generate_feature_graphic: Whether to generate Feature Graphic (None = use project default)
         """
         self.logger = logging.getLogger(__name__)
-        self.generate_ipad = generate_ipad
-        self.generate_gplay = generate_gplay
-        self.generate_feature_graphic = generate_feature_graphic
+
+        # Use project config or create default (loyalty-app)
+        self.project_config = project_config or LoyaltyAppConfig()
+
+        # Feature flags: explicit args override project config
+        self.generate_iphone = self.project_config.generate_iphone
+        self.generate_ipad = generate_ipad if generate_ipad is not None else self.project_config.generate_ipad
+        self.generate_gplay = generate_gplay if generate_gplay is not None else (
+            self.project_config.generate_gplay_phone or self.project_config.generate_gplay_tablet
+        )
+        self.generate_feature_graphic = generate_feature_graphic if generate_feature_graphic is not None else self.project_config.generate_feature_graphic
 
         # Set up directories using absolute paths
-        # __file__ = automation/02-build-deploy/screenshots/commands/generate_mockups.py
-        # We need: commands -> screenshots -> 02-build-deploy -> automation -> repo_root
-        # Important: resolve() is needed because __file__ can be relative when running via main.py
         resolved_file = Path(__file__).resolve()
         self.script_dir = resolved_file.parent.parent
-        repo_root = resolved_file.parent.parent.parent.parent.parent
-        white_label_dir = repo_root / "white_label_app"
 
-        # Use absolute paths for screenshots directory
-        self.screenshots_dir = screenshots_dir or (white_label_dir / "screenshots")
-        self.output_dir = output_dir or self.screenshots_dir / "mockups"
+        # Use project config paths or fallback to legacy args
+        if project_config is not None:
+            self.screenshots_dir = self.project_config.screenshots_dir
+            self.output_dir = self.project_config.mockups_output_dir
+            self.top_images_dir = self.project_config.top_images_dir
+            self.client_assets_dir = self.project_config.client_assets_dir
+            self.repo_root = self.project_config.repo_root
+        else:
+            # Legacy behavior for backwards compatibility
+            repo_root = resolved_file.parent.parent.parent.parent.parent
+            white_label_dir = repo_root / "white_label_app"
+            self.screenshots_dir = screenshots_dir or (white_label_dir / "screenshots")
+            self.output_dir = output_dir or self.screenshots_dir / "mockups"
+            self.top_images_dir = self.script_dir / "mockupgen_templates" / "top_images"
+            self.client_assets_dir = white_label_dir / "assets" / "client_specific_assets"
+            self.repo_root = repo_root
+
         self.templates_dir = templates_dir or self.script_dir / "mockupgen_templates"
         self.apply_mockup_script = self.script_dir / "apply_mockup.py"
-        self.top_images_dir = self.templates_dir / "top_images"
 
         # Output subdirectories for Apple App Store
         # Folder names match Fastlane deliver conventions and expected resolutions
@@ -186,52 +219,40 @@ class MockupGenerator:
         self.gplay_phone_output_dir = self.output_dir / "gplay_phone"
         self.gplay_tablet_output_dir = self.output_dir / "gplay_tablet"
 
-        # Client assets directory
-        self.client_assets_dir = white_label_dir / "assets" / "client_specific_assets"
-
-        # Feature Graphic output directory (same as gplay_phone for convenience)
+        # Feature Graphic output directory
         self.feature_graphic_output_dir = self.output_dir / "feature_graphic"
 
         # Initialize ImageMagick service
         self.imagemagick = ImageMagickService()
 
-        # Store repo root for config loading
-        self.repo_root = repo_root
-
     def _load_primary_color_from_config(self) -> None:
         """
-        Load PRIMARY_COLOR from white_label_app/config.json
+        Load PRIMARY_COLOR from project configuration.
 
-        Sets the PRIMARY_COLOR environment variable from the client config
+        Sets the PRIMARY_COLOR environment variable from the project config
         so that gradient generation can use it.
+
+        Uses ProjectConfig.get_primary_color() which handles:
+        - loyalty-app: reads from white_label_app/config.json
+        - loyalty-admin: uses fixed brand color
         """
-        try:
-            config_path = self.repo_root / "white_label_app" / "config.json"
+        primary_color = self.project_config.get_primary_color()
 
-            if not config_path.exists():
-                self.logger.warning(f"Config file not found: {config_path}")
-                return
-
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-
-            primary_color = config.get('colors', {}).get('primary')
-            if primary_color:
-                os.environ['PRIMARY_COLOR'] = primary_color
-                self._print_info(f"PRIMARY_COLOR carregada: {primary_color}")
-            else:
-                self.logger.warning("Primary color not found in config.json")
-
-        except (json.JSONDecodeError, IOError) as e:
-            self.logger.warning(f"Failed to load config.json: {e}")
+        if primary_color:
+            os.environ['PRIMARY_COLOR'] = primary_color
+            self._print_info(f"PRIMARY_COLOR carregada: {primary_color}")
+        else:
+            self.logger.warning(f"Primary color not found for {self.project_config.project_name}")
 
     def _print_banner(self) -> None:
         """Print application banner"""
+        project_name = self.project_config.project_name
         print()
         print(f"{self.MAGENTA}╔═══════════════════════════════════════════╗{self.NC}")
         print(f"{self.MAGENTA}║         📱 Mockup Generator 📱           ║{self.NC}")
         print(f"{self.MAGENTA}║   Python + OpenCV + ImageMagick Pipeline  ║{self.NC}")
         print(f"{self.MAGENTA}╚═══════════════════════════════════════════╝{self.NC}")
+        print(f"{self.CYAN}   Project: {project_name}{self.NC}")
         print()
 
     def _print_section(self, title: str) -> None:
@@ -688,24 +709,25 @@ class MockupGenerator:
 
         try:
             # === APPLE IPHONE MOCKUP ===
-            # Step 1: Generate flat mockup (screenshot with rounded corners)
-            print("   🍎 iPhone 6.7\": Aplicando cantos arredondados + curvas decorativas...")
-            self._generate_flat_mockup(screenshot_path, template_slug, temp_flat)
+            if self.generate_iphone:
+                # Step 1: Generate flat mockup (screenshot with rounded corners)
+                print("   🍎 iPhone 6.7\": Aplicando cantos arredondados + curvas decorativas...")
+                self._generate_flat_mockup(screenshot_path, template_slug, temp_flat)
 
-            # Step 2: Apply gradient background with decorative curves (and optional top image/bottom logo)
-            self.imagemagick.create_iphone_mockup_with_curves(
-                flat_mockup_path=temp_flat,
-                output_path=iphone_output,
-                gradient_start=gradient_start,
-                gradient_end=gradient_end,
-                seed=curve_seed,
-                top_image_path=top_image_path,
-                bottom_logo_path=bottom_logo_path
-            )
+                # Step 2: Apply gradient background with decorative curves (and optional top image/bottom logo)
+                self.imagemagick.create_iphone_mockup_with_curves(
+                    flat_mockup_path=temp_flat,
+                    output_path=iphone_output,
+                    gradient_start=gradient_start,
+                    gradient_end=gradient_end,
+                    seed=curve_seed,
+                    top_image_path=top_image_path,
+                    bottom_logo_path=bottom_logo_path
+                )
 
-            size_mb = iphone_output.stat().st_size / (1024 * 1024)
-            print(f"   {self.GREEN}✅{self.NC} iPhone 6.7\" (1290x2796) - {size_mb:.2f} MB")
-            results['iphone'] = True
+                size_mb = iphone_output.stat().st_size / (1024 * 1024)
+                print(f"   {self.GREEN}✅{self.NC} iPhone 6.7\" (1290x2796) - {size_mb:.2f} MB")
+                results['iphone'] = True
 
             # === GOOGLE PLAY PHONE MOCKUP ===
             # Google Play prohibits device frames - create clean screenshot with curves
@@ -792,12 +814,14 @@ class MockupGenerator:
         print(f"   Cor: {self.YELLOW}{style_name}{self.NC}")
         print()
 
-        # Apple App Store
-        print(f"{self.CYAN}🍎 Apple App Store:{self.NC}")
-        print(f"   iPhone 6.7\" (1290x2796): {self.YELLOW}{counts['iphone']}{self.NC} mockups")
-        if self.generate_ipad:
-            print(f"   iPad 12.9\" (2048x2732): {self.YELLOW}{counts['ipad']}{self.NC} mockups")
-        print()
+        # Apple App Store (only show if any Apple output was generated)
+        if self.generate_iphone or self.generate_ipad:
+            print(f"{self.CYAN}🍎 Apple App Store:{self.NC}")
+            if self.generate_iphone:
+                print(f"   iPhone 6.7\" (1290x2796): {self.YELLOW}{counts['iphone']}{self.NC} mockups")
+            if self.generate_ipad:
+                print(f"   iPad 12.9\" (2048x2732): {self.YELLOW}{counts['ipad']}{self.NC} mockups")
+            print()
 
         # Google Play Store
         if self.generate_gplay:
@@ -809,7 +833,8 @@ class MockupGenerator:
             print()
 
         print(f"{self.CYAN}📂 Localização:{self.NC}")
-        print(f"   🍎 iPhone:      {self.YELLOW}{self.iphone_output_dir}{self.NC}")
+        if self.generate_iphone:
+            print(f"   🍎 iPhone:      {self.YELLOW}{self.iphone_output_dir}{self.NC}")
         if self.generate_ipad:
             print(f"   🍎 iPad:        {self.YELLOW}{self.ipad_output_dir}{self.NC}")
         if self.generate_gplay:
@@ -849,7 +874,8 @@ class MockupGenerator:
 
             # Create output directories
             self.output_dir.mkdir(parents=True, exist_ok=True)
-            self.iphone_output_dir.mkdir(parents=True, exist_ok=True)
+            if self.generate_iphone:
+                self.iphone_output_dir.mkdir(parents=True, exist_ok=True)
             if self.generate_ipad:
                 self.ipad_output_dir.mkdir(parents=True, exist_ok=True)
             if self.generate_gplay:
@@ -883,10 +909,16 @@ class MockupGenerator:
             else:
                 print(f"   Logo: {self.YELLOW}Desabilitada{self.NC}")
             print()
-            print(f"   {self.CYAN}🍎 Apple App Store:{self.NC}")
-            print(f"      iPhone 6.7\": 1290x2796 (cantos arredondados)")
-            if self.generate_ipad:
-                print(f"      iPad 12.9\": 2048x2732 (cantos arredondados)")
+
+            # Show Apple App Store targets only if enabled
+            if self.generate_iphone or self.generate_ipad:
+                print(f"   {self.CYAN}🍎 Apple App Store:{self.NC}")
+                if self.generate_iphone:
+                    print(f"      iPhone 6.7\": 1290x2796 (cantos arredondados)")
+                if self.generate_ipad:
+                    print(f"      iPad 12.9\": 2048x2732 (cantos arredondados)")
+
+            # Show Google Play targets only if enabled
             if self.generate_gplay:
                 print()
                 print(f"   {self.CYAN}🤖 Google Play Store:{self.NC}")
@@ -934,7 +966,15 @@ class MockupGenerator:
             )
 
             # Guard clause: Check if any mockups were created
-            if counts['iphone'] == 0:
+            # Success is defined by at least one output type having been generated
+            total_mockups = sum([
+                counts['iphone'] if self.generate_iphone else 0,
+                counts['ipad'] if self.generate_ipad else 0,
+                counts['gplay_phone'] if self.generate_gplay else 0,
+                counts['gplay_tablet'] if self.generate_gplay else 0,
+            ])
+
+            if total_mockups == 0:
                 self._print_error("Nenhum mockup foi criado com sucesso!")
                 return 1
 

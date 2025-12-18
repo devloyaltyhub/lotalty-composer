@@ -1832,8 +1832,9 @@ end
 # ADMIN LANES - Loyalty Hub Admin Panel
 # ==========================================
 
-# Path to loyalty-admin-main (sibling to loyalty-compose)
-ADMIN_APP_PATH = File.expand_path('../../../../loyalty-admin-main', __dir__)
+# Path to loyalty-admin-main (sibling to loyalty-composer)
+# fastlane -> 02-build-deploy -> loyalty-composer -> loyaltyhub (where loyalty-admin-main is)
+ADMIN_APP_PATH = File.expand_path('../../../loyalty-admin-main', __dir__)
 
 platform :admin do
   desc "Build Admin Android release AAB (uses Shorebird)"
@@ -1849,28 +1850,50 @@ platform :admin do
 
     UI.message("🔒 Obfuscation enabled, symbols at: #{symbols_path}")
 
-    # Check if Shorebird is available
-    shorebird_yaml = File.join(ADMIN_APP_PATH, 'shorebird.yaml')
-    use_shorebird = File.exist?(shorebird_yaml) && system("which shorebird > /dev/null 2>&1")
+    # Temporarily remove integration_test from pubspec.yaml
+    # This is required because integration_test SDK registers in GeneratedPluginRegistrant.java
+    # but isn't available in release builds, causing compilation errors
+    pubspec_path = File.join(ADMIN_APP_PATH, 'pubspec.yaml')
+    pubspec_content = File.read(pubspec_path)
+    removed_integration_test = false
 
-    if use_shorebird
-      UI.message("🐦 Using Shorebird for OTA-enabled build")
+    if pubspec_content.include?('integration_test:')
+      UI.message("🔧 Temporarily removing integration_test from pubspec.yaml")
+      modified_content = pubspec_content.gsub(/\s*integration_test:\s*\n\s*sdk:\s*flutter\s*\n?/, "\n")
+      File.write(pubspec_path, modified_content)
+      removed_integration_test = true
+    end
 
-      # Step 1: Generate debug symbols
-      UI.message("📦 Generating debug symbols...")
-      sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
+    begin
+      # Check if Shorebird is available
+      shorebird_yaml = File.join(ADMIN_APP_PATH, 'shorebird.yaml')
+      use_shorebird = File.exist?(shorebird_yaml) && system("which shorebird > /dev/null 2>&1")
 
-      # Step 2: Shorebird release
-      UI.message("🐦 Creating Shorebird release...")
-      sh("cd #{ADMIN_APP_PATH} && shorebird release android --flutter-version=3.35.5 --no-confirm")
+      if use_shorebird
+        UI.message("🐦 Using Shorebird for OTA-enabled build")
 
-      UI.success("✅ Admin Android Shorebird release completed!")
-    else
-      UI.important("⚠️  Shorebird not available, using standard Flutter build")
-      sh("cd #{ADMIN_APP_PATH} && flutter clean")
-      sh("cd #{ADMIN_APP_PATH} && flutter pub get")
-      sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
-      UI.success("✅ Admin Android build completed!")
+        # Step 1: Generate debug symbols
+        UI.message("📦 Generating debug symbols...")
+        sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
+
+        # Step 2: Shorebird release
+        UI.message("🐦 Creating Shorebird release...")
+        sh("cd #{ADMIN_APP_PATH} && shorebird release android --flutter-version=3.35.5 --no-confirm")
+
+        UI.success("✅ Admin Android Shorebird release completed!")
+      else
+        UI.important("⚠️  Shorebird not available, using standard Flutter build")
+        sh("cd #{ADMIN_APP_PATH} && flutter clean")
+        sh("cd #{ADMIN_APP_PATH} && flutter pub get")
+        sh("cd #{ADMIN_APP_PATH} && flutter build appbundle --release --obfuscate --split-debug-info=#{symbols_path}")
+        UI.success("✅ Admin Android build completed!")
+      end
+    ensure
+      # Always restore pubspec.yaml after build
+      if removed_integration_test
+        UI.message("🔧 Restoring pubspec.yaml")
+        sh("cd #{ADMIN_APP_PATH} && git checkout pubspec.yaml")
+      end
     end
   end
 

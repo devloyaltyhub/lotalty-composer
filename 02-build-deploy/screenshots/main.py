@@ -27,6 +27,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 from commands.capture import ScreenshotCapture, main as capture_main
 from commands.generate_mockups import MockupGenerator, main as mockups_main
 from commands.pipeline import ScreenshotPipeline, main as pipeline_main
+from config.project_config import get_project_config, list_available_projects, PROJECT_CONFIGS
 
 
 # Console colors
@@ -86,6 +87,15 @@ For command-specific help:
         '--version',
         action='version',
         version='Screenshot Automation CLI'
+    )
+
+    # Project selection (global, applies to all commands)
+    available_projects = ', '.join(PROJECT_CONFIGS.keys())
+    parser.add_argument(
+        '-p', '--project',
+        choices=list(PROJECT_CONFIGS.keys()),
+        default='app',
+        help=f'Project to process: {available_projects} (default: app)'
     )
 
     # Create subcommands
@@ -373,11 +383,21 @@ def cmd_mockups(args: argparse.Namespace) -> int:
     if args.add_logo is not None:
         os.environ['ADD_LOGO'] = 'true' if args.add_logo else 'false'
 
-    # Determine what to generate
-    generate_ipad = not (args.no_ipad or args.gplay_only)
-    generate_gplay = not (args.no_gplay or args.apple_only)
+    # Get project configuration
+    project_config = get_project_config(args.project)
+    print(f"{CYAN}📁 Projeto: {project_config.project_name}{NC}")
+
+    # Determine what to generate (CLI args override project defaults)
+    generate_ipad = None  # Let project config decide
+    generate_gplay = None  # Let project config decide
+
+    if args.no_ipad or args.gplay_only:
+        generate_ipad = False
+    if args.no_gplay or args.apple_only:
+        generate_gplay = False
 
     generator = MockupGenerator(
+        project_config=project_config,
         screenshots_dir=args.screenshots_dir,
         output_dir=args.output_dir,
         templates_dir=args.templates_dir,
@@ -393,11 +413,21 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
     if args.add_logo is not None:
         os.environ['ADD_LOGO'] = 'true' if args.add_logo else 'false'
 
-    # Determine what to generate
-    generate_ipad = not (args.no_ipad or args.gplay_only)
-    generate_gplay = not (args.no_gplay or args.apple_only)
+    # Get project configuration
+    project_config = get_project_config(args.project)
+    print(f"{CYAN}📁 Projeto: {project_config.project_name}{NC}")
+
+    # Determine what to generate (CLI args override project defaults)
+    generate_ipad = None  # Let project config decide
+    generate_gplay = None  # Let project config decide
+
+    if args.no_ipad or args.gplay_only:
+        generate_ipad = False
+    if args.no_gplay or args.apple_only:
+        generate_gplay = False
 
     pipeline = ScreenshotPipeline(
+        project_config=project_config,
         device=args.device,
         platform=args.platform,
         skip_tests=args.skip_tests,

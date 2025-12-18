@@ -160,7 +160,8 @@ async function main() {
       version = await promptVersion(builder);
     }
 
-    // Set version if manual
+    // Set version if manual, otherwise increment
+    const versionAlreadySet = !!version;
     if (version) {
       builder.setVersion(version);
     } else {
@@ -194,7 +195,8 @@ async function main() {
       builder.buildAndroid();
       logger.success('Build concluido!');
     } else {
-      await builder.buildAndDeploy({ track, skipBuild: false });
+      // Pass versionAlreadySet to prevent double increment
+      await builder.buildAndDeploy({ track, skipBuild: false, versionAlreadySet });
     }
 
     process.exit(0);

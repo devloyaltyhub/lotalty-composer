@@ -19,6 +19,7 @@ import argparse
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from commands.capture import ScreenshotCapture
 from commands.generate_mockups import MockupGenerator
+from config.project_config import ProjectConfig, LoyaltyAppConfig
 
 
 class PipelineError(Exception):
@@ -40,34 +41,43 @@ class ScreenshotPipeline:
 
     def __init__(
         self,
+        project_config: Optional[ProjectConfig] = None,
         device: str = "iPhone 15 Pro Max",
         platform: str = "ios",
         skip_tests: bool = False,
         device_choice: Optional[int] = None,
         gradient_choice: Optional[int] = None,
-        generate_ipad: bool = True,
-        generate_gplay: bool = True
+        generate_ipad: Optional[bool] = None,
+        generate_gplay: Optional[bool] = None
     ):
         """
         Initialize screenshot pipeline
 
         Args:
+            project_config: Project configuration (recommended)
             device: Device name for screenshot capture
             platform: Platform (ios or android)
             skip_tests: Skip screenshot capture (use existing)
             device_choice: Mockup device choice (1-2)
             gradient_choice: Gradient style choice (0-6)
-            generate_ipad: Whether to generate iPad screenshots
-            generate_gplay: Whether to generate Google Play screenshots
+            generate_ipad: Whether to generate iPad screenshots (None = use project default)
+            generate_gplay: Whether to generate Google Play screenshots (None = use project default)
         """
         self.logger = logging.getLogger(__name__)
+
+        # Use project config or create default (loyalty-app)
+        self.project_config = project_config or LoyaltyAppConfig()
 
         # Capture configuration
         self.device = device
         self.platform = platform
         self.skip_tests = skip_tests
-        self.generate_ipad = generate_ipad
-        self.generate_gplay = generate_gplay
+
+        # Feature flags: explicit args override project config
+        self.generate_ipad = generate_ipad if generate_ipad is not None else self.project_config.generate_ipad
+        self.generate_gplay = generate_gplay if generate_gplay is not None else (
+            self.project_config.generate_gplay_phone or self.project_config.generate_gplay_tablet
+        )
 
         # Mockup configuration (via environment variables)
         if device_choice is not None:
@@ -75,7 +85,7 @@ class ScreenshotPipeline:
         if gradient_choice is not None:
             os.environ['GRADIENT_CHOICE'] = str(gradient_choice)
 
-        # Load PRIMARY_COLOR from client config if gradient_choice is 0 (Client Primary)
+        # Load PRIMARY_COLOR from project config if gradient_choice is 0 (Client Primary)
         if gradient_choice == 0:
             self._load_primary_color_from_config()
 
@@ -83,52 +93,39 @@ class ScreenshotPipeline:
         self.capture_cmd = ScreenshotCapture(
             device=device,
             platform=platform,
-            skip_tests=skip_tests
+            skip_tests=skip_tests,
+            screenshots_dir=self.project_config.screenshots_dir
         )
         self.mockup_cmd = MockupGenerator(
-            generate_ipad=generate_ipad,
-            generate_gplay=generate_gplay
+            project_config=self.project_config,
+            generate_ipad=self.generate_ipad,
+            generate_gplay=self.generate_gplay
         )
 
     def _load_primary_color_from_config(self) -> None:
         """
-        Load PRIMARY_COLOR from white_label_app/config.json
+        Load PRIMARY_COLOR from project configuration.
 
-        Sets the PRIMARY_COLOR environment variable from the client config
+        Sets the PRIMARY_COLOR environment variable from the project config
         so that MockupGenerator can use it for the gradient.
         """
-        try:
-            # Find config.json path
-            # __file__ = automation/02-build-deploy/screenshots/commands/pipeline.py
-            # repo_root = commands -> screenshots -> 02-build-deploy -> automation -> repo_root
-            script_path = Path(__file__).resolve()
-            repo_root = script_path.parent.parent.parent.parent.parent
-            config_path = repo_root / "white_label_app" / "config.json"
+        primary_color = self.project_config.get_primary_color()
 
-            if not config_path.exists():
-                self.logger.warning(f"Config file not found: {config_path}")
-                return
-
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-
-            primary_color = config.get('colors', {}).get('primary')
-            if primary_color:
-                os.environ['PRIMARY_COLOR'] = primary_color
-                self.logger.info(f"Loaded PRIMARY_COLOR from config: {primary_color}")
-            else:
-                self.logger.warning("Primary color not found in config.json")
-
-        except (json.JSONDecodeError, IOError) as e:
-            self.logger.warning(f"Failed to load config.json: {e}")
+        if primary_color:
+            os.environ['PRIMARY_COLOR'] = primary_color
+            self.logger.info(f"Loaded PRIMARY_COLOR: {primary_color}")
+        else:
+            self.logger.warning(f"Primary color not found for {self.project_config.project_name}")
 
     def _print_banner(self) -> None:
         """Print pipeline banner"""
+        project_name = self.project_config.project_name
         print()
         print(f"{self.MAGENTA}╔════════════════════════════════════════════╗{self.NC}")
         print(f"{self.MAGENTA}║   📱  App Store Screenshot Pipeline  📱    ║{self.NC}")
         print(f"{self.MAGENTA}║          Fully Automated Workflow          ║{self.NC}")
         print(f"{self.MAGENTA}╚════════════════════════════════════════════╝{self.NC}")
+        print(f"{self.CYAN}   Project: {project_name}{self.NC}")
         print()
 
     def _print_section(self, title: str) -> None:
