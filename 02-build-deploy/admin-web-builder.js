@@ -124,23 +124,25 @@ class AdminWebBuilder {
 
   /**
    * Get dart-define flags for web build
-   * NOTE: Environment variables are configured in GitHub Pages settings.
-   * This method is kept for local development/testing only.
+   * These variables are embedded into the build and deployed to GitHub Pages
    */
   getDartDefines() {
     const defines = [];
 
-    // Master Firebase password (optional for local builds)
-    // GitHub Pages already has this configured as environment variable
+    // Master Firebase Email (required)
+    if (process.env.MASTER_FIREBASE_EMAIL) {
+      defines.push(`--dart-define=MASTER_FIREBASE_EMAIL=${process.env.MASTER_FIREBASE_EMAIL}`);
+      logger.info('MASTER_FIREBASE_EMAIL loaded from environment');
+    } else {
+      logger.warn('MASTER_FIREBASE_EMAIL not set - admin login may fail');
+    }
+
+    // Master Firebase Password (required)
     if (process.env.MASTER_FIREBASE_PASSWORD) {
       defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${process.env.MASTER_FIREBASE_PASSWORD}`);
       logger.info('MASTER_FIREBASE_PASSWORD loaded from environment');
-    }
-
-    // Cloud Service API Key (optional)
-    if (process.env.CLOUD_SERVICE_API_KEY) {
-      defines.push(`--dart-define=CLOUD_SERVICE_API_KEY=${process.env.CLOUD_SERVICE_API_KEY}`);
-      logger.info('CLOUD_SERVICE_API_KEY loaded from environment');
+    } else {
+      logger.warn('MASTER_FIREBASE_PASSWORD not set - admin login will fail');
     }
 
     return defines.length > 0 ? ' ' + defines.join(' ') : '';
