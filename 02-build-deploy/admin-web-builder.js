@@ -124,56 +124,23 @@ class AdminWebBuilder {
 
   /**
    * Get dart-define flags for web build
-   * Reads sensitive config from .master_password file or environment variables
+   * NOTE: Environment variables are configured in GitHub Pages settings.
+   * This method is kept for local development/testing only.
    */
   getDartDefines() {
     const defines = [];
 
-    // Master Firebase password (required for web builds)
-    // Priority: 1) .master_password file in admin root, 2) .env variable
-    let masterPassword = null;
-
-    // Try to read from .master_password file first (same as Flutter app does)
-    const masterPasswordFile = path.join(this.adminRoot, '.master_password');
-    if (fs.existsSync(masterPasswordFile)) {
-      masterPassword = fs.readFileSync(masterPasswordFile, 'utf8').trim();
-      if (masterPassword) {
-        logger.info('MASTER_FIREBASE_PASSWORD loaded from .master_password file');
-      }
-    }
-
-    // Fallback to environment variable
-    if (!masterPassword && process.env.MASTER_FIREBASE_PASSWORD) {
-      masterPassword = process.env.MASTER_FIREBASE_PASSWORD;
+    // Master Firebase password (optional for local builds)
+    // GitHub Pages already has this configured as environment variable
+    if (process.env.MASTER_FIREBASE_PASSWORD) {
+      defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${process.env.MASTER_FIREBASE_PASSWORD}`);
       logger.info('MASTER_FIREBASE_PASSWORD loaded from environment');
     }
 
-    if (masterPassword) {
-      defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${masterPassword}`);
-    } else {
-      logger.warning('MASTER_FIREBASE_PASSWORD not set - login will fail on web');
-      logger.warning('Create .master_password file in loyalty-admin-main or set MASTER_FIREBASE_PASSWORD in .env');
-    }
-
     // Cloud Service API Key (optional)
-    // Priority: 1) .cloud_service_api_key file, 2) .env variable
-    let cloudServiceApiKey = null;
-
-    const apiKeyFile = path.join(this.adminRoot, '.cloud_service_api_key');
-    if (fs.existsSync(apiKeyFile)) {
-      cloudServiceApiKey = fs.readFileSync(apiKeyFile, 'utf8').trim();
-      if (cloudServiceApiKey) {
-        logger.info('CLOUD_SERVICE_API_KEY loaded from .cloud_service_api_key file');
-      }
-    }
-
-    if (!cloudServiceApiKey && process.env.CLOUD_SERVICE_API_KEY) {
-      cloudServiceApiKey = process.env.CLOUD_SERVICE_API_KEY;
+    if (process.env.CLOUD_SERVICE_API_KEY) {
+      defines.push(`--dart-define=CLOUD_SERVICE_API_KEY=${process.env.CLOUD_SERVICE_API_KEY}`);
       logger.info('CLOUD_SERVICE_API_KEY loaded from environment');
-    }
-
-    if (cloudServiceApiKey) {
-      defines.push(`--dart-define=CLOUD_SERVICE_API_KEY=${cloudServiceApiKey}`);
     }
 
     return defines.length > 0 ? ' ' + defines.join(' ') : '';
@@ -300,11 +267,26 @@ class AdminWebBuilder {
     const date = new Date().toISOString().split('T')[0];
     const commitMessage = message || `Deploy Admin Web v${version.full} - ${date}`;
 
+    // Get the correct remote name
+    const remote = this.getGitRemote();
+
+    // Ensure clean state (abort any pending operations)
+    try {
+      this.exec('git rebase --abort', { cwd: this.webRepo, silent: true });
+    } catch {
+      // No rebase in progress, ignore
+    }
+    try {
+      this.exec('git merge --abort', { cwd: this.webRepo, silent: true });
+    } catch {
+      // No merge in progress, ignore
+    }
+
     // Check if there are changes to commit
     const status = this.exec('git status --porcelain', { cwd: this.webRepo, silent: true });
 
     if (!status) {
-      logger.warning('No changes to commit');
+      logger.warn('No changes to commit');
       return false;
     }
 
@@ -314,21 +296,10 @@ class AdminWebBuilder {
     // Commit
     this.exec(`git commit -m "${commitMessage}"`, { cwd: this.webRepo });
 
-    // Get the correct remote name
-    const remote = this.getGitRemote();
-
-    // Pull before push to avoid conflicts
-    logger.info(`Pulling from ${remote}/master...`);
-    try {
-      this.exec(`git pull ${remote} master --rebase`, { cwd: this.webRepo });
-    } catch (pullError) {
-      // If pull fails, it might be a new repo or no remote history - continue anyway
-      logger.warning(`Pull failed (may be ok for new repo): ${pullError.message}`);
-    }
-
-    // Push
+    // For static site builds, we just force push
+    // The build directory is the source of truth
     logger.info(`Pushing to ${remote}/master...`);
-    this.exec(`git push ${remote} master`, { cwd: this.webRepo });
+    this.exec(`git push ${remote} master --force`, { cwd: this.webRepo });
 
     logger.success('Pushed to GitHub');
     return true;

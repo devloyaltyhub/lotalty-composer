@@ -172,40 +172,15 @@ const SCRIPTS = {
     args: ['doctor'],
   },
 
-  // Admin Deploy (Android + Web)
-  DEPLOY_ADMIN_MENU: {
-    name: 'Deploy Admin (Menu)',
-    description: 'Menu interativo para deploy do Admin (Android, Web ou ambos)',
-    category: CATEGORIES.BUILD_DEPLOY,
-    script: '02-build-deploy/cli/deploy-admin-menu.js',
-  },
-  GENERATE_SCREENSHOTS_ADMIN: {
-    name: 'Gerar Screenshots Admin',
-    description: 'Capturar screenshots Android (phone + tablet) para Google Play Store',
-    category: CATEGORIES.BUILD_DEPLOY,
-    script: '02-build-deploy/cli/generate-screenshots-admin.js',
-  },
-  DEPLOY_ADMIN_ANDROID: {
-    name: 'Deploy Admin Android',
-    description: 'Build com Shorebird e deploy do Admin para Google Play Store',
-    category: CATEGORIES.BUILD_DEPLOY,
-    script: '02-build-deploy/cli/deploy-admin.js',
-  },
-  BUILD_ADMIN_ANDROID: {
-    name: 'Build Admin Android (sem deploy)',
-    description: 'Compilar Admin Android sem enviar para Play Store',
-    category: CATEGORIES.BUILD_DEPLOY,
-    script: '02-build-deploy/cli/deploy-admin.js',
-    args: ['--build-only'],
-  },
-  DEPLOY_ADMIN_WEB: {
-    name: 'Deploy Admin Web',
+  // Admin Deploy (Web only)
+  DEPLOY_ADMIN: {
+    name: 'Deploy Admin',
     description: 'Build Flutter Web e deploy para GitHub Pages (devloyaltyhub.github.io)',
     category: CATEGORIES.BUILD_DEPLOY,
     script: '02-build-deploy/cli/deploy-admin-web.js',
   },
-  BUILD_ADMIN_WEB: {
-    name: 'Build Admin Web (sem deploy)',
+  BUILD_ADMIN: {
+    name: 'Build Admin (sem deploy)',
     description: 'Compilar Flutter Web sem enviar para GitHub Pages',
     category: CATEGORIES.BUILD_DEPLOY,
     script: '02-build-deploy/cli/deploy-admin-web.js',
@@ -298,11 +273,11 @@ const WORKFLOWS = {
   },
   DEPLOY_ADMIN: {
     name: '🚀 Deploy Admin',
-    description: 'Build e deploy do Admin (Android, Web ou ambos)',
+    description: 'Build e deploy do Admin Web para GitHub Pages',
     category: CATEGORIES.WORKFLOWS,
     confirmStart: true,
     steps: [
-      { action: 'deploy', script: SCRIPTS.DEPLOY_ADMIN_MENU },
+      { action: 'deploy', script: SCRIPTS.DEPLOY_ADMIN },
     ],
   },
 };

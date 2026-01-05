@@ -3,21 +3,18 @@
 /**
  * Deploy Admin Menu CLI
  *
- * Unified menu for deploying loyalty-admin-main to Android (Play Store) and/or Web (GitHub Pages).
+ * Deploys loyalty-admin-main to Web (GitHub Pages).
+ * NOTE: Admin is web-only. For mobile admin, use the white-label app.
  *
  * Usage:
- *   node deploy-admin-menu.js    # Interactive menu
+ *   node deploy-admin-menu.js    # Deploy to web
  */
 
 const { spawn } = require('child_process');
 const path = require('path');
-const inquirer = require('inquirer');
 const logger = require('../../shared/utils/logger');
 
-const DEPLOY_SCRIPTS = {
-  android: path.join(__dirname, 'deploy-admin.js'),
-  web: path.join(__dirname, 'deploy-admin-web.js'),
-};
+const DEPLOY_SCRIPT = path.join(__dirname, 'deploy-admin-web.js');
 
 /**
  * Run a deploy script
@@ -45,37 +42,12 @@ function runScript(scriptPath) {
  * Main function
  */
 async function main() {
-  logger.section('Deploy Admin');
-
-  const { platform } = await inquirer.prompt([
-    {
-      type: 'list',
-      name: 'platform',
-      message: 'Qual plataforma deseja fazer deploy?',
-      choices: [
-        { name: '📱 Android (Google Play Store)', value: 'android' },
-        { name: '🌐 Web (GitHub Pages)', value: 'web' },
-        { name: '🚀 Ambos (Android + Web)', value: 'both' },
-      ],
-    },
-  ]);
+  logger.section('Deploy Admin (Web)');
+  logger.info('Admin is web-only. Deploying to GitHub Pages...');
+  logger.blank();
 
   try {
-    if (platform === 'android' || platform === 'both') {
-      logger.blank();
-      await runScript(DEPLOY_SCRIPTS.android);
-    }
-
-    if (platform === 'web' || platform === 'both') {
-      logger.blank();
-      await runScript(DEPLOY_SCRIPTS.web);
-    }
-
-    if (platform === 'both') {
-      logger.blank();
-      logger.success('Deploy completo (Android + Web) finalizado!');
-    }
-
+    await runScript(DEPLOY_SCRIPT);
   } catch (error) {
     logger.error(`Erro: ${error.message}`);
     process.exit(1);
