@@ -118,6 +118,7 @@ describe('RemoteConfigSetup', () => {
               suggestionBox: '{{SUGGESTION_BOX}}',
               clarity: '{{CLARITY}}',
               ourStory: '{{OUR_STORY}}',
+              events: '{{EVENTS}}',
             }),
           },
         },
@@ -139,6 +140,7 @@ describe('RemoteConfigSetup', () => {
           suggestionBox: false,
           clarity: true,
           ourStory: false,
+          events: true,
         },
         clarityProjectId: 'clarity123',
       };
@@ -164,6 +166,7 @@ describe('RemoteConfigSetup', () => {
           suggestionBox: false,
           clarity: false,
           ourStory: false,
+          events: false,
         },
         clarityProjectId: 'my-clarity-project',
       };
@@ -185,6 +188,7 @@ describe('RemoteConfigSetup', () => {
           suggestionBox: true,
           clarity: true,
           ourStory: true,
+          events: true,
         },
         clarityProjectId: 'test',
       };
@@ -208,6 +212,7 @@ describe('RemoteConfigSetup', () => {
           suggestionBox: false,
           clarity: false,
           ourStory: false,
+          events: false,
         },
         clarityProjectId: 'test',
       };
@@ -426,6 +431,7 @@ describe('RemoteConfigSetup', () => {
         suggestionBox: false,
         clarity: true,
         ourStory: false,
+        events: true,
       },
       clarityProjectId: 'clarity123',
       clientCode: 'demo',

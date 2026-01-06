@@ -93,6 +93,7 @@ class RemoteConfigSetup {
     );
     templateStr = templateStr.replace('{{CLARITY}}', featureFlags.clarity ? 'true' : 'false');
     templateStr = templateStr.replace('{{OUR_STORY}}', featureFlags.ourStory ? 'true' : 'false');
+    templateStr = templateStr.replace('{{EVENTS}}', featureFlags.events ? 'true' : 'false');
 
     // Replace Clarity Project ID
     templateStr = templateStr.replace('{{CLARITY_PROJECT_ID}}', clarityProjectId);

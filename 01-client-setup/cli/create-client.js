@@ -204,6 +204,7 @@ class ClientCreationWizard {
           { name: 'Suggestion Box', value: 'suggestionBox', checked: true },
           { name: 'Clarity Analytics', value: 'clarity', checked: true },
           { name: 'Our Story', value: 'ourStory', checked: true },
+          { name: 'Events', value: 'events', checked: true },
         ],
       },
       {
@@ -234,6 +235,7 @@ class ClientCreationWizard {
       suggestionBox: answers.featureFlags.includes('suggestionBox'),
       clarity: answers.featureFlags.includes('clarity'),
       ourStory: answers.featureFlags.includes('ourStory'),
+      events: answers.featureFlags.includes('events'),
     };
     answers.featureFlags = featureFlagsObject;
 
