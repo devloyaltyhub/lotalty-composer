@@ -49,14 +49,19 @@ function showHelp() {
     npm run deploy-admin-web -- --message="Custom commit message"
 
   Options:
-    --build-only        Build without deploying to GitHub
-    --skip-build        Deploy existing build (skip flutter build)
+    --build-only        Build without deploying (no version increment)
+    --skip-build        Deploy existing build (skip flutter build, no version increment)
     --message="..."     Custom commit message
     --help, -h          Show this help
 
   Deploy Target:
     Repository: devloyaltyhub.github.io
     URL: https://devloyaltyhub.github.io
+
+  Version Management:
+    - Full deploy: Auto-increments build number (+1) and creates git tag
+    - Build-only: No version changes
+    - Skip-build: No version changes (uses existing build)
   `);
 }
 
@@ -129,7 +134,9 @@ async function main() {
 
     // Get version info
     const versionInfo = builder.getVersionInfo();
+    const nextBuild = parseInt(versionInfo.buildNumber, 10) + 1;
     logger.keyValue('Versao atual', versionInfo.full);
+    logger.keyValue('Proxima versao', `${versionInfo.version}+${nextBuild}`);
     logger.keyValue('Destino', 'https://devloyaltyhub.github.io');
 
     // Determine action
@@ -142,13 +149,13 @@ async function main() {
       action = await promptAction();
     }
 
-    // Handle build-only
+    // Handle build-only (no version increment, just build for testing)
     if (action === 'build-only') {
       const { confirm } = await inquirer.prompt([
         {
           type: 'confirm',
           name: 'confirm',
-          message: `Iniciar build do Admin Web v${versionInfo.full}?`,
+          message: `Iniciar build do Admin Web v${versionInfo.full}? (sem incremento)`,
           default: true,
         },
       ]);
@@ -164,10 +171,11 @@ async function main() {
 
     // Handle full deploy or skip-build
     const skipBuild = action === 'skip-build';
+    const deployVersion = skipBuild ? versionInfo.full : `${versionInfo.version}+${nextBuild}`;
 
     // Get commit message
     const date = new Date().toISOString().split('T')[0];
-    const defaultMessage = `Deploy Admin Web v${versionInfo.full} - ${date}`;
+    const defaultMessage = `Deploy Admin Web v${deployVersion} - ${date}`;
     const message = args.message || await promptCommitMessage(defaultMessage);
 
     // Confirm
@@ -176,7 +184,7 @@ async function main() {
       {
         type: 'confirm',
         name: 'confirm',
-        message: `Iniciar ${actionText} do Admin Web v${versionInfo.full}?`,
+        message: `Iniciar ${actionText} do Admin Web v${deployVersion}?`,
         default: true,
       },
     ]);

@@ -123,6 +123,76 @@ class AdminWebBuilder {
   }
 
   /**
+   * Increment build number in pubspec.yaml
+   */
+  incrementBuildNumber() {
+    logger.info('Incrementing build number...');
+
+    const pubspecPath = path.join(this.adminRoot, 'pubspec.yaml');
+    let pubspec = fs.readFileSync(pubspecPath, 'utf8');
+    const match = pubspec.match(/^(version:\s*[0-9]+\.[0-9]+\.[0-9]+\+)([0-9]+)/m);
+
+    if (!match) {
+      throw new Error('Version not found in pubspec.yaml');
+    }
+
+    const currentBuild = parseInt(match[2], 10);
+    const newBuild = currentBuild + 1;
+
+    pubspec = pubspec.replace(
+      /^(version:\s*[0-9]+\.[0-9]+\.[0-9]+\+)[0-9]+/m,
+      `$1${newBuild}`
+    );
+
+    fs.writeFileSync(pubspecPath, pubspec);
+    logger.success(`Build number incremented: ${currentBuild} -> ${newBuild}`);
+
+    return newBuild;
+  }
+
+  /**
+   * Create git tag in loyalty-admin-main repository
+   */
+  createGitTag(versionInfo) {
+    const tagName = `admin-web-v${versionInfo.full}`;
+    logger.info(`Creating git tag: ${tagName}...`);
+
+    try {
+      this.exec(`git tag -a ${tagName} -m "Admin Web Deploy v${versionInfo.full}"`, { cwd: this.adminRoot });
+      this.exec(`git push origin ${tagName}`, { cwd: this.adminRoot });
+      logger.success(`Git tag created and pushed: ${tagName}`);
+      return tagName;
+    } catch (error) {
+      if (error.message.includes('already exists')) {
+        logger.warn(`Tag ${tagName} already exists, skipping...`);
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Commit version bump to loyalty-admin-main repository
+   */
+  commitVersionBump(versionInfo) {
+    logger.info('Committing version bump...');
+
+    const status = this.exec('git status --porcelain pubspec.yaml', { cwd: this.adminRoot, silent: true });
+
+    if (!status) {
+      logger.warn('No version changes to commit');
+      return false;
+    }
+
+    this.exec('git add pubspec.yaml', { cwd: this.adminRoot });
+    this.exec(`git commit -m "chore: bump build number to ${versionInfo.buildNumber}"`, { cwd: this.adminRoot });
+    this.exec('git push origin HEAD', { cwd: this.adminRoot });
+
+    logger.success('Version bump committed and pushed');
+    return true;
+  }
+
+  /**
    * Get dart-define flags for web build
    * These variables are embedded into the build and deployed to GitHub Pages
    */
@@ -342,9 +412,19 @@ class AdminWebBuilder {
       // Validate
       this.checkPrerequisites();
 
-      // Version
+      // Increment build number before getting version info
+      if (!skipBuild) {
+        this.incrementBuildNumber();
+      }
+
+      // Version (after increment)
       const versionInfo = this.getVersionInfo();
       logger.keyValue('Version', versionInfo.full);
+
+      // Commit version bump to loyalty-admin-main
+      if (!skipBuild) {
+        this.commitVersionBump(versionInfo);
+      }
 
       if (!skipBuild) {
         await telegram.buildStarted('admin-web', ['web']);
@@ -363,6 +443,12 @@ class AdminWebBuilder {
 
       // Commit and push
       const pushed = this.commitAndPush(message);
+
+      // Create git tag in loyalty-admin-main
+      let tagName = null;
+      if (pushed) {
+        tagName = this.createGitTag(versionInfo);
+      }
 
       // Finalize
       const duration = this.formatDuration(Date.now() - this.startTime);
@@ -385,9 +471,10 @@ class AdminWebBuilder {
         URL: 'https://devloyaltyhub.github.io',
         Duration: duration,
         Status: pushed ? 'Deployed' : 'No changes',
+        Tag: tagName || 'N/A',
       });
 
-      return { success: true, version: versionInfo.full, duration, pushed };
+      return { success: true, version: versionInfo.full, duration, pushed, tagName };
 
     } catch (error) {
       const duration = this.formatDuration(Date.now() - this.startTime);
