@@ -1,11 +1,11 @@
-const fs = require('fs').promises;
-const path = require('path');
-const chalk = require('chalk');
+const fs = require("fs").promises;
+const path = require("path");
+const chalk = require("chalk");
 
 class RemoteConfigSetup {
   constructor(firebaseApp) {
     if (!firebaseApp) {
-      throw new Error('Firebase app instance is required');
+      throw new Error("Firebase app instance is required");
     }
     this.app = firebaseApp;
   }
@@ -20,7 +20,7 @@ class RemoteConfigSetup {
   async setupRemoteConfig(config) {
     const { featureFlags, clarityProjectId, clientCode } = config;
 
-    console.log(chalk.blue('\n📡 Setting up Firebase Remote Config...'));
+    console.log(chalk.blue("\n📡 Setting up Firebase Remote Config..."));
 
     try {
       // Load the Remote Config template
@@ -38,7 +38,7 @@ class RemoteConfigSetup {
       // Validate the published configuration
       await this.validateRemoteConfig(featureFlags, clarityProjectId);
 
-      console.log(chalk.green('✓ Remote Config setup completed successfully'));
+      console.log(chalk.green("✓ Remote Config setup completed successfully"));
 
       return {
         featureFlags,
@@ -46,7 +46,10 @@ class RemoteConfigSetup {
         versionarte: this.getDefaultVersionarte(),
       };
     } catch (error) {
-      console.error(chalk.red('✗ Failed to setup Remote Config:'), error.message);
+      console.error(
+        chalk.red("✗ Failed to setup Remote Config:"),
+        error.message,
+      );
       throw error;
     }
   }
@@ -55,13 +58,18 @@ class RemoteConfigSetup {
    * Load the Remote Config template from file
    */
   async loadTemplate() {
-    const templatePath = path.join(__dirname, '../../shared/templates/remote-config-template.json');
+    const templatePath = path.join(
+      __dirname,
+      "../../shared/templates/remote-config-template.json",
+    );
 
     try {
-      const templateContent = await fs.readFile(templatePath, 'utf-8');
+      const templateContent = await fs.readFile(templatePath, "utf-8");
       return JSON.parse(templateContent);
     } catch (error) {
-      throw new Error(`Failed to load Remote Config template: ${error.message}`);
+      throw new Error(
+        `Failed to load Remote Config template: ${error.message}`,
+      );
     }
   }
 
@@ -75,29 +83,52 @@ class RemoteConfigSetup {
     let templateStr = JSON.stringify(template, null, 2);
 
     // Replace feature flags
-    templateStr = templateStr.replace('{{DELIVERY}}', featureFlags.delivery ? 'true' : 'false');
-    templateStr = templateStr.replace('{{CLUB}}', featureFlags.club ? 'true' : 'false');
-    templateStr = templateStr.replace('{{HAPPY_HOUR}}', featureFlags.happyHour ? 'true' : 'false');
-    templateStr = templateStr.replace('{{CAMPAIGNS}}', featureFlags.campaigns ? 'true' : 'false');
     templateStr = templateStr.replace(
-      '{{STORE_HOURS}}',
-      featureFlags.storeHours ? 'true' : 'false'
+      "{{DELIVERY}}",
+      featureFlags.delivery ? "true" : "false",
     );
     templateStr = templateStr.replace(
-      '{{PUSH_NOTIFICATIONS}}',
-      featureFlags.pushNotifications ? 'true' : 'false'
+      "{{HAPPY_HOUR}}",
+      featureFlags.happyHour ? "true" : "false",
     );
     templateStr = templateStr.replace(
-      '{{SUGGESTION_BOX}}',
-      featureFlags.suggestionBox ? 'true' : 'false'
+      "{{CAMPAIGNS}}",
+      featureFlags.campaigns ? "true" : "false",
     );
-    templateStr = templateStr.replace('{{CLARITY}}', featureFlags.clarity ? 'true' : 'false');
-    templateStr = templateStr.replace('{{OUR_STORY}}', featureFlags.ourStory ? 'true' : 'false');
-    templateStr = templateStr.replace('{{EVENTS}}', featureFlags.events ? 'true' : 'false');
-    templateStr = templateStr.replace('{{TEAM}}', featureFlags.team ? 'true' : 'false');
+    templateStr = templateStr.replace(
+      "{{STORE_HOURS}}",
+      featureFlags.storeHours ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{PUSH_NOTIFICATIONS}}",
+      featureFlags.pushNotifications ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{SUGGESTION_BOX}}",
+      featureFlags.suggestionBox ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{CLARITY}}",
+      featureFlags.clarity ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{OUR_STORY}}",
+      featureFlags.ourStory ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{EVENTS}}",
+      featureFlags.events ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
+      "{{TEAM}}",
+      featureFlags.team ? "true" : "false",
+    );
 
     // Replace Clarity Project ID
-    templateStr = templateStr.replace('{{CLARITY_PROJECT_ID}}', clarityProjectId);
+    templateStr = templateStr.replace(
+      "{{CLARITY_PROJECT_ID}}",
+      clarityProjectId,
+    );
 
     return JSON.parse(templateStr);
   }
@@ -106,9 +137,9 @@ class RemoteConfigSetup {
    * Publish the Remote Config template to Firebase
    */
   async publishTemplate(template, clientCode) {
-    const admin = require('firebase-admin');
+    const admin = require("firebase-admin");
 
-    console.log(chalk.blue('  → Publishing Remote Config template...'));
+    console.log(chalk.blue("  → Publishing Remote Config template..."));
 
     try {
       const remoteConfig = admin.remoteConfig(this.app);
@@ -124,15 +155,18 @@ class RemoteConfigSetup {
       // The version field in our template file is just for documentation
 
       // Publish the template
-      const publishedTemplate = await remoteConfig.publishTemplate(currentTemplate);
+      const publishedTemplate =
+        await remoteConfig.publishTemplate(currentTemplate);
 
       console.log(
         chalk.green(
-          `  ✓ Remote Config template published (version: ${publishedTemplate.version.versionNumber})`
-        )
+          `  ✓ Remote Config template published (version: ${publishedTemplate.version.versionNumber})`,
+        ),
       );
     } catch (error) {
-      throw new Error(`Failed to publish Remote Config template: ${error.message}`);
+      throw new Error(
+        `Failed to publish Remote Config template: ${error.message}`,
+      );
     }
   }
 
@@ -141,9 +175,11 @@ class RemoteConfigSetup {
    * Note: Remote Config may take some time to propagate
    */
   async validateRemoteConfig(expectedFeatureFlags, expectedClarityId) {
-    const admin = require('firebase-admin');
+    const admin = require("firebase-admin");
 
-    console.log(chalk.blue('  → Validating Remote Config (this may take a moment)...'));
+    console.log(
+      chalk.blue("  → Validating Remote Config (this may take a moment)..."),
+    );
 
     const maxRetries = 5;
     const retryDelay = 2000; // 2 seconds
@@ -155,22 +191,22 @@ class RemoteConfigSetup {
 
         // Check if feature flags parameter exists
         if (!template.parameters.featureFlags) {
-          throw new Error('featureFlags parameter not found');
+          throw new Error("featureFlags parameter not found");
         }
 
         // Check if clarityProjectId parameter exists
         if (!template.parameters.clarityProjectId) {
-          throw new Error('clarityProjectId parameter not found');
+          throw new Error("clarityProjectId parameter not found");
         }
 
         // Check if versionarte parameter exists
         if (!template.parameters.versionarte) {
-          throw new Error('versionarte parameter not found');
+          throw new Error("versionarte parameter not found");
         }
 
         // Parse and validate feature flags
         const publishedFeatureFlags = JSON.parse(
-          template.parameters.featureFlags.defaultValue.value
+          template.parameters.featureFlags.defaultValue.value,
         );
 
         // Validate each feature flag
@@ -182,24 +218,31 @@ class RemoteConfigSetup {
         }
 
         // Validate Clarity Project ID
-        const publishedClarityId = template.parameters.clarityProjectId.defaultValue.value;
+        const publishedClarityId =
+          template.parameters.clarityProjectId.defaultValue.value;
         if (publishedClarityId !== expectedClarityId) {
-          throw new Error('Clarity Project ID mismatch');
+          throw new Error("Clarity Project ID mismatch");
         }
 
-        console.log(chalk.green('  ✓ Remote Config validated successfully'));
+        console.log(chalk.green("  ✓ Remote Config validated successfully"));
         return true;
       } catch (error) {
         if (attempt < maxRetries) {
           console.log(
-            chalk.yellow(`  ⚠ Validation attempt ${attempt}/${maxRetries} failed, retrying...`)
+            chalk.yellow(
+              `  ⚠ Validation attempt ${attempt}/${maxRetries} failed, retrying...`,
+            ),
           );
           await this.sleep(retryDelay);
         } else {
           console.log(
-            chalk.yellow('  ⚠ Remote Config validation timed out, but template was published')
+            chalk.yellow(
+              "  ⚠ Remote Config validation timed out, but template was published",
+            ),
           );
-          console.log(chalk.yellow('    You can verify manually in Firebase Console'));
+          console.log(
+            chalk.yellow("    You can verify manually in Firebase Console"),
+          );
           return false;
         }
       }
@@ -215,27 +258,27 @@ class RemoteConfigSetup {
     return {
       android: {
         version: {
-          minimum: '1.0.0',
-          latest: '0.0.1',
+          minimum: "1.0.0",
+          latest: "0.0.1",
         },
-        download_url: '',
+        download_url: "",
         status: {
           active: true,
           message: {
-            pt: 'O Aplicativo está em manutenção. Por favor, tente mais tarde.',
+            pt: "O Aplicativo está em manutenção. Por favor, tente mais tarde.",
           },
         },
       },
       ios: {
         version: {
-          minimum: '1.0.0',
-          latest: '0.0.1',
+          minimum: "1.0.0",
+          latest: "0.0.1",
         },
-        download_url: '',
+        download_url: "",
         status: {
           active: true,
           message: {
-            pt: 'O Aplicativo está em manutenção. Por favor, tente mais tarde.',
+            pt: "O Aplicativo está em manutenção. Por favor, tente mais tarde.",
           },
         },
       },

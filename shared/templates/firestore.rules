@@ -83,6 +83,21 @@ service cloud.firestore {
     match /Our_Story/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /Image_Mappings/{docId} { allow read: if true; allow write: if isAdmin(); }
 
+    // === EVENTS (conteúdo público, inscrição requer auth) ===
+    match /Events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // === EVENT_REGISTRATIONS (usuário lê próprias, cria próprias, admin gerencia) ===
+    match /Event_Registrations/{registrationId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() &&
+                      request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
     // === LEGACY ===
     match /Consumption/{docId} {
       allow read: if isAdmin() ||
