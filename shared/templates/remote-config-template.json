@@ -3,7 +3,7 @@
   "parameters": {
     "featureFlags": {
       "defaultValue": {
-        "value": "{\"delivery\":{{DELIVERY}},\"club\":{{CLUB}},\"happyHour\":{{HAPPY_HOUR}},\"campaigns\":{{CAMPAIGNS}},\"storeHours\":{{STORE_HOURS}},\"pushNotifications\":{{PUSH_NOTIFICATIONS}},\"suggestionBox\":{{SUGGESTION_BOX}},\"clarity\":{{CLARITY}},\"ourStory\":{{OUR_STORY}},\"events\":{{EVENTS}}}"
+        "value": "{\"delivery\":{{DELIVERY}},\"club\":{{CLUB}},\"happyHour\":{{HAPPY_HOUR}},\"campaigns\":{{CAMPAIGNS}},\"storeHours\":{{STORE_HOURS}},\"pushNotifications\":{{PUSH_NOTIFICATIONS}},\"suggestionBox\":{{SUGGESTION_BOX}},\"clarity\":{{CLARITY}},\"ourStory\":{{OUR_STORY}},\"events\":{{EVENTS}},\"team\":{{TEAM}}}"
       },
       "valueType": "STRING",
       "description": "Feature flags controlling which features are enabled in the app"
