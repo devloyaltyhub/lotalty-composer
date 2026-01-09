@@ -413,6 +413,37 @@ class ClientCreationWizard {
     logger.success("Firestore rules deployed");
   }
 
+  // Step 5b: Deploy Firestore indexes
+  async deployFirestoreIndexes() {
+    logger.section("Deploying Firestore Indexes");
+
+    const indexesPath = path.join(
+      __dirname,
+      "../../shared/templates/firestore.indexes.json",
+    );
+    const tempIndexesPath = path.join(
+      this.config.clientFolder,
+      "firestore.indexes.json",
+    );
+
+    fs.copyFileSync(indexesPath, tempIndexesPath);
+
+    const firebaseJsonPath = path.join(
+      this.config.clientFolder,
+      "firebase.json",
+    );
+    const firebaseJson = JSON.parse(fs.readFileSync(firebaseJsonPath, "utf8"));
+    firebaseJson.firestore.indexes = "firestore.indexes.json";
+    fs.writeFileSync(firebaseJsonPath, JSON.stringify(firebaseJson, null, 2));
+
+    await firebaseClient.deployFirestoreIndexes(
+      this.config.firebaseProjectId,
+      tempIndexesPath,
+    );
+
+    logger.success("Firestore indexes deployed");
+  }
+
   // Step 5.5: Setup Remote Config
   async setupRemoteConfig() {
     logger.section("Setting up Firebase Remote Config");
@@ -1302,6 +1333,11 @@ auto_update: true
       // Step 5: Deploy Firestore rules
       await this.executeStep("deploy_firestore_rules", () =>
         this.deployFirestoreRules(),
+      );
+
+      // Step 5b: Deploy Firestore indexes
+      await this.executeStep("deploy_firestore_indexes", () =>
+        this.deployFirestoreIndexes(),
       );
 
       // Step 5.5: Generate Android Keystore for App Check

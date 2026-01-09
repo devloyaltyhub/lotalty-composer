@@ -1,0 +1,69 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "Consumptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Consumptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clubId", "order": "ASCENDING" },
+        { "fieldPath": "creationTime", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clubId", "order": "ASCENDING" },
+        { "fieldPath": "creationTime", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uidOrderIssuer", "order": "ASCENDING" },
+        { "fieldPath": "createdOn", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "uidOrderIssuer", "order": "ASCENDING" },
+        { "fieldPath": "createdOn", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Event_Registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "eventId", "order": "ASCENDING" },
+        { "fieldPath": "registeredAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Event_Registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "registeredAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

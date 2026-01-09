@@ -440,6 +440,31 @@ class FirebaseClient {
     }
   }
 
+  // Deploy Firestore indexes
+  async deployFirestoreIndexes(projectId, indexesFilePath) {
+    logger.startSpinner('Deploying Firestore indexes...');
+
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+
+    try {
+      if (!fs.existsSync(indexesFilePath)) {
+        throw new Error(`Indexes file not found: ${indexesFilePath}`);
+      }
+
+      execSync(`firebase deploy --only firestore:indexes --project ${projectId}`, {
+        cwd: require('path').dirname(indexesFilePath),
+        stdio: 'pipe',
+      });
+
+      logger.succeedSpinner('Firestore indexes deployed successfully');
+      return true;
+    } catch (error) {
+      logger.failSpinner(`Failed to deploy indexes: ${error.message}`);
+      throw error;
+    }
+  }
+
   // Cleanup - delete Firebase app instances
   cleanup() {
     this.apps.forEach((app, clientCode) => {
