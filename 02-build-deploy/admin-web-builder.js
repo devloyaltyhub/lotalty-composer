@@ -240,7 +240,7 @@ class AdminWebBuilder {
 
     // Get dart-define flags for sensitive environment variables
     const dartDefines = this.getDartDefines();
-    this.exec(`flutter build web --release --base-href "/" --no-source-maps --no-wasm-dry-run${dartDefines}`);
+    this.exec(`flutter build web --release --base-href "/" --no-source-maps --pwa-strategy none${dartDefines}`);
 
     // Verify build output exists
     if (!fs.existsSync(this.buildOutput)) {
@@ -252,8 +252,33 @@ class AdminWebBuilder {
       throw new Error('index.html not found in build output');
     }
 
+    this.injectCacheBusting(indexPath);
+
     logger.success('Flutter Web build completed');
     return true;
+  }
+
+  /**
+   * Inject cache-busting query strings into index.html
+   */
+  injectCacheBusting(indexPath) {
+    logger.info('Injecting cache-busting version...');
+
+    const version = Date.now();
+    let html = fs.readFileSync(indexPath, 'utf8');
+
+    html = html.replace(
+      'src="flutter_bootstrap.js"',
+      `src="flutter_bootstrap.js?v=${version}"`
+    );
+
+    html = html.replace(
+      'href="manifest.json"',
+      `href="manifest.json?v=${version}"`
+    );
+
+    fs.writeFileSync(indexPath, html);
+    logger.success(`Cache-busting version: ${version}`);
   }
 
   /**
@@ -436,6 +461,10 @@ class AdminWebBuilder {
         if (!fs.existsSync(this.buildOutput)) {
           throw new Error(`No existing build found at ${this.buildOutput}. Run without --skip-build first.`);
         }
+
+        // Apply cache-busting even when skipping build
+        const indexPath = path.join(this.buildOutput, 'index.html');
+        this.injectCacheBusting(indexPath);
       }
 
       // Copy to repo

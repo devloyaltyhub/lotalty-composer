@@ -388,6 +388,37 @@ def validate_cocoapods!
 end
 
 # ==========================================
+# SECURITY CHECKS
+# ==========================================
+
+# Script path for hardcoded credentials check
+CREDENTIALS_CHECK_SCRIPT = File.expand_path('../scripts/check-hardcoded-credentials.sh', __dir__)
+
+# Check for hardcoded credentials before release builds
+# This prevents accidentally shipping dev credentials to production
+def check_hardcoded_credentials!
+  UI.message("🔐 Verificando credenciais hardcoded...")
+
+  unless File.exist?(CREDENTIALS_CHECK_SCRIPT)
+    UI.user_error!("❌ Script de verificação não encontrado: #{CREDENTIALS_CHECK_SCRIPT}")
+  end
+
+  result = system(CREDENTIALS_CHECK_SCRIPT)
+
+  unless result
+    UI.error("")
+    UI.error("🚨 SEGURANÇA: Credenciais hardcoded detectadas!")
+    UI.error("")
+    UI.error("   O build foi BLOQUEADO para proteger credenciais.")
+    UI.error("   Verifique login_screen.dart e use kDebugMode para credenciais de dev.")
+    UI.error("")
+    UI.user_error!("Build cancelado por segurança - corrija as credenciais hardcoded")
+  end
+
+  UI.success("✅ Verificação de segurança OK - nenhuma credencial exposta")
+end
+
+# ==========================================
 # ANDROID LANES
 # ==========================================
 
@@ -397,6 +428,9 @@ WHITE_LABEL_APP_PATH = File.expand_path('../../../white_label_app', __dir__)
 platform :android do
   desc "Build Android release AAB (uses Shorebird if configured)"
   lane :build do |options|
+    # Security check - block build if hardcoded credentials found
+    check_hardcoded_credentials!
+
     client_name = options[:client] || "demo"
     use_shorebird = options[:shorebird] != false # Default to true
 
@@ -889,6 +923,9 @@ platform :ios do
 
   desc "Build iOS release IPA (uses Shorebird if configured)"
   lane :build do |options|
+    # Security check - block build if hardcoded credentials found
+    check_hardcoded_credentials!
+
     client_name = options[:client] || "demo"
     use_shorebird = options[:shorebird] != false # Default to true
 
