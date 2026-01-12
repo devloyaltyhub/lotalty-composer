@@ -206,6 +206,7 @@ class ClientCreationWizard {
         message: "Select features to enable for this client:",
         choices: [
           { name: "Delivery", value: "delivery", checked: false },
+          { name: "E-commerce", value: "ecommerce", checked: true },
           { name: "Happy Hour", value: "happyHour", checked: true },
           { name: "Campaigns", value: "campaigns", checked: true },
           { name: "Store Hours", value: "storeHours", checked: true },
@@ -218,6 +219,7 @@ class ClientCreationWizard {
           { name: "Clarity Analytics", value: "clarity", checked: true },
           { name: "Our Story", value: "ourStory", checked: true },
           { name: "Events", value: "events", checked: true },
+          { name: "Team", value: "team", checked: true },
         ],
       },
       {
@@ -240,6 +242,7 @@ class ClientCreationWizard {
     // Convert feature flags array to object
     const featureFlagsObject = {
       delivery: answers.featureFlags.includes("delivery"),
+      ecommerce: answers.featureFlags.includes("ecommerce"),
       happyHour: answers.featureFlags.includes("happyHour"),
       campaigns: answers.featureFlags.includes("campaigns"),
       storeHours: answers.featureFlags.includes("storeHours"),
@@ -248,6 +251,7 @@ class ClientCreationWizard {
       clarity: answers.featureFlags.includes("clarity"),
       ourStory: answers.featureFlags.includes("ourStory"),
       events: answers.featureFlags.includes("events"),
+      team: answers.featureFlags.includes("team"),
     };
     answers.featureFlags = featureFlagsObject;
 

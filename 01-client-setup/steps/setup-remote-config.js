@@ -88,6 +88,10 @@ class RemoteConfigSetup {
       featureFlags.delivery ? "true" : "false",
     );
     templateStr = templateStr.replace(
+      "{{ECOMMERCE}}",
+      featureFlags.ecommerce ? "true" : "false",
+    );
+    templateStr = templateStr.replace(
       "{{HAPPY_HOUR}}",
       featureFlags.happyHour ? "true" : "false",
     );
