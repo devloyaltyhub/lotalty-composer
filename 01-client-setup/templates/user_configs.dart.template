@@ -4,7 +4,9 @@
 // Fonte: clients/{{clientCode}}/config.json
 // ============================================================================
 
-enum BusinessType { coffee, beer, sportfood }
+import 'package:loyalty_core/loyalty_core.dart' show BusinessType;
+
+export 'package:loyalty_core/loyalty_core.dart' show BusinessType;
 
 class UserConfigs {
   UserConfigs._();
