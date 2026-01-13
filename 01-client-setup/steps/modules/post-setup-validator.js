@@ -1,9 +1,9 @@
 const fs = require('fs');
 const path = require('path');
+const { WHITE_LABEL_APP_ROOT } = require('../../../shared/utils/paths');
 
-// Constants
-// From: 01-client-setup/steps/modules/ -> ../../../../loyalty-app
-const TARGET_ROOT = path.join(__dirname, '../../../../loyalty-app');
+// Constants - use centralized path
+const TARGET_ROOT = WHITE_LABEL_APP_ROOT;
 
 /**
  * Post-setup validation module

@@ -7,6 +7,7 @@ const templateGen = require('./modules/template-generator');
 const keystoreOps = require('./modules/keystore-operations');
 const iosOps = require('./modules/ios-operations');
 const postSetupValidator = require('./modules/post-setup-validator');
+const firebaseOptionsGenerator = require('./modules/firebase-options-generator');
 const {
   COMPOSE_ROOT,
   LOYALTY_APP_ROOT,
@@ -354,10 +355,13 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
     console.log(`  ✅ firebase_options.dart copiado para lib/ (de ${relativePath})`);
     copied++;
   } else {
-    // Try to generate firebase_options.dart automatically if we have a projectId
+    // Try to generate firebase_options.dart automatically
+    console.log(`  ⚠️  firebase_options.dart não encontrado, tentando gerar automaticamente...`);
+    let generated = false;
+
+    // First, try using FlutterFire CLI if we have a projectId
     const projectId = clientConfig.firebaseOptions?.projectId;
     if (projectId) {
-      console.log(`  ⚠️  firebase_options.dart não encontrado, gerando automaticamente...`);
       try {
         const { execSync } = require('child_process');
         execSync(`flutterfire configure --project=${projectId} --out=lib/firebase_options.dart --yes`, {
@@ -365,7 +369,7 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
           stdio: 'inherit',
           timeout: 180000, // 3 minutes
         });
-        console.log('  ✅ firebase_options.dart gerado automaticamente');
+        console.log('  ✅ firebase_options.dart gerado via FlutterFire CLI');
 
         // Copy the generated file to the client folder for future use
         if (fs.existsSync(dartDest)) {
@@ -376,12 +380,33 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
           fs.copyFileSync(dartDest, path.join(clientLibDir, 'firebase_options.dart'));
           console.log('  ✅ firebase_options.dart salvo na pasta do cliente para uso futuro');
         }
+        generated = true;
         copied++;
-      } catch (error) {
-        console.error(`  ❌ Falha ao gerar firebase_options.dart: ${error.message}`);
-        missing.push('lib/firebase_options.dart');
+      } catch (flutterfireError) {
+        console.log(`  ⚠️  FlutterFire CLI falhou: ${flutterfireError.message}`);
+        console.log('  🔄 Tentando gerar a partir dos arquivos de configuração existentes...');
       }
-    } else {
+    }
+
+    // Fallback: generate from existing google-services.json and GoogleService-Info.plist
+    if (!generated) {
+      const bundleId = clientConfig.bundleId || clientConfig.packageName;
+      const clientName = clientConfig.clientName || clientCode;
+
+      if (bundleId) {
+        generated = firebaseOptionsGenerator.generateFirebaseOptionsFromConfigs(
+          clientDir,
+          TARGET_ROOT,
+          bundleId,
+          clientName
+        );
+        if (generated) {
+          copied++;
+        }
+      }
+    }
+
+    if (!generated) {
       missing.push('lib/firebase_options.dart');
     }
   }

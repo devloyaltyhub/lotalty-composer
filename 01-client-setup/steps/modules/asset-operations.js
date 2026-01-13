@@ -93,7 +93,7 @@ function runAssetValidation(businessType, projectRoot) {
     console.log('📋 Checking required assets and copying missing ones...');
     const validateAssetsScript = path.join(
       projectRoot,
-      'automation/shared/validators/asset-validator.js'
+      'shared/validators/asset-validator.js'
     );
 
     execSync(
@@ -156,7 +156,7 @@ function optimizeLottieAnimations(projectRoot) {
   console.log('✨ Optimizing Lottie animations...');
 
   try {
-    const animationsPath = path.join(projectRoot, 'automation/shared/shared_assets/animations');
+    const animationsPath = path.join(projectRoot, 'shared/shared_assets/animations');
 
     if (!fs.existsSync(animationsPath)) {
       console.log('⚠️ Animations directory not found, skipping optimization');
@@ -236,7 +236,7 @@ function runFinalAssetValidation(businessType, projectRoot) {
     const validatedBusinessType = validateBusinessTypeKey(businessType, 'businessType');
     const validateAssetsScript = path.join(
       projectRoot,
-      'automation/shared/validators/asset-validator.js'
+      'shared/validators/asset-validator.js'
     );
     execSync(`node "${validateAssetsScript}" --business-type "${validatedBusinessType}" --strict`, {
       stdio: 'inherit',
