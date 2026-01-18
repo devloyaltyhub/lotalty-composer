@@ -127,6 +127,10 @@ class RemoteConfigSetup {
       "{{TEAM}}",
       featureFlags.team ? "true" : "false",
     );
+    templateStr = templateStr.replace(
+      "{{BIRTHDAY_BONUS}}",
+      featureFlags.birthdayBonus ? "true" : "false",
+    );
 
     // Replace Clarity Project ID
     templateStr = templateStr.replace(

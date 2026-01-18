@@ -224,6 +224,15 @@ class AdminWebBuilder {
   buildWeb() {
     logger.info('Building Flutter Web...');
 
+    // SAFETY: Remove any stray .git in build/web BEFORE flutter clean
+    // flutter clean doesn't remove .git directories, so we must do it manually
+    // This can happen if GitHub Pages repo was accidentally cloned/copied there
+    const strayGit = path.join(this.buildOutput, '.git');
+    if (fs.existsSync(strayGit)) {
+      logger.warn('Found stray .git in build/web - removing to prevent build corruption');
+      fs.removeSync(strayGit);
+    }
+
     // Clean previous build
     logger.info('Cleaning previous build...');
     this.exec('flutter clean');
@@ -312,9 +321,13 @@ class AdminWebBuilder {
       }
     }
 
-    // Copy build output
+    // Copy build output (excluding .git if it somehow exists)
     const buildFiles = fs.readdirSync(this.buildOutput);
     for (const file of buildFiles) {
+      if (file === '.git') {
+        logger.warn('Skipping .git found in build output (should not exist)');
+        continue;
+      }
       const src = path.join(this.buildOutput, file);
       const dest = path.join(this.webRepo, file);
       fs.copySync(src, dest);
