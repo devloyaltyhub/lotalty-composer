@@ -259,6 +259,19 @@ Gradient Choices:
         help='Skip adding logo to mockups'
     )
 
+    mockups_parser.add_argument(
+        '--recreate',
+        type=str,
+        help='Screenshot names to regenerate (comma-separated). Ex: 01_home,02_products'
+    )
+
+    mockups_parser.add_argument(
+        '--recreate-platform',
+        choices=['all', 'iphone', 'ipad', 'gplay_phone', 'gplay_tablet'],
+        default='all',
+        help='Platform to regenerate when using --recreate (default: all)'
+    )
+
     # =====================================
     # PIPELINE SUBCOMMAND
     # =====================================
@@ -358,6 +371,19 @@ Examples:
         help='Skip adding logo to mockups'
     )
 
+    mockup_group.add_argument(
+        '--recreate',
+        type=str,
+        help='Screenshot names to regenerate (comma-separated). Ex: 01_home,02_products'
+    )
+
+    mockup_group.add_argument(
+        '--recreate-platform',
+        choices=['all', 'iphone', 'ipad', 'gplay_phone', 'gplay_tablet'],
+        default='all',
+        help='Platform to regenerate when using --recreate (default: all)'
+    )
+
     return parser
 
 
@@ -396,13 +422,21 @@ def cmd_mockups(args: argparse.Namespace) -> int:
     if args.no_gplay or args.apple_only:
         generate_gplay = False
 
+    recreate_list = []
+    if hasattr(args, 'recreate') and args.recreate:
+        recreate_list = [s.strip() for s in args.recreate.split(',')]
+
+    recreate_platform = getattr(args, 'recreate_platform', 'all') or 'all'
+
     generator = MockupGenerator(
         project_config=project_config,
         screenshots_dir=args.screenshots_dir,
         output_dir=args.output_dir,
         templates_dir=args.templates_dir,
         generate_ipad=generate_ipad,
-        generate_gplay=generate_gplay
+        generate_gplay=generate_gplay,
+        recreate_list=recreate_list,
+        recreate_platform=recreate_platform
     )
     return generator.generate()
 
@@ -426,6 +460,12 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
     if args.no_gplay or args.apple_only:
         generate_gplay = False
 
+    recreate_list = []
+    if hasattr(args, 'recreate') and args.recreate:
+        recreate_list = [s.strip() for s in args.recreate.split(',')]
+
+    recreate_platform = getattr(args, 'recreate_platform', 'all') or 'all'
+
     pipeline = ScreenshotPipeline(
         project_config=project_config,
         device=args.device,
@@ -434,7 +474,9 @@ def cmd_pipeline(args: argparse.Namespace) -> int:
         device_choice=args.device_choice,
         gradient_choice=args.gradient_choice,
         generate_ipad=generate_ipad,
-        generate_gplay=generate_gplay
+        generate_gplay=generate_gplay,
+        recreate_list=recreate_list,
+        recreate_platform=recreate_platform
     )
     return pipeline.run()
 

@@ -48,7 +48,9 @@ class ScreenshotPipeline:
         device_choice: Optional[int] = None,
         gradient_choice: Optional[int] = None,
         generate_ipad: Optional[bool] = None,
-        generate_gplay: Optional[bool] = None
+        generate_gplay: Optional[bool] = None,
+        recreate_list: Optional[list] = None,
+        recreate_platform: str = 'all'
     ):
         """
         Initialize screenshot pipeline
@@ -62,6 +64,8 @@ class ScreenshotPipeline:
             gradient_choice: Gradient style choice (0-6)
             generate_ipad: Whether to generate iPad screenshots (None = use project default)
             generate_gplay: Whether to generate Google Play screenshots (None = use project default)
+            recreate_list: List of screenshot names to force regenerate
+            recreate_platform: Platform to regenerate ('all', 'iphone', 'ipad', 'gplay_phone', 'gplay_tablet')
         """
         self.logger = logging.getLogger(__name__)
 
@@ -99,7 +103,9 @@ class ScreenshotPipeline:
         self.mockup_cmd = MockupGenerator(
             project_config=self.project_config,
             generate_ipad=self.generate_ipad,
-            generate_gplay=self.generate_gplay
+            generate_gplay=self.generate_gplay,
+            recreate_list=recreate_list or [],
+            recreate_platform=recreate_platform
         )
 
     def _load_primary_color_from_config(self) -> None:

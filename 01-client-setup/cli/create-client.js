@@ -220,7 +220,7 @@ class ClientCreationWizard {
           { name: "Our Story", value: "ourStory", checked: true },
           { name: "Events", value: "events", checked: true },
           { name: "Team", value: "team", checked: true },
-          { name: "Birthday Bonus", value: "birthdayBonus", checked: false },
+          { name: "Birthday Bonus", value: "birthday", checked: false },
         ],
       },
       {
@@ -253,7 +253,7 @@ class ClientCreationWizard {
       ourStory: answers.featureFlags.includes("ourStory"),
       events: answers.featureFlags.includes("events"),
       team: answers.featureFlags.includes("team"),
-      birthdayBonus: answers.featureFlags.includes("birthdayBonus"),
+      birthday: answers.featureFlags.includes("birthday"),
     };
     answers.featureFlags = featureFlagsObject;
 

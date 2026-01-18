@@ -125,6 +125,167 @@ class DeviceType:
         return devices[choice]
 
 
+class CheckpointManager:
+    """
+    Manages checkpoint state for resume functionality.
+
+    Saves progress after each screenshot/platform is processed,
+    allowing the script to resume from where it left off if interrupted.
+    """
+
+    CHECKPOINT_FILE = ".mockups_progress.json"
+    VERSION = 1
+
+    # Console colors
+    CYAN = '\033[0;36m'
+    YELLOW = '\033[1;33m'
+    GREEN = '\033[0;32m'
+    NC = '\033[0m'
+
+    def __init__(self, output_dir: Path):
+        self.output_dir = output_dir
+        self.checkpoint_path = output_dir / self.CHECKPOINT_FILE
+        self.state: Optional[dict] = None
+        self.logger = logging.getLogger(__name__)
+
+    def exists(self) -> bool:
+        """Check if a checkpoint file exists"""
+        return self.checkpoint_path.exists()
+
+    def load(self) -> Optional[dict]:
+        """Load checkpoint from file"""
+        if not self.exists():
+            return None
+
+        try:
+            with open(self.checkpoint_path, 'r') as f:
+                self.state = json.load(f)
+                return self.state
+        except (json.JSONDecodeError, IOError) as e:
+            self.logger.warning(f"Failed to load checkpoint: {e}")
+            return None
+
+    def save(self) -> None:
+        """Save current state to checkpoint file"""
+        if self.state is None:
+            return
+
+        try:
+            self.state['last_updated'] = self._now()
+            self.output_dir.mkdir(parents=True, exist_ok=True)
+            with open(self.checkpoint_path, 'w') as f:
+                json.dump(self.state, f, indent=2)
+        except IOError as e:
+            self.logger.warning(f"Failed to save checkpoint: {e}")
+
+    def initialize(self, config: dict) -> None:
+        """Initialize a new checkpoint with config"""
+        self.state = {
+            'version': self.VERSION,
+            'started_at': self._now(),
+            'config': config,
+            'screenshots': {},
+            'last_updated': self._now()
+        }
+        self.save()
+
+    def mark_platform_complete(self, screenshot_name: str, platform: str) -> None:
+        """Mark a specific platform for a screenshot as complete"""
+        if self.state is None:
+            return
+
+        if screenshot_name not in self.state['screenshots']:
+            self.state['screenshots'][screenshot_name] = {}
+
+        self.state['screenshots'][screenshot_name][platform] = True
+        self.save()
+
+    def is_platform_complete(self, screenshot_name: str, platform: str) -> bool:
+        """Check if a specific platform for a screenshot is already complete"""
+        if self.state is None:
+            return False
+
+        return self.state.get('screenshots', {}).get(screenshot_name, {}).get(platform, False)
+
+    def is_screenshot_complete(self, screenshot_name: str, platforms: List[str]) -> bool:
+        """Check if all platforms for a screenshot are complete"""
+        if self.state is None:
+            return False
+
+        screenshot_state = self.state.get('screenshots', {}).get(screenshot_name, {})
+        return all(screenshot_state.get(p, False) for p in platforms)
+
+    def get_pending_platforms(self, screenshot_name: str, platforms: List[str]) -> List[str]:
+        """Get list of platforms that still need processing for a screenshot"""
+        if self.state is None:
+            return platforms
+
+        screenshot_state = self.state.get('screenshots', {}).get(screenshot_name, {})
+        return [p for p in platforms if not screenshot_state.get(p, False)]
+
+    def clear(self) -> None:
+        """Remove checkpoint file (call when successfully completed)"""
+        if self.checkpoint_path.exists():
+            try:
+                self.checkpoint_path.unlink()
+                self.state = None
+            except IOError as e:
+                self.logger.warning(f"Failed to remove checkpoint: {e}")
+
+    def get_progress_summary(self) -> str:
+        """Get a human-readable progress summary"""
+        if self.state is None:
+            return "Nenhum progresso salvo"
+
+        screenshots = self.state.get('screenshots', {})
+        total_complete = sum(
+            1 for s in screenshots.values()
+            if all(v for v in s.values())
+        )
+        return f"{total_complete} screenshots completos"
+
+    def prompt_resume(self) -> bool:
+        """
+        Prompt user whether to resume from checkpoint or start fresh.
+
+        Returns:
+            True to resume, False to start fresh
+        """
+        if not self.exists():
+            return False
+
+        checkpoint = self.load()
+        if not checkpoint:
+            return False
+
+        print()
+        print(f"{self.CYAN}╔═══════════════════════════════════════════╗{self.NC}")
+        print(f"{self.CYAN}║     📋 Checkpoint encontrado!             ║{self.NC}")
+        print(f"{self.CYAN}╚═══════════════════════════════════════════╝{self.NC}")
+        print()
+        print(f"   Iniciado em: {self.YELLOW}{checkpoint.get('started_at', 'N/A')}{self.NC}")
+        print(f"   Atualizado em: {self.YELLOW}{checkpoint.get('last_updated', 'N/A')}{self.NC}")
+        print(f"   Progresso: {self.YELLOW}{self.get_progress_summary()}{self.NC}")
+        print()
+
+        if sys.stdin.isatty():
+            try:
+                choice = input("Continuar de onde parou? (S/N) [padrão: S]: ").strip().lower()
+                if choice in ('n', 'nao', 'não', 'no'):
+                    self.clear()
+                    return False
+                return True
+            except (ValueError, KeyboardInterrupt):
+                return True
+        else:
+            return True
+
+    def _now(self) -> str:
+        """Get current timestamp as ISO string"""
+        from datetime import datetime
+        return datetime.now().isoformat()
+
+
 class MockupGenerator:
     """
     Generates mockups from screenshots.
@@ -158,7 +319,9 @@ class MockupGenerator:
         templates_dir: Optional[Path] = None,
         generate_ipad: Optional[bool] = None,
         generate_gplay: Optional[bool] = None,
-        generate_feature_graphic: Optional[bool] = None
+        generate_feature_graphic: Optional[bool] = None,
+        recreate_list: Optional[List[str]] = None,
+        recreate_platform: str = 'all'
     ):
         """
         Initialize mockup generator
@@ -172,8 +335,14 @@ class MockupGenerator:
             generate_ipad: Whether to generate iPad versions (None = use project default)
             generate_gplay: Whether to generate Google Play versions (None = use project default)
             generate_feature_graphic: Whether to generate Feature Graphic (None = use project default)
+            recreate_list: List of screenshot names to force regenerate (ignores checkpoint)
+            recreate_platform: Platform to regenerate ('all', 'iphone', 'ipad', 'gplay_phone', 'gplay_tablet')
         """
         self.logger = logging.getLogger(__name__)
+
+        # Recreate flags
+        self.recreate_list = recreate_list or []
+        self.recreate_platform = recreate_platform
 
         # Use project config or create default (loyalty-app)
         self.project_config = project_config or LoyaltyAppConfig()
@@ -224,6 +393,9 @@ class MockupGenerator:
 
         # Initialize ImageMagick service
         self.imagemagick = ImageMagickService()
+
+        # Initialize checkpoint manager (will be set up in generate())
+        self.checkpoint: Optional[CheckpointManager] = None
 
     def _load_primary_color_from_config(self) -> None:
         """
@@ -414,6 +586,45 @@ class MockupGenerator:
 
         self.logger.debug(f"Transparent logo not found at: {logo_path}")
         return None
+
+    def _should_process_platform(self, screenshot_name: str, platform: str) -> bool:
+        """
+        Check if a platform should be processed for a screenshot.
+
+        Args:
+            screenshot_name: Name of the screenshot (without extension)
+            platform: Platform name ('iphone', 'ipad', 'gplay_phone', 'gplay_tablet')
+
+        Returns:
+            True if platform should be processed, False to skip
+        """
+        if screenshot_name in self.recreate_list:
+            if self.recreate_platform == 'all' or self.recreate_platform == platform:
+                return True
+
+        if self.checkpoint and self.checkpoint.is_platform_complete(screenshot_name, platform):
+            return False
+
+        return True
+
+    def _delete_existing_mockup(self, screenshot_name: str, platform: str) -> None:
+        """Delete existing mockup file before regenerating"""
+        platform_dirs = {
+            'iphone': self.iphone_output_dir,
+            'ipad': self.ipad_output_dir,
+            'gplay_phone': self.gplay_phone_output_dir,
+            'gplay_tablet': self.gplay_tablet_output_dir
+        }
+
+        output_dir = platform_dirs.get(platform)
+        if output_dir:
+            mockup_path = output_dir / f"{screenshot_name}_mockup.png"
+            if mockup_path.exists():
+                try:
+                    mockup_path.unlink()
+                    self.logger.debug(f"Deleted existing mockup: {mockup_path}")
+                except IOError as e:
+                    self.logger.warning(f"Failed to delete {mockup_path}: {e}")
 
     def _generate_feature_graphic(
         self,
@@ -707,79 +918,110 @@ class MockupGenerator:
         if bottom_logo_path:
             print(f"   🏷️  Logo inferior: {bottom_logo_path.name}")
 
+        is_recreate = name in self.recreate_list
+
         try:
             # === APPLE IPHONE MOCKUP ===
             if self.generate_iphone:
-                # Step 1: Generate flat mockup (screenshot with rounded corners)
-                print("   🍎 iPhone 6.7\": Aplicando cantos arredondados + curvas decorativas...")
-                self._generate_flat_mockup(screenshot_path, template_slug, temp_flat)
+                if not self._should_process_platform(name, 'iphone'):
+                    print(f"   {self.CYAN}⏭️{self.NC}  iPhone 6.7\": Ja processado (pulando)")
+                    results['iphone'] = True
+                else:
+                    if is_recreate:
+                        self._delete_existing_mockup(name, 'iphone')
+                    print("   🍎 iPhone 6.7\": Aplicando cantos arredondados + curvas decorativas...")
+                    self._generate_flat_mockup(screenshot_path, template_slug, temp_flat)
 
-                # Step 2: Apply gradient background with decorative curves (and optional top image/bottom logo)
-                self.imagemagick.create_iphone_mockup_with_curves(
-                    flat_mockup_path=temp_flat,
-                    output_path=iphone_output,
-                    gradient_start=gradient_start,
-                    gradient_end=gradient_end,
-                    seed=curve_seed,
-                    top_image_path=top_image_path,
-                    bottom_logo_path=bottom_logo_path
-                )
+                    self.imagemagick.create_iphone_mockup_with_curves(
+                        flat_mockup_path=temp_flat,
+                        output_path=iphone_output,
+                        gradient_start=gradient_start,
+                        gradient_end=gradient_end,
+                        seed=curve_seed,
+                        top_image_path=top_image_path,
+                        bottom_logo_path=bottom_logo_path
+                    )
 
-                size_mb = iphone_output.stat().st_size / (1024 * 1024)
-                print(f"   {self.GREEN}✅{self.NC} iPhone 6.7\" (1290x2796) - {size_mb:.2f} MB")
-                results['iphone'] = True
+                    size_mb = iphone_output.stat().st_size / (1024 * 1024)
+                    print(f"   {self.GREEN}✅{self.NC} iPhone 6.7\" (1290x2796) - {size_mb:.2f} MB")
+                    results['iphone'] = True
+                    if self.checkpoint:
+                        self.checkpoint.mark_platform_complete(name, 'iphone')
 
             # === GOOGLE PLAY PHONE MOCKUP ===
-            # Google Play prohibits device frames - create clean screenshot with curves
             if self.generate_gplay:
-                print("   🤖 Google Play Phone: Criando versão sem frame + curvas...")
-                self.imagemagick.create_google_play_phone_screenshot_with_curves(
-                    input_path=screenshot_path,
-                    output_path=gplay_phone_output,
-                    gradient_start=gradient_start,
-                    gradient_end=gradient_end,
-                    seed=curve_seed,
-                    top_image_path=top_image_path,
-                    bottom_logo_path=bottom_logo_path
-                )
+                if not self._should_process_platform(name, 'gplay_phone'):
+                    print(f"   {self.CYAN}⏭️{self.NC}  GPlay Phone: Ja processado (pulando)")
+                    results['gplay_phone'] = True
+                else:
+                    if is_recreate:
+                        self._delete_existing_mockup(name, 'gplay_phone')
+                    print("   🤖 Google Play Phone: Criando versão sem frame + curvas...")
+                    self.imagemagick.create_google_play_phone_screenshot_with_curves(
+                        input_path=screenshot_path,
+                        output_path=gplay_phone_output,
+                        gradient_start=gradient_start,
+                        gradient_end=gradient_end,
+                        seed=curve_seed,
+                        top_image_path=top_image_path,
+                        bottom_logo_path=bottom_logo_path
+                    )
 
-                size_mb = gplay_phone_output.stat().st_size / (1024 * 1024)
-                print(f"   {self.GREEN}✅{self.NC} GPlay Phone (1080x1920) - {size_mb:.2f} MB")
-                results['gplay_phone'] = True
+                    size_mb = gplay_phone_output.stat().st_size / (1024 * 1024)
+                    print(f"   {self.GREEN}✅{self.NC} GPlay Phone (1080x1920) - {size_mb:.2f} MB")
+                    results['gplay_phone'] = True
+                    if self.checkpoint:
+                        self.checkpoint.mark_platform_complete(name, 'gplay_phone')
 
             # === APPLE IPAD MOCKUP ===
             if self.generate_ipad:
-                print("   🍎 iPad 12.9\": Criando versão tablet + curvas...")
-                self.imagemagick.create_ipad_screenshot_with_curves(
-                    input_path=screenshot_path,
-                    output_path=ipad_output,
-                    gradient_start=gradient_start,
-                    gradient_end=gradient_end,
-                    seed=curve_seed,
-                    top_image_path=top_image_path,
-                    bottom_logo_path=bottom_logo_path
-                )
+                if not self._should_process_platform(name, 'ipad'):
+                    print(f"   {self.CYAN}⏭️{self.NC}  iPad 12.9\": Ja processado (pulando)")
+                    results['ipad'] = True
+                else:
+                    if is_recreate:
+                        self._delete_existing_mockup(name, 'ipad')
+                    print("   🍎 iPad 12.9\": Criando versão tablet + curvas...")
+                    self.imagemagick.create_ipad_screenshot_with_curves(
+                        input_path=screenshot_path,
+                        output_path=ipad_output,
+                        gradient_start=gradient_start,
+                        gradient_end=gradient_end,
+                        seed=curve_seed,
+                        top_image_path=top_image_path,
+                        bottom_logo_path=bottom_logo_path
+                    )
 
-                size_mb = ipad_output.stat().st_size / (1024 * 1024)
-                print(f"   {self.GREEN}✅{self.NC} iPad 12.9\" (2048x2732) - {size_mb:.2f} MB")
-                results['ipad'] = True
+                    size_mb = ipad_output.stat().st_size / (1024 * 1024)
+                    print(f"   {self.GREEN}✅{self.NC} iPad 12.9\" (2048x2732) - {size_mb:.2f} MB")
+                    results['ipad'] = True
+                    if self.checkpoint:
+                        self.checkpoint.mark_platform_complete(name, 'ipad')
 
             # === GOOGLE PLAY TABLET MOCKUP ===
             if self.generate_gplay:
-                print("   🤖 Google Play Tablet: Criando versão tablet + curvas...")
-                self.imagemagick.create_google_play_tablet_screenshot_with_curves(
-                    input_path=screenshot_path,
-                    output_path=gplay_tablet_output,
-                    gradient_start=gradient_start,
-                    gradient_end=gradient_end,
-                    seed=curve_seed,
-                    top_image_path=top_image_path,
-                    bottom_logo_path=bottom_logo_path
-                )
+                if not self._should_process_platform(name, 'gplay_tablet'):
+                    print(f"   {self.CYAN}⏭️{self.NC}  GPlay Tablet: Ja processado (pulando)")
+                    results['gplay_tablet'] = True
+                else:
+                    if is_recreate:
+                        self._delete_existing_mockup(name, 'gplay_tablet')
+                    print("   🤖 Google Play Tablet: Criando versão tablet + curvas...")
+                    self.imagemagick.create_google_play_tablet_screenshot_with_curves(
+                        input_path=screenshot_path,
+                        output_path=gplay_tablet_output,
+                        gradient_start=gradient_start,
+                        gradient_end=gradient_end,
+                        seed=curve_seed,
+                        top_image_path=top_image_path,
+                        bottom_logo_path=bottom_logo_path
+                    )
 
-                size_mb = gplay_tablet_output.stat().st_size / (1024 * 1024)
-                print(f"   {self.GREEN}✅{self.NC} GPlay Tablet (1600x2560) - {size_mb:.2f} MB")
-                results['gplay_tablet'] = True
+                    size_mb = gplay_tablet_output.stat().st_size / (1024 * 1024)
+                    print(f"   {self.GREEN}✅{self.NC} GPlay Tablet (1600x2560) - {size_mb:.2f} MB")
+                    results['gplay_tablet'] = True
+                    if self.checkpoint:
+                        self.checkpoint.mark_platform_complete(name, 'gplay_tablet')
 
             print()
 
@@ -884,12 +1126,44 @@ class MockupGenerator:
             if self.generate_feature_graphic:
                 self.feature_graphic_output_dir.mkdir(parents=True, exist_ok=True)
 
-            # Get user choices
-            device_type, device_name, template_slug = self._prompt_device_choice()
-            style_name, gradient_start, gradient_end = self._prompt_gradient_choice()
+            # Initialize checkpoint manager
+            self.checkpoint = CheckpointManager(self.output_dir)
 
-            # Ask if user wants to add logo
-            add_logo = self._prompt_logo_choice()
+            # Check for existing checkpoint (resume functionality)
+            is_resuming = False
+            if self.checkpoint.exists() and not self.recreate_list:
+                is_resuming = self.checkpoint.prompt_resume()
+
+            # Get user choices (or load from checkpoint if resuming)
+            if is_resuming and self.checkpoint.state:
+                saved_config = self.checkpoint.state.get('config', {})
+                device_choice = saved_config.get('device_choice', 1)
+                gradient_choice = saved_config.get('gradient_choice', 0)
+                add_logo = saved_config.get('add_logo', True)
+
+                device_type, device_name, template_slug = DeviceType.get_by_choice(device_choice)
+
+                if gradient_choice == 0:
+                    self._load_primary_color_from_config()
+                style_name, gradient_start, gradient_end = GradientStyle.get_by_index(gradient_choice)
+
+                self._print_info(f"Retomando com configuração salva: {device_name}, {style_name}")
+            else:
+                device_type, device_name, template_slug = self._prompt_device_choice()
+                style_name, gradient_start, gradient_end = self._prompt_gradient_choice()
+                add_logo = self._prompt_logo_choice()
+
+                device_choice = 1 if template_slug == 'iphone15promax' else 2
+                gradient_choice = int(os.getenv('GRADIENT_CHOICE', '0'))
+
+                self.checkpoint.initialize({
+                    'device_choice': device_choice,
+                    'gradient_choice': gradient_choice,
+                    'add_logo': add_logo,
+                    'generate_iphone': self.generate_iphone,
+                    'generate_ipad': self.generate_ipad,
+                    'generate_gplay': self.generate_gplay
+                })
 
             # Find transparent logo for bottom-right branding (only if user wants it)
             bottom_logo_path = None
@@ -977,6 +1251,11 @@ class MockupGenerator:
             if total_mockups == 0:
                 self._print_error("Nenhum mockup foi criado com sucesso!")
                 return 1
+
+            # Clear checkpoint on success
+            if self.checkpoint:
+                self.checkpoint.clear()
+                self._print_success("Checkpoint removido (processo concluído)")
 
             return 0
 
