@@ -1,3 +1,6 @@
+/* eslint-disable no-dupe-class-members */
+// TODO: Revisar métodos duplicados: buildUrlMappingFromStorage e configureTestUser
+// Existem duas implementações de cada método - a segunda sobrescreve a primeira
 const fs = require('fs');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');

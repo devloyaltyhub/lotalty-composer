@@ -172,82 +172,72 @@ class FirebaseClient {
 
   // Internal method to actually initialize client
   async _initializeClient(clientCode, firebaseOptions, customCredentialsPath = null) {
-    return new Promise(async (resolve, reject) => {
-      // Double-check in case another thread finished while we were waiting
-      if (this.apps.has(clientCode)) {
-        this.lastUsed.set(clientCode, Date.now()); // Update last used time
-        resolve(this.apps.get(clientCode));
-        return;
+    // Double-check in case another thread finished while we were waiting
+    if (this.apps.has(clientCode)) {
+      this.lastUsed.set(clientCode, Date.now()); // Update last used time
+      return this.apps.get(clientCode);
+    }
+
+    // Check if we need to evict a connection to make room
+    if (this.apps.size >= this.maxConnections) {
+      await this._evictLRU();
+    }
+
+    // Determine which service account to use
+    let serviceAccountPath;
+
+    if (customCredentialsPath) {
+      // Use custom credentials (client-specific service account)
+      serviceAccountPath = customCredentialsPath;
+      logger.info(`Using client-specific service account for ${clientCode}`);
+    } else {
+      // Fall back to master service account (old behavior for backward compatibility)
+      serviceAccountPath =
+        process.env.MASTER_FIREBASE_SERVICE_ACCOUNT ||
+        process.env.GOOGLE_APPLICATION_CREDENTIALS;
+
+      if (!serviceAccountPath) {
+        throw new Error(
+          'MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set'
+        );
       }
 
-      try {
-        // Check if we need to evict a connection to make room
-        if (this.apps.size >= this.maxConnections) {
-          await this._evictLRU();
-        }
+      logger.warn(`Using master service account for ${clientCode} (may cause auth issues)`);
+    }
 
-        // Determine which service account to use
-        let serviceAccountPath;
+    // Resolve path relative to automation root
+    const path = require('path');
+    const automationRoot = path.resolve(__dirname, '../..');
 
-        if (customCredentialsPath) {
-          // Use custom credentials (client-specific service account)
-          serviceAccountPath = customCredentialsPath;
-          logger.info(`Using client-specific service account for ${clientCode}`);
-        } else {
-          // Fall back to master service account (old behavior for backward compatibility)
-          serviceAccountPath =
-            process.env.MASTER_FIREBASE_SERVICE_ACCOUNT ||
-            process.env.GOOGLE_APPLICATION_CREDENTIALS;
-
-          if (!serviceAccountPath) {
-            reject(
-              new Error(
-                'MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set'
-              )
-            );
-            return;
-          }
-
-          logger.warn(`Using master service account for ${clientCode} (may cause auth issues)`);
-        }
-
-        // Resolve path relative to automation root
-        const path = require('path');
-        const automationRoot = path.resolve(__dirname, '../..');
-
-        // Expand environment variables like $HOME, $USER, etc.
-        serviceAccountPath = serviceAccountPath.replace(
-          /\$([A-Z_][A-Z0-9_]*)/g,
-          (match, varName) => {
-            return process.env[varName] || match;
-          }
-        );
-
-        // If path is relative, resolve it from automation root
-        if (!path.isAbsolute(serviceAccountPath)) {
-          serviceAccountPath = path.resolve(automationRoot, serviceAccountPath);
-        }
-
-        const serviceAccount = require(serviceAccountPath);
-
-        const app = admin.initializeApp(
-          {
-            credential: admin.credential.cert(serviceAccount),
-            projectId: firebaseOptions.projectId,
-          },
-          `client-${clientCode}`
-        );
-
-        this.apps.set(clientCode, app);
-        this.lastUsed.set(clientCode, Date.now());
-        logger.info(
-          `Client Firebase initialized: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`
-        );
-        resolve(app);
-      } catch (error) {
-        reject(new Error(`Failed to initialize client Firebase: ${error.message}`));
+    // Expand environment variables like $HOME, $USER, etc.
+    serviceAccountPath = serviceAccountPath.replace(
+      /\$([A-Z_][A-Z0-9_]*)/g,
+      (match, varName) => {
+        return process.env[varName] || match;
       }
-    });
+    );
+
+    // If path is relative, resolve it from automation root
+    if (!path.isAbsolute(serviceAccountPath)) {
+      serviceAccountPath = path.resolve(automationRoot, serviceAccountPath);
+    }
+
+    const serviceAccount = require(serviceAccountPath);
+
+    const app = admin.initializeApp(
+      {
+        credential: admin.credential.cert(serviceAccount),
+        projectId: firebaseOptions.projectId,
+      },
+      `client-${clientCode}`
+    );
+
+    this.apps.set(clientCode, app);
+    this.lastUsed.set(clientCode, Date.now());
+    logger.info(
+      `Client Firebase initialized: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`
+    );
+    return app;
   }
 
   // Evict the least recently used connection
