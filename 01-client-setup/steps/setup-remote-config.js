@@ -1,6 +1,11 @@
 const fs = require("fs").promises;
 const path = require("path");
 const chalk = require("chalk");
+const {
+  replaceTemplateVariables,
+  getDefaultVersionarte,
+  sleep,
+} = require("../../shared/utils/remote-config-helpers");
 
 class RemoteConfigSetup {
   constructor(firebaseApp) {
@@ -23,19 +28,15 @@ class RemoteConfigSetup {
     console.log(chalk.blue("\n📡 Setting up Firebase Remote Config..."));
 
     try {
-      // Load the Remote Config template
       const template = await this.loadTemplate();
 
-      // Replace variables in the template
-      const processedTemplate = this.replaceVariables(template, {
+      const processedTemplate = replaceTemplateVariables(template, {
         featureFlags,
         clarityProjectId,
       });
 
-      // Publish the Remote Config template
       await this.publishTemplate(processedTemplate, clientCode);
 
-      // Validate the published configuration
       await this.validateRemoteConfig(featureFlags, clarityProjectId);
 
       console.log(chalk.green("✓ Remote Config setup completed successfully"));
@@ -43,7 +44,7 @@ class RemoteConfigSetup {
       return {
         featureFlags,
         clarityProjectId,
-        versionarte: this.getDefaultVersionarte(),
+        versionarte: getDefaultVersionarte(),
       };
     } catch (error) {
       console.error(
@@ -74,77 +75,9 @@ class RemoteConfigSetup {
   }
 
   /**
-   * Replace variables in the template
-   */
-  replaceVariables(template, config) {
-    const { featureFlags, clarityProjectId } = config;
-
-    // Convert template to string for replacement
-    let templateStr = JSON.stringify(template, null, 2);
-
-    // Replace feature flags
-    templateStr = templateStr.replace(
-      "{{DELIVERY}}",
-      featureFlags.delivery ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{ECOMMERCE}}",
-      featureFlags.ecommerce ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{HAPPY_HOUR}}",
-      featureFlags.happyHour ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{CAMPAIGNS}}",
-      featureFlags.campaigns ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{STORE_HOURS}}",
-      featureFlags.storeHours ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{PUSH_NOTIFICATIONS}}",
-      featureFlags.pushNotifications ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{SUGGESTION_BOX}}",
-      featureFlags.suggestionBox ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{CLARITY}}",
-      featureFlags.clarity ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{OUR_STORY}}",
-      featureFlags.ourStory ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{EVENTS}}",
-      featureFlags.events ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{TEAM}}",
-      featureFlags.team ? "true" : "false",
-    );
-    templateStr = templateStr.replace(
-      "{{BIRTHDAY}}",
-      featureFlags.birthday ? "true" : "false",
-    );
-
-    // Replace Clarity Project ID
-    templateStr = templateStr.replace(
-      "{{CLARITY_PROJECT_ID}}",
-      clarityProjectId,
-    );
-
-    return JSON.parse(templateStr);
-  }
-
-  /**
    * Publish the Remote Config template to Firebase
    */
-  async publishTemplate(template, clientCode) {
+  async publishTemplate(template, _clientCode) {
     const admin = require("firebase-admin");
 
     console.log(chalk.blue("  → Publishing Remote Config template..."));
@@ -152,17 +85,11 @@ class RemoteConfigSetup {
     try {
       const remoteConfig = admin.remoteConfig(this.app);
 
-      // Always get the current template (Firebase creates a blank one if it doesn't exist)
       let currentTemplate = await remoteConfig.getTemplate();
 
-      // Update the template with our parameters and conditions
       currentTemplate.parameters = template.parameters;
       currentTemplate.conditions = template.conditions || [];
 
-      // Don't set version - Firebase manages this automatically
-      // The version field in our template file is just for documentation
-
-      // Publish the template
       const publishedTemplate =
         await remoteConfig.publishTemplate(currentTemplate);
 
@@ -190,47 +117,18 @@ class RemoteConfigSetup {
     );
 
     const maxRetries = 5;
-    const retryDelay = 2000; // 2 seconds
+    const retryDelay = 2000;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         const remoteConfig = admin.remoteConfig(this.app);
         const template = await remoteConfig.getTemplate();
 
-        // Check if feature flags parameter exists
-        if (!template.parameters.featureFlags) {
-          throw new Error("featureFlags parameter not found");
-        }
+        this.validateTemplateParameters(template);
 
-        // Check if clarityProjectId parameter exists
-        if (!template.parameters.clarityProjectId) {
-          throw new Error("clarityProjectId parameter not found");
-        }
+        this.validateFeatureFlags(template, expectedFeatureFlags);
 
-        // Check if versionarte parameter exists
-        if (!template.parameters.versionarte) {
-          throw new Error("versionarte parameter not found");
-        }
-
-        // Parse and validate feature flags
-        const publishedFeatureFlags = JSON.parse(
-          template.parameters.featureFlags.defaultValue.value,
-        );
-
-        // Validate each feature flag
-        const featureFlagKeys = Object.keys(expectedFeatureFlags);
-        for (const key of featureFlagKeys) {
-          if (publishedFeatureFlags[key] !== expectedFeatureFlags[key]) {
-            throw new Error(`Feature flag mismatch for ${key}`);
-          }
-        }
-
-        // Validate Clarity Project ID
-        const publishedClarityId =
-          template.parameters.clarityProjectId.defaultValue.value;
-        if (publishedClarityId !== expectedClarityId) {
-          throw new Error("Clarity Project ID mismatch");
-        }
+        this.validateClarityProjectId(template, expectedClarityId);
 
         console.log(chalk.green("  ✓ Remote Config validated successfully"));
         return true;
@@ -241,7 +139,7 @@ class RemoteConfigSetup {
               `  ⚠ Validation attempt ${attempt}/${maxRetries} failed, retrying...`,
             ),
           );
-          await this.sleep(retryDelay);
+          await sleep(retryDelay);
         } else {
           console.log(
             chalk.yellow(
@@ -260,44 +158,47 @@ class RemoteConfigSetup {
   }
 
   /**
-   * Get default versionarte configuration
+   * Validate required template parameters exist
    */
-  getDefaultVersionarte() {
-    return {
-      android: {
-        version: {
-          minimum: "1.0.0",
-          latest: "0.0.1",
-        },
-        download_url: "",
-        status: {
-          active: true,
-          message: {
-            pt: "O Aplicativo está em manutenção. Por favor, tente mais tarde.",
-          },
-        },
-      },
-      ios: {
-        version: {
-          minimum: "1.0.0",
-          latest: "0.0.1",
-        },
-        download_url: "",
-        status: {
-          active: true,
-          message: {
-            pt: "O Aplicativo está em manutenção. Por favor, tente mais tarde.",
-          },
-        },
-      },
-    };
+  validateTemplateParameters(template) {
+    if (!template.parameters.featureFlags) {
+      throw new Error("featureFlags parameter not found");
+    }
+
+    if (!template.parameters.clarityProjectId) {
+      throw new Error("clarityProjectId parameter not found");
+    }
+
+    if (!template.parameters.versionarte) {
+      throw new Error("versionarte parameter not found");
+    }
   }
 
   /**
-   * Sleep utility for retries
+   * Validate feature flags match expected values
    */
-  sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+  validateFeatureFlags(template, expectedFeatureFlags) {
+    const publishedFeatureFlags = JSON.parse(
+      template.parameters.featureFlags.defaultValue.value,
+    );
+
+    const featureFlagKeys = Object.keys(expectedFeatureFlags);
+    for (const key of featureFlagKeys) {
+      if (publishedFeatureFlags[key] !== expectedFeatureFlags[key]) {
+        throw new Error(`Feature flag mismatch for ${key}`);
+      }
+    }
+  }
+
+  /**
+   * Validate Clarity Project ID matches expected value
+   */
+  validateClarityProjectId(template, expectedClarityId) {
+    const publishedClarityId =
+      template.parameters.clarityProjectId.defaultValue.value;
+    if (publishedClarityId !== expectedClarityId) {
+      throw new Error("Clarity Project ID mismatch");
+    }
   }
 }
 

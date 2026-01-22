@@ -1,18 +1,9 @@
-/**
- * AdminWebBuilder - Build and deploy automation for loyalty-admin-main (Web)
- *
- * Builds Flutter Web and deploys to GitHub Pages (devloyaltyhub.github.io)
- * No Shorebird needed for web - just build and push to GitHub.
- */
-
 const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs-extra');
 
-// Load environment variables
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 
-// Paths
 const COMPOSE_ROOT = path.resolve(__dirname, '..');
 const ADMIN_ROOT = path.resolve(COMPOSE_ROOT, '../loyalty-admin-main');
 const WEB_REPO = path.resolve(COMPOSE_ROOT, '../devloyaltyhub.github.io');
@@ -20,13 +11,12 @@ const BUILD_OUTPUT = path.join(ADMIN_ROOT, 'build', 'web');
 
 const logger = require('../shared/utils/logger');
 const telegram = require('../shared/utils/telegram');
+const AdminWebBuildOperations = require('./utils/admin-web-build-operations');
+const AdminWebGitOperations = require('./utils/admin-web-git-operations');
+const AdminWebPrerequisites = require('./utils/admin-web-prerequisites');
 
-// Constants
 const MS_PER_SECOND = 1000;
 const SECONDS_PER_MINUTE = 60;
-
-// Files to preserve in the web repo during deploy
-const PRESERVE_FILES = ['.git', 'CNAME', 'CORS_FIX.md', '.nojekyll'];
 
 class AdminWebBuilder {
   constructor() {
@@ -34,11 +24,17 @@ class AdminWebBuilder {
     this.webRepo = WEB_REPO;
     this.buildOutput = BUILD_OUTPUT;
     this.startTime = null;
+
+    this.prerequisites = new AdminWebPrerequisites(this.adminRoot, this.webRepo, this.exec.bind(this));
+    this.buildOps = new AdminWebBuildOperations(this.adminRoot, this.buildOutput, this.exec.bind(this));
+    this.gitOps = new AdminWebGitOperations(
+      this.adminRoot,
+      this.webRepo,
+      this.buildOutput,
+      this.exec.bind(this)
+    );
   }
 
-  /**
-   * Execute shell command
-   */
   exec(command, options = {}) {
     try {
       const result = execSync(command, {
@@ -58,378 +54,55 @@ class AdminWebBuilder {
     }
   }
 
-  /**
-   * Check prerequisites for build/deploy
-   */
   checkPrerequisites() {
-    const errors = [];
-
-    // Check Flutter
-    try {
-      const flutterVersion = this.exec('flutter --version', { silent: true });
-      logger.info(`Flutter: ${flutterVersion.split('\n')[0]}`);
-    } catch {
-      errors.push('Flutter not installed or not in PATH');
-    }
-
-    // Check Git
-    try {
-      this.exec('git --version', { silent: true });
-    } catch {
-      errors.push('Git not installed or not in PATH');
-    }
-
-    // Check loyalty-admin-main exists
-    if (!fs.existsSync(this.adminRoot)) {
-      errors.push(`loyalty-admin-main not found at ${this.adminRoot}`);
-    }
-
-    // Check devloyaltyhub.github.io repo exists
-    if (!fs.existsSync(this.webRepo)) {
-      errors.push(`devloyaltyhub.github.io repo not found at ${this.webRepo}`);
-    }
-
-    // Check it's a git repo
-    if (!fs.existsSync(path.join(this.webRepo, '.git'))) {
-      errors.push(`${this.webRepo} is not a git repository`);
-    }
-
-    if (errors.length > 0) {
-      errors.forEach(e => logger.error(e));
-      throw new Error('Prerequisites check failed');
-    }
-
-    logger.success('Prerequisites validated');
-    return true;
+    return this.prerequisites.check();
   }
 
-  /**
-   * Get version info from pubspec.yaml
-   */
   getVersionInfo() {
-    const pubspecPath = path.join(this.adminRoot, 'pubspec.yaml');
-    const pubspec = fs.readFileSync(pubspecPath, 'utf8');
-    const match = pubspec.match(/^version:\s*([0-9]+\.[0-9]+\.[0-9]+)\+([0-9]+)/m);
-
-    if (!match) {
-      throw new Error('Version not found in pubspec.yaml');
-    }
-
-    return {
-      version: match[1],
-      buildNumber: match[2],
-      full: `${match[1]}+${match[2]}`,
-    };
+    return this.buildOps.getVersionInfo();
   }
 
-  /**
-   * Increment build number in pubspec.yaml
-   */
   incrementBuildNumber() {
-    logger.info('Incrementing build number...');
-
-    const pubspecPath = path.join(this.adminRoot, 'pubspec.yaml');
-    let pubspec = fs.readFileSync(pubspecPath, 'utf8');
-    const match = pubspec.match(/^(version:\s*[0-9]+\.[0-9]+\.[0-9]+\+)([0-9]+)/m);
-
-    if (!match) {
-      throw new Error('Version not found in pubspec.yaml');
-    }
-
-    const currentBuild = parseInt(match[2], 10);
-    const newBuild = currentBuild + 1;
-
-    pubspec = pubspec.replace(
-      /^(version:\s*[0-9]+\.[0-9]+\.[0-9]+\+)[0-9]+/m,
-      `$1${newBuild}`
-    );
-
-    fs.writeFileSync(pubspecPath, pubspec);
-    logger.success(`Build number incremented: ${currentBuild} -> ${newBuild}`);
-
-    return newBuild;
+    return this.buildOps.incrementBuildNumber();
   }
 
-  /**
-   * Create git tag in loyalty-admin-main repository
-   */
   createGitTag(versionInfo) {
-    const tagName = `admin-web-v${versionInfo.full}`;
-    logger.info(`Creating git tag: ${tagName}...`);
-
-    try {
-      this.exec(`git tag -a ${tagName} -m "Admin Web Deploy v${versionInfo.full}"`, { cwd: this.adminRoot });
-      this.exec(`git push origin ${tagName}`, { cwd: this.adminRoot });
-      logger.success(`Git tag created and pushed: ${tagName}`);
-      return tagName;
-    } catch (error) {
-      if (error.message.includes('already exists')) {
-        logger.warn(`Tag ${tagName} already exists, skipping...`);
-        return null;
-      }
-      throw error;
-    }
+    return this.gitOps.createGitTag(versionInfo);
   }
 
-  /**
-   * Commit version bump to loyalty-admin-main repository
-   */
   commitVersionBump(versionInfo) {
-    logger.info('Committing version bump...');
-
-    const status = this.exec('git status --porcelain pubspec.yaml', { cwd: this.adminRoot, silent: true });
-
-    if (!status) {
-      logger.warn('No version changes to commit');
-      return false;
-    }
-
-    this.exec('git add pubspec.yaml', { cwd: this.adminRoot });
-    this.exec(`git commit -m "chore: bump build number to ${versionInfo.buildNumber}"`, { cwd: this.adminRoot });
-    this.exec('git push origin HEAD', { cwd: this.adminRoot });
-
-    logger.success('Version bump committed and pushed');
-    return true;
+    return this.gitOps.commitVersionBump(versionInfo);
   }
 
-  /**
-   * Get dart-define flags for web build
-   * These variables are embedded into the build and deployed to GitHub Pages
-   */
   getDartDefines() {
-    const defines = [];
-
-    // Master Firebase Email (required)
-    if (process.env.MASTER_FIREBASE_EMAIL) {
-      defines.push(`--dart-define=MASTER_FIREBASE_EMAIL=${process.env.MASTER_FIREBASE_EMAIL}`);
-      logger.info('MASTER_FIREBASE_EMAIL loaded from environment');
-    } else {
-      logger.warn('MASTER_FIREBASE_EMAIL not set - admin login may fail');
-    }
-
-    // Master Firebase Password (required)
-    if (process.env.MASTER_FIREBASE_PASSWORD) {
-      defines.push(`--dart-define=MASTER_FIREBASE_PASSWORD=${process.env.MASTER_FIREBASE_PASSWORD}`);
-      logger.info('MASTER_FIREBASE_PASSWORD loaded from environment');
-    } else {
-      logger.warn('MASTER_FIREBASE_PASSWORD not set - admin login will fail');
-    }
-
-    return defines.length > 0 ? ' ' + defines.join(' ') : '';
+    return this.buildOps.getDartDefines();
   }
 
-  /**
-   * Build Flutter Web
-   */
   buildWeb() {
-    logger.info('Building Flutter Web...');
-
-    // SAFETY: Remove any stray .git in build/web BEFORE flutter clean
-    // flutter clean doesn't remove .git directories, so we must do it manually
-    // This can happen if GitHub Pages repo was accidentally cloned/copied there
-    const strayGit = path.join(this.buildOutput, '.git');
-    if (fs.existsSync(strayGit)) {
-      logger.warn('Found stray .git in build/web - removing to prevent build corruption');
-      fs.removeSync(strayGit);
-    }
-
-    // Clean previous build
-    logger.info('Cleaning previous build...');
-    this.exec('flutter clean');
-
-    // Get dependencies
-    logger.info('Getting dependencies...');
-    this.exec('flutter pub get');
-
-    // Build web with release optimizations
-    // Note: --obfuscate is NOT supported for web builds
-    // Release mode automatically minifies the code
-    // Note: --web-renderer was removed in Flutter 3.35+, CanvasKit is now the default
-    logger.info('Building web release...');
-
-    // Get dart-define flags for sensitive environment variables
-    const dartDefines = this.getDartDefines();
-    this.exec(`flutter build web --release --base-href "/" --no-source-maps --pwa-strategy none${dartDefines}`);
-
-    // Verify build output exists
-    if (!fs.existsSync(this.buildOutput)) {
-      throw new Error(`Build output not found at ${this.buildOutput}`);
-    }
-
-    const indexPath = path.join(this.buildOutput, 'index.html');
-    if (!fs.existsSync(indexPath)) {
-      throw new Error('index.html not found in build output');
-    }
-
-    this.injectCacheBusting(indexPath);
-
-    logger.success('Flutter Web build completed');
-    return true;
+    return this.buildOps.buildWeb();
   }
 
-  /**
-   * Inject cache-busting query strings into index.html
-   */
   injectCacheBusting(indexPath) {
-    logger.info('Injecting cache-busting version...');
-
-    const version = Date.now();
-    let html = fs.readFileSync(indexPath, 'utf8');
-
-    html = html.replace(
-      'src="flutter_bootstrap.js"',
-      `src="flutter_bootstrap.js?v=${version}"`
-    );
-
-    html = html.replace(
-      'href="manifest.json"',
-      `href="manifest.json?v=${version}"`
-    );
-
-    fs.writeFileSync(indexPath, html);
-    logger.success(`Cache-busting version: ${version}`);
+    return this.buildOps.injectCacheBusting(indexPath);
   }
 
-  /**
-   * Copy build output to web repo
-   */
   copyBuildToRepo() {
-    logger.info('Copying build to GitHub Pages repo...');
-
-    // Get list of files to preserve
-    const preservedFiles = {};
-
-    // Backup preserved files
-    for (const file of PRESERVE_FILES) {
-      const filePath = path.join(this.webRepo, file);
-      if (fs.existsSync(filePath)) {
-        if (file === '.git') {
-          // Don't copy .git, just skip it during clean
-          preservedFiles[file] = true;
-        } else {
-          preservedFiles[file] = fs.readFileSync(filePath);
-        }
-      }
-    }
-
-    // Clean web repo (except preserved files)
-    const files = fs.readdirSync(this.webRepo);
-    for (const file of files) {
-      if (!PRESERVE_FILES.includes(file)) {
-        const filePath = path.join(this.webRepo, file);
-        fs.removeSync(filePath);
-      }
-    }
-
-    // Copy build output (excluding .git if it somehow exists)
-    const buildFiles = fs.readdirSync(this.buildOutput);
-    for (const file of buildFiles) {
-      if (file === '.git') {
-        logger.warn('Skipping .git found in build output (should not exist)');
-        continue;
-      }
-      const src = path.join(this.buildOutput, file);
-      const dest = path.join(this.webRepo, file);
-      fs.copySync(src, dest);
-    }
-
-    // Restore preserved files (except .git which was never removed)
-    for (const [file, content] of Object.entries(preservedFiles)) {
-      if (file !== '.git' && content) {
-        const filePath = path.join(this.webRepo, file);
-        fs.writeFileSync(filePath, content);
-      }
-    }
-
-    // Ensure .nojekyll exists (prevents GitHub Pages from ignoring _ prefixed files)
-    const nojekyllPath = path.join(this.webRepo, '.nojekyll');
-    if (!fs.existsSync(nojekyllPath)) {
-      fs.writeFileSync(nojekyllPath, '');
-    }
-
-    logger.success('Build copied to GitHub Pages repo');
-    return true;
+    return this.gitOps.copyBuildToRepo();
   }
 
-  /**
-   * Get the git remote name (usually 'origin' or 'site')
-   */
   getGitRemote() {
-    try {
-      const remotes = this.exec('git remote', { cwd: this.webRepo, silent: true });
-      const remoteList = remotes.split('\n').filter(r => r.trim());
-      // Prefer 'origin', fallback to first available remote
-      if (remoteList.includes('origin')) return 'origin';
-      if (remoteList.includes('site')) return 'site';
-      return remoteList[0] || 'origin';
-    } catch {
-      return 'origin';
-    }
+    return this.gitOps.getGitRemote();
   }
 
-  /**
-   * Commit and push to GitHub
-   */
   commitAndPush(message) {
-    logger.info('Committing and pushing to GitHub...');
-
-    const version = this.getVersionInfo();
-    const date = new Date().toISOString().split('T')[0];
-    const commitMessage = message || `Deploy Admin Web v${version.full} - ${date}`;
-
-    // Get the correct remote name
-    const remote = this.getGitRemote();
-
-    // Ensure clean state (abort any pending operations)
-    try {
-      this.exec('git rebase --abort', { cwd: this.webRepo, silent: true });
-    } catch {
-      // No rebase in progress, ignore
-    }
-    try {
-      this.exec('git merge --abort', { cwd: this.webRepo, silent: true });
-    } catch {
-      // No merge in progress, ignore
-    }
-
-    // Check if there are changes to commit
-    const status = this.exec('git status --porcelain', { cwd: this.webRepo, silent: true });
-
-    if (!status) {
-      logger.warn('No changes to commit');
-      return false;
-    }
-
-    // Add all changes
-    this.exec('git add .', { cwd: this.webRepo });
-
-    // Commit
-    this.exec(`git commit -m "${commitMessage}"`, { cwd: this.webRepo });
-
-    // For static site builds, we just force push
-    // The build directory is the source of truth
-    logger.info(`Pushing to ${remote}/master...`);
-    this.exec(`git push ${remote} master --force`, { cwd: this.webRepo });
-
-    logger.success('Pushed to GitHub');
-    return true;
+    const versionInfo = this.getVersionInfo();
+    return this.gitOps.commitAndPush(message, versionInfo);
   }
 
-  /**
-   * Get current git status of web repo
-   */
   getGitStatus() {
-    try {
-      const status = this.exec('git status --porcelain', { cwd: this.webRepo, silent: true });
-      return status ? status.split('\n').length : 0;
-    } catch {
-      return 0;
-    }
+    return this.gitOps.getGitStatus();
   }
 
-  /**
-   * Format duration for display
-   */
   formatDuration(ms) {
     const seconds = Math.floor(ms / MS_PER_SECOND);
     const minutes = Math.floor(seconds / SECONDS_PER_MINUTE);
@@ -437,9 +110,6 @@ class AdminWebBuilder {
     return minutes > 0 ? `${minutes}m ${remainingSeconds}s` : `${seconds}s`;
   }
 
-  /**
-   * Full build and deploy pipeline
-   */
   async buildAndDeploy(options = {}) {
     const { skipBuild = false, message = null } = options;
     this.startTime = Date.now();
@@ -447,19 +117,15 @@ class AdminWebBuilder {
     try {
       logger.section('Admin Web Deploy Pipeline');
 
-      // Validate
       this.checkPrerequisites();
 
-      // Increment build number before getting version info
       if (!skipBuild) {
         this.incrementBuildNumber();
       }
 
-      // Version (after increment)
       const versionInfo = this.getVersionInfo();
       logger.keyValue('Version', versionInfo.full);
 
-      // Commit version bump to loyalty-admin-main
       if (!skipBuild) {
         this.commitVersionBump(versionInfo);
       }
@@ -470,29 +136,25 @@ class AdminWebBuilder {
       } else {
         logger.info('Skipping build (using existing build)');
 
-        // Verify build exists
         if (!fs.existsSync(this.buildOutput)) {
-          throw new Error(`No existing build found at ${this.buildOutput}. Run without --skip-build first.`);
+          throw new Error(
+            `No existing build found at ${this.buildOutput}. Run without --skip-build first.`
+          );
         }
 
-        // Apply cache-busting even when skipping build
         const indexPath = path.join(this.buildOutput, 'index.html');
         this.injectCacheBusting(indexPath);
       }
 
-      // Copy to repo
       this.copyBuildToRepo();
 
-      // Commit and push
       const pushed = this.commitAndPush(message);
 
-      // Create git tag in loyalty-admin-main
       let tagName = null;
       if (pushed) {
         tagName = this.createGitTag(versionInfo);
       }
 
-      // Finalize
       const duration = this.formatDuration(Date.now() - this.startTime);
 
       if (pushed) {
@@ -517,7 +179,6 @@ class AdminWebBuilder {
       });
 
       return { success: true, version: versionInfo.full, duration, pushed, tagName };
-
     } catch (error) {
       const duration = this.formatDuration(Date.now() - this.startTime);
       logger.error(`Deploy failed after ${duration}: ${error.message}`);
@@ -526,26 +187,19 @@ class AdminWebBuilder {
     }
   }
 
-  /**
-   * Build only (no deploy)
-   */
   async buildOnly() {
     this.startTime = Date.now();
 
     try {
       logger.section('Admin Web Build');
 
-      // Validate
       this.checkPrerequisites();
 
-      // Version
       const versionInfo = this.getVersionInfo();
       logger.keyValue('Version', versionInfo.full);
 
-      // Build
       this.buildWeb();
 
-      // Finalize
       const duration = this.formatDuration(Date.now() - this.startTime);
 
       logger.blank();
@@ -557,7 +211,6 @@ class AdminWebBuilder {
       });
 
       return { success: true, version: versionInfo.full, duration, buildPath: this.buildOutput };
-
     } catch (error) {
       const duration = this.formatDuration(Date.now() - this.startTime);
       logger.error(`Build failed after ${duration}: ${error.message}`);

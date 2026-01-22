@@ -1,6 +1,13 @@
-const fs = require('fs');
-const path = require('path');
 const logger = require('./logger');
+const {
+  createFirebaseProjectRollback,
+  createDirectoryRollback,
+  createFileRollback,
+  createGitBranchRollback,
+  createGitTagRollback,
+  createMasterFirebaseEntryRollback,
+  createFirestoreCollectionRollback,
+} = require('./rollback-handlers');
 
 /**
  * Tracks created resources and provides rollback capability
@@ -28,16 +35,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'firebase_project',
       projectId,
-      rollback: async () => {
-        logger.warn(
-          `⚠️  Manual cleanup required: Delete Firebase project "${projectId}" from console`
-        );
-        logger.warn(`   https://console.firebase.google.com/project/${projectId}/settings/general`);
-        // Note: Firebase projects can't be deleted via CLI immediately,
-        // they need to be deleted from console and have a 30-day retention period
-      },
+      rollback: createFirebaseProjectRollback(projectId),
     });
-    logger.info(`✓ Tracked: Firebase project ${projectId}`);
+    logger.info(`Tracked: Firebase project ${projectId}`);
   }
 
   /**
@@ -48,15 +48,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'directory',
       path: dirPath,
-      rollback: async () => {
-        if (fs.existsSync(dirPath)) {
-          logger.info(`Removing directory: ${dirPath}`);
-          fs.rmSync(dirPath, { recursive: true, force: true });
-          logger.success(`✓ Directory removed`);
-        }
-      },
+      rollback: createDirectoryRollback(dirPath),
     });
-    logger.info(`✓ Tracked: Directory ${dirPath}`);
+    logger.info(`Tracked: Directory ${dirPath}`);
   }
 
   /**
@@ -67,15 +61,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'file',
       path: filePath,
-      rollback: async () => {
-        if (fs.existsSync(filePath)) {
-          logger.info(`Removing file: ${filePath}`);
-          fs.unlinkSync(filePath);
-          logger.success(`✓ File removed`);
-        }
-      },
+      rollback: createFileRollback(filePath),
     });
-    logger.info(`✓ Tracked: File ${filePath}`);
+    logger.info(`Tracked: File ${filePath}`);
   }
 
   /**
@@ -87,31 +75,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'git_branch',
       branchName,
-      rollback: async () => {
-        try {
-          logger.info(`Deleting git branch: ${branchName}`);
-
-          // Checkout main before deleting
-          await gitManager.git.checkout('main');
-
-          // Delete local branch
-          await gitManager.git.deleteLocalBranch(branchName, true);
-
-          // Delete remote branch if it exists
-          try {
-            await gitManager.git.push('origin', branchName, ['--delete']);
-            logger.success(`✓ Remote branch deleted`);
-          } catch (error) {
-            logger.warn(`Remote branch may not exist: ${error.message}`);
-          }
-
-          logger.success(`✓ Branch deleted`);
-        } catch (error) {
-          logger.error(`Failed to delete branch: ${error.message}`);
-        }
-      },
+      rollback: createGitBranchRollback(branchName, gitManager),
     });
-    logger.info(`✓ Tracked: Git branch ${branchName}`);
+    logger.info(`Tracked: Git branch ${branchName}`);
   }
 
   /**
@@ -123,28 +89,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'git_tag',
       tagName,
-      rollback: async () => {
-        try {
-          logger.info(`Deleting git tag: ${tagName}`);
-
-          // Delete local tag
-          await gitManager.git.tag(['-d', tagName]);
-
-          // Delete remote tag if it exists
-          try {
-            await gitManager.git.push('origin', `:refs/tags/${tagName}`);
-            logger.success(`✓ Remote tag deleted`);
-          } catch (error) {
-            logger.warn(`Remote tag may not exist: ${error.message}`);
-          }
-
-          logger.success(`✓ Tag deleted`);
-        } catch (error) {
-          logger.error(`Failed to delete tag: ${error.message}`);
-        }
-      },
+      rollback: createGitTagRollback(tagName, gitManager),
     });
-    logger.info(`✓ Tracked: Git tag ${tagName}`);
+    logger.info(`Tracked: Git tag ${tagName}`);
   }
 
   /**
@@ -156,18 +103,9 @@ class ResourceTracker {
     this.resources.push({
       type: 'master_firebase_entry',
       clientCode,
-      rollback: async () => {
-        try {
-          logger.info(`Removing client entry from master Firebase: ${clientCode}`);
-          const firestore = await firebaseClient.getMasterFirestore();
-          await firestore.collection('clients').doc(clientCode).delete();
-          logger.success(`✓ Master Firebase entry removed`);
-        } catch (error) {
-          logger.error(`Failed to remove master Firebase entry: ${error.message}`);
-        }
-      },
+      rollback: createMasterFirebaseEntryRollback(clientCode, firebaseClient),
     });
-    logger.info(`✓ Tracked: Master Firebase entry for ${clientCode}`);
+    logger.info(`Tracked: Master Firebase entry for ${clientCode}`);
   }
 
   /**
@@ -181,23 +119,9 @@ class ResourceTracker {
       type: 'firestore_collection',
       clientCode,
       collectionName,
-      rollback: async () => {
-        try {
-          logger.info(`Clearing Firestore collection: ${collectionName}`);
-          const firestore = firebaseClient.getClientFirestore(clientCode);
-          const snapshot = await firestore.collection(collectionName).get();
-
-          const batch = firestore.batch();
-          snapshot.docs.forEach((doc) => batch.delete(doc.ref));
-
-          await batch.commit();
-          logger.success(`✓ Collection ${collectionName} cleared (${snapshot.size} documents)`);
-        } catch (error) {
-          logger.error(`Failed to clear collection ${collectionName}: ${error.message}`);
-        }
-      },
+      rollback: createFirestoreCollectionRollback(clientCode, collectionName, firebaseClient),
     });
-    logger.info(`✓ Tracked: Firestore collection ${collectionName}`);
+    logger.info(`Tracked: Firestore collection ${collectionName}`);
   }
 
   /**
@@ -206,14 +130,9 @@ class ResourceTracker {
    */
   getSummary() {
     const summary = {};
-
     for (const resource of this.resources) {
-      if (!summary[resource.type]) {
-        summary[resource.type] = 0;
-      }
-      summary[resource.type]++;
+      summary[resource.type] = (summary[resource.type] || 0) + 1;
     }
-
     return summary;
   }
 
@@ -222,17 +141,14 @@ class ResourceTracker {
    */
   printSummary() {
     const summary = this.getSummary();
-
     logger.info('');
-    logger.info('📋 Tracked Resources:');
-    logger.info('═══════════════════════════════════════');
-
+    logger.info('Tracked Resources:');
+    logger.info('-------------------------------------------');
     for (const [type, count] of Object.entries(summary)) {
       logger.info(`  ${type}: ${count}`);
     }
-
     logger.info(`  TOTAL: ${this.resources.length}`);
-    logger.info('═══════════════════════════════════════');
+    logger.info('-------------------------------------------');
     logger.info('');
   }
 
@@ -248,21 +164,15 @@ class ResourceTracker {
     }
 
     logger.warn('');
-    logger.warn('═══════════════════════════════════════');
+    logger.warn('-------------------------------------------');
     logger.warn('  ROLLING BACK RESOURCES');
-    logger.warn('═══════════════════════════════════════');
+    logger.warn('-------------------------------------------');
     this.printSummary();
 
-    const results = {
-      success: 0,
-      failed: 0,
-      total: this.resources.length,
-    };
+    const results = { success: 0, failed: 0, total: this.resources.length };
 
-    // Execute rollback in reverse order (LIFO)
     for (let i = this.resources.length - 1; i >= 0; i--) {
       const resource = this.resources[i];
-
       try {
         logger.info(`[${i + 1}/${this.resources.length}] Rolling back ${resource.type}...`);
         await resource.rollback();
@@ -270,24 +180,21 @@ class ResourceTracker {
       } catch (error) {
         logger.error(`Failed to rollback ${resource.type}: ${error.message}`);
         results.failed++;
-        // Continue with other rollbacks even if one fails
       }
     }
 
     logger.warn('');
-    logger.warn('═══════════════════════════════════════');
+    logger.warn('-------------------------------------------');
     logger.warn('  ROLLBACK COMPLETE');
-    logger.warn('═══════════════════════════════════════');
+    logger.warn('-------------------------------------------');
     logger.info(`  Success: ${results.success}/${results.total}`);
     if (results.failed > 0) {
       logger.error(`  Failed:  ${results.failed}/${results.total}`);
     }
-    logger.warn('═══════════════════════════════════════');
+    logger.warn('-------------------------------------------');
     logger.warn('');
 
-    // Clear resources after rollback
     this.resources = [];
-
     return results;
   }
 

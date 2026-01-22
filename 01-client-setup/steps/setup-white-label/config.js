@@ -1,0 +1,36 @@
+const path = require('path');
+const {
+  COMPOSE_ROOT,
+  CLIENTS_DIR,
+  SHARED_ASSETS_DIR,
+  WHITE_LABEL_APP_ROOT,
+  WHITE_LABEL_ASSETS_DIR,
+  WHITE_LABEL_PUBSPEC,
+  LOYALTY_CREDENTIALS_ROOT,
+} = require('../../../shared/utils/paths');
+
+require('dotenv').config({ path: path.join(COMPOSE_ROOT, '.env') });
+
+const SETUP_MODE = {
+  FULL: 'full',
+  DEPLOY: 'deploy',
+};
+
+const TARGET_ROOT = WHITE_LABEL_APP_ROOT;
+const GENERAL_ASSETS_DIR = SHARED_ASSETS_DIR;
+const ASSETS_DIR = WHITE_LABEL_ASSETS_DIR;
+const PUBSPEC_PATH = WHITE_LABEL_PUBSPEC;
+const TEMPLATES_DIR = path.join(COMPOSE_ROOT, '01-client-setup', 'templates');
+const LOYALTY_CREDENTIALS_PATH = LOYALTY_CREDENTIALS_ROOT;
+
+module.exports = {
+  SETUP_MODE,
+  TARGET_ROOT,
+  GENERAL_ASSETS_DIR,
+  ASSETS_DIR,
+  PUBSPEC_PATH,
+  TEMPLATES_DIR,
+  LOYALTY_CREDENTIALS_PATH,
+  COMPOSE_ROOT,
+  CLIENTS_DIR,
+};

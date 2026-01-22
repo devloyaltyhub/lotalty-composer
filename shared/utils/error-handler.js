@@ -1,133 +1,32 @@
-const logger = require('./logger');
-const telegram = require('./telegram');
-
 /**
  * Centralized error handling utility
  * Provides consistent error handling across all automation scripts
  *
  * Features:
- * - Standardized error classes
+ * - Standardized error classes (from error-types.js)
  * - Consistent logging
  * - Optional Telegram notifications
  * - Cleanup function execution
  * - Stack trace logging
  * - Exit code management
- * - Retry with exponential backoff
+ * - Retry with exponential backoff (from retry-helpers.js)
  */
 
-// ============================================================================
-// ERROR CLASSES
-// ============================================================================
-
-/**
- * Base error class for all automation errors
- */
-class AutomationError extends Error {
-  constructor(message, code = 'AUTOMATION_ERROR', metadata = {}) {
-    super(message);
-    this.name = this.constructor.name;
-    this.code = code;
-    this.metadata = metadata;
-    this.timestamp = new Date().toISOString();
-    Error.captureStackTrace(this, this.constructor);
-  }
-
-  toJSON() {
-    return {
-      name: this.name,
-      message: this.message,
-      code: this.code,
-      metadata: this.metadata,
-      timestamp: this.timestamp,
-      stack: this.stack,
-    };
-  }
-}
-
-/**
- * Validation error for invalid input
- */
-class ValidationError extends AutomationError {
-  constructor(message, field = null, metadata = {}) {
-    super(message, 'VALIDATION_ERROR', { field, ...metadata });
-  }
-}
-
-/**
- * Firebase operation error
- */
-class FirebaseError extends AutomationError {
-  constructor(message, operation = null, metadata = {}) {
-    super(message, 'FIREBASE_ERROR', { operation, ...metadata });
-  }
-}
-
-/**
- * Git operation error
- */
-class GitError extends AutomationError {
-  constructor(message, command = null, metadata = {}) {
-    super(message, 'GIT_ERROR', { command, ...metadata });
-  }
-}
-
-/**
- * File system operation error
- */
-class FileSystemError extends AutomationError {
-  constructor(message, path = null, metadata = {}) {
-    super(message, 'FILESYSTEM_ERROR', { path, ...metadata });
-  }
-}
-
-/**
- * External command execution error
- */
-class CommandError extends AutomationError {
-  constructor(message, command = null, exitCode = null, metadata = {}) {
-    super(message, 'COMMAND_ERROR', { command, exitCode, ...metadata });
-  }
-}
-
-/**
- * Configuration error
- */
-class ConfigurationError extends AutomationError {
-  constructor(message, key = null, metadata = {}) {
-    super(message, 'CONFIGURATION_ERROR', { key, ...metadata });
-  }
-}
-
-/**
- * Network or external service error
- */
-class ExternalServiceError extends AutomationError {
-  constructor(message, service = null, metadata = {}) {
-    super(message, 'EXTERNAL_SERVICE_ERROR', { service, ...metadata });
-  }
-}
-
-/**
- * Timeout error
- */
-class TimeoutError extends AutomationError {
-  constructor(message, operation = null, timeout = null, metadata = {}) {
-    super(message, 'TIMEOUT_ERROR', { operation, timeout, ...metadata });
-  }
-}
-
-/**
- * Rollback error
- */
-class RollbackError extends AutomationError {
-  constructor(message, step = null, metadata = {}) {
-    super(message, 'ROLLBACK_ERROR', { step, ...metadata });
-  }
-}
-
-// ============================================================================
-// ERROR HANDLER CLASS
-// ============================================================================
+const logger = require('./logger');
+const telegram = require('./telegram');
+const { withRetry, retryWithBackoff, makeSafe } = require('./retry-helpers');
+const {
+  AutomationError,
+  ValidationError,
+  FirebaseError,
+  GitError,
+  FileSystemError,
+  CommandError,
+  ConfigurationError,
+  ExternalServiceError,
+  TimeoutError,
+  RollbackError,
+} = require('./error-types');
 
 class ErrorHandler {
   constructor() {
@@ -161,17 +60,15 @@ class ErrorHandler {
 
     logger.warn('Executing cleanup functions...');
 
-    // Execute in reverse order
     for (let i = this.cleanupFunctions.length - 1; i >= 0; i--) {
       const { fn, description } = this.cleanupFunctions[i];
 
       try {
         logger.info(`Cleanup: ${description}`);
         await fn();
-        logger.success(`✓ ${description} completed`);
+        logger.success(`Cleanup "${description}" completed`);
       } catch (cleanupError) {
         logger.error(`Failed to execute cleanup "${description}": ${cleanupError.message}`);
-        // Continue with other cleanups even if one fails
       }
     }
 
@@ -190,11 +87,10 @@ class ErrorHandler {
   async handleCLIError(error, options = {}) {
     const { sendTelegram = false, cleanup = null, exitCode = 1, showStack = true } = options;
 
-    // Log the error
     logger.error('');
-    logger.error('═══════════════════════════════════════');
+    logger.error('===================================');
     logger.error('  ERROR OCCURRED');
-    logger.error('═══════════════════════════════════════');
+    logger.error('===================================');
     logger.error(`Message: ${error.message}`);
 
     if (showStack && error.stack) {
@@ -203,13 +99,11 @@ class ErrorHandler {
       logger.error(error.stack);
     }
 
-    logger.error('═══════════════════════════════════════');
+    logger.error('===================================');
     logger.error('');
 
-    // Execute registered cleanups
     await this.executeCleanups();
 
-    // Execute additional cleanup if provided
     if (cleanup && typeof cleanup === 'function') {
       try {
         logger.info('Executing additional cleanup...');
@@ -220,16 +114,14 @@ class ErrorHandler {
       }
     }
 
-    // Send Telegram notification if requested
     if (sendTelegram) {
       try {
-        await telegram.sendMessage(`❌ Automation Error\n\n${error.message}`, 'error');
+        await telegram.sendMessage(`Automation Error\n\n${error.message}`, 'error');
       } catch (telegramError) {
         logger.warn(`Failed to send Telegram notification: ${telegramError.message}`);
       }
     }
 
-    // Exit process
     process.exit(exitCode);
   }
 
@@ -279,96 +171,24 @@ class ErrorHandler {
   }
 
   /**
-   * Handle error with retry logic
-   * @param {Function} fn - Async function to execute
-   * @param {Object} options - Retry options
-   * @param {number} options.maxRetries - Maximum retry attempts (default: 3)
-   * @param {number} options.delayMs - Delay between retries in ms (default: 1000)
-   * @param {Function} options.onRetry - Callback called before each retry
-   * @returns {Promise<any>} Result of the function
+   * Handle error with retry logic (delegates to retry-helpers)
    */
   async withRetry(fn, options = {}) {
-    const { maxRetries = 3, delayMs = 1000, onRetry = null } = options;
-
-    let lastError;
-
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error;
-
-        if (attempt < maxRetries) {
-          logger.warn(`Attempt ${attempt}/${maxRetries} failed: ${error.message}`);
-          logger.info(`Retrying in ${delayMs}ms...`);
-
-          if (onRetry) {
-            await onRetry(attempt, error);
-          }
-
-          await new Promise((resolve) => setTimeout(resolve, delayMs));
-        }
-      }
-    }
-
-    // All retries failed
-    throw new Error(`Failed after ${maxRetries} attempts. Last error: ${lastError.message}`);
+    return withRetry(fn, options);
   }
 
   /**
    * Retries an operation with exponential backoff (static version)
-   * @param {Function} fn - The function to retry
-   * @param {Object} options - Retry options
-   * @returns {Promise} Result of the function
    */
   static async retry(fn, options = {}) {
-    const {
-      maxRetries = 3,
-      initialDelay = 1000,
-      maxDelay = 10000,
-      backoffFactor = 2,
-      shouldRetry = () => true,
-    } = options;
-
-    let lastError;
-    let delay = initialDelay;
-
-    for (let attempt = 0; attempt <= maxRetries; attempt++) {
-      try {
-        return await fn();
-      } catch (error) {
-        lastError = error;
-
-        if (attempt < maxRetries && shouldRetry(error)) {
-          logger.warn(`Operation failed (attempt ${attempt + 1}/${maxRetries + 1}), retrying in ${delay}ms...`);
-
-          await new Promise((resolve) => setTimeout(resolve, delay));
-          delay = Math.min(delay * backoffFactor, maxDelay);
-        } else {
-          break;
-        }
-      }
-    }
-
-    throw lastError;
+    return retryWithBackoff(fn, options);
   }
 
   /**
-   * Create a safe version of a function that logs but doesn't throw
-   * Useful for optional operations that shouldn't break the flow
-   * @param {Function} fn - Function to make safe
-   * @param {string} description - Description for logging
-   * @returns {Function} Safe version of the function
+   * Create a safe version of a function (delegates to retry-helpers)
    */
   makeSafe(fn, description = 'Operation') {
-    return async (...args) => {
-      try {
-        return await fn(...args);
-      } catch (error) {
-        logger.warn(`${description} failed (non-critical): ${error.message}`);
-        return null;
-      }
-    };
+    return makeSafe(fn, description);
   }
 
   /**
@@ -410,13 +230,10 @@ class ErrorHandler {
   }
 }
 
-// Create singleton instance for backward compatibility
 const errorHandlerInstance = new ErrorHandler();
 
-// Export both the instance (default) and all error classes
 module.exports = errorHandlerInstance;
 
-// Also export as named exports for destructuring
 module.exports.ErrorHandler = ErrorHandler;
 module.exports.AutomationError = AutomationError;
 module.exports.ValidationError = ValidationError;
