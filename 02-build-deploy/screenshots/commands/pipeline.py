@@ -94,11 +94,13 @@ class ScreenshotPipeline:
             self._load_primary_color_from_config()
 
         # Initialize components
+        white_label_dir = getattr(self.project_config, 'white_label_dir', None)
         self.capture_cmd = ScreenshotCapture(
             device=device,
             platform=platform,
             skip_tests=skip_tests,
-            screenshots_dir=self.project_config.screenshots_dir
+            screenshots_dir=self.project_config.screenshots_dir,
+            white_label_dir=white_label_dir
         )
         self.mockup_cmd = MockupGenerator(
             project_config=self.project_config,
