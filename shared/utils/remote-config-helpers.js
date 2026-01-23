@@ -20,6 +20,7 @@ const FEATURE_FLAG_MAPPINGS = [
   { placeholder: "{{EVENTS}}", key: "events" },
   { placeholder: "{{TEAM}}", key: "team" },
   { placeholder: "{{BIRTHDAY}}", key: "birthday" },
+  { placeholder: "{{PAYMENTS}}", key: "payments" },
 ];
 
 /**

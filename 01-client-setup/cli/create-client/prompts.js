@@ -21,6 +21,7 @@ const FEATURE_FLAGS_CHOICES = [
   { name: "Events", value: "events", checked: true },
   { name: "Team", value: "team", checked: true },
   { name: "Birthday Bonus", value: "birthday", checked: false },
+  { name: "Payments (PIX)", value: "payments", checked: false },
 ];
 
 function convertFeatureFlagsToObject(featureFlagsArray) {
@@ -37,6 +38,7 @@ function convertFeatureFlagsToObject(featureFlagsArray) {
     events: featureFlagsArray.includes("events"),
     team: featureFlagsArray.includes("team"),
     birthday: featureFlagsArray.includes("birthday"),
+    payments: featureFlagsArray.includes("payments"),
   };
 }
 

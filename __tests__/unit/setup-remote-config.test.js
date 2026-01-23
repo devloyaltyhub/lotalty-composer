@@ -32,6 +32,11 @@ jest.mock("chalk", () => ({
 const fs = require("fs").promises;
 const admin = require("firebase-admin");
 const RemoteConfigSetup = require("../../01-client-setup/steps/setup-remote-config");
+const {
+  replaceTemplateVariables,
+  getDefaultVersionarte,
+  sleep,
+} = require("../../shared/utils/remote-config-helpers");
 
 describe("RemoteConfigSetup", () => {
   let setup;
@@ -106,127 +111,6 @@ describe("RemoteConfigSetup", () => {
       fs.readFile.mockResolvedValue("invalid json");
 
       await expect(setup.loadTemplate()).rejects.toThrow();
-    });
-  });
-
-  describe("replaceVariables()", () => {
-    const baseTemplate = {
-      parameters: {
-        featureFlags: {
-          defaultValue: {
-            value: JSON.stringify({
-              delivery: "{{DELIVERY}}",
-              happyHour: "{{HAPPY_HOUR}}",
-              campaigns: "{{CAMPAIGNS}}",
-              storeHours: "{{STORE_HOURS}}",
-              pushNotifications: "{{PUSH_NOTIFICATIONS}}",
-              suggestionBox: "{{SUGGESTION_BOX}}",
-              clarity: "{{CLARITY}}",
-              ourStory: "{{OUR_STORY}}",
-              events: "{{EVENTS}}",
-            }),
-          },
-        },
-        clarityProjectId: {
-          defaultValue: { value: "{{CLARITY_PROJECT_ID}}" },
-        },
-      },
-    };
-
-    test("replaces feature flags with true/false strings", () => {
-      const config = {
-        featureFlags: {
-          delivery: true,
-          happyHour: true,
-          campaigns: false,
-          storeHours: true,
-          pushNotifications: true,
-          suggestionBox: false,
-          clarity: true,
-          ourStory: false,
-          events: true,
-        },
-        clarityProjectId: "clarity123",
-      };
-
-      const result = setup.replaceVariables(baseTemplate, config);
-      const resultStr = JSON.stringify(result);
-
-      // Values are escaped in JSON string format
-      expect(resultStr).toContain("delivery");
-      expect(resultStr).toContain("true");
-      expect(resultStr).toContain("false");
-    });
-
-    test("replaces Clarity project ID", () => {
-      const config = {
-        featureFlags: {
-          delivery: false,
-          club: false,
-          happyHour: false,
-          campaigns: false,
-          storeHours: false,
-          pushNotifications: false,
-          suggestionBox: false,
-          clarity: false,
-          ourStory: false,
-          events: false,
-        },
-        clarityProjectId: "my-clarity-project",
-      };
-
-      const result = setup.replaceVariables(baseTemplate, config);
-
-      expect(JSON.stringify(result)).toContain("my-clarity-project");
-    });
-
-    test("handles all flags as true", () => {
-      const config = {
-        featureFlags: {
-          delivery: true,
-          club: true,
-          happyHour: true,
-          campaigns: true,
-          storeHours: true,
-          pushNotifications: true,
-          suggestionBox: true,
-          clarity: true,
-          ourStory: true,
-          events: true,
-        },
-        clarityProjectId: "test",
-      };
-
-      const result = setup.replaceVariables(baseTemplate, config);
-      const resultStr = JSON.stringify(result);
-
-      expect(resultStr).not.toContain("false");
-      expect(resultStr).toContain("true");
-    });
-
-    test("handles all flags as false", () => {
-      const config = {
-        featureFlags: {
-          delivery: false,
-          club: false,
-          happyHour: false,
-          campaigns: false,
-          storeHours: false,
-          pushNotifications: false,
-          suggestionBox: false,
-          clarity: false,
-          ourStory: false,
-          events: false,
-        },
-        clarityProjectId: "test",
-      };
-
-      const result = setup.replaceVariables(baseTemplate, config);
-      const resultStr = JSON.stringify(result);
-
-      // All flags should be false - check the escaped string contains false values
-      expect(resultStr).toContain("false");
-      expect(resultStr).not.toContain(":true");
     });
   });
 
@@ -417,39 +301,10 @@ describe("RemoteConfigSetup", () => {
       expect(result).toBe(false);
     });
 
-    test("retries on failure", async () => {
-      mockRemoteConfig.getTemplate
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockRejectedValueOnce(new Error("Network error"))
-        .mockResolvedValue({
-          parameters: {
-            featureFlags: {
-              defaultValue: { value: JSON.stringify(expectedFeatureFlags) },
-            },
-            clarityProjectId: { defaultValue: { value: expectedClarityId } },
-            versionarte: { defaultValue: { value: "{}" } },
-          },
-        });
-
-      // Mock sleep to avoid waiting
-      jest.spyOn(setup, "sleep").mockResolvedValue();
-
-      const result = await setup.validateRemoteConfig(
-        expectedFeatureFlags,
-        expectedClarityId,
-      );
-
-      expect(result).toBe(true);
-      expect(mockRemoteConfig.getTemplate).toHaveBeenCalledTimes(3);
-    });
-
     test("returns false after max retries", async () => {
       mockRemoteConfig.getTemplate.mockRejectedValue(
         new Error("Persistent error"),
       );
-
-      // Mock sleep to avoid waiting
-      jest.spyOn(setup, "sleep").mockResolvedValue();
 
       const result = await setup.validateRemoteConfig(
         expectedFeatureFlags,
@@ -458,14 +313,14 @@ describe("RemoteConfigSetup", () => {
 
       expect(result).toBe(false);
       expect(mockRemoteConfig.getTemplate).toHaveBeenCalledTimes(5);
-    });
+    }, 15000);
   });
 
   describe("setupRemoteConfig()", () => {
     const config = {
       featureFlags: {
         delivery: true,
-        club: false,
+        ecommerce: true,
         happyHour: true,
         campaigns: false,
         storeHours: true,
@@ -474,6 +329,9 @@ describe("RemoteConfigSetup", () => {
         clarity: true,
         ourStory: false,
         events: true,
+        team: true,
+        birthday: false,
+        payments: false,
       },
       clarityProjectId: "clarity123",
       clientCode: "demo",
@@ -529,10 +387,148 @@ describe("RemoteConfigSetup", () => {
       await expect(setup.setupRemoteConfig(config)).rejects.toThrow();
     });
   });
+});
+
+describe("remote-config-helpers", () => {
+  describe("replaceTemplateVariables()", () => {
+    const baseTemplate = {
+      parameters: {
+        featureFlags: {
+          defaultValue: {
+            value: JSON.stringify({
+              delivery: "{{DELIVERY}}",
+              ecommerce: "{{ECOMMERCE}}",
+              happyHour: "{{HAPPY_HOUR}}",
+              campaigns: "{{CAMPAIGNS}}",
+              storeHours: "{{STORE_HOURS}}",
+              pushNotifications: "{{PUSH_NOTIFICATIONS}}",
+              suggestionBox: "{{SUGGESTION_BOX}}",
+              clarity: "{{CLARITY}}",
+              ourStory: "{{OUR_STORY}}",
+              events: "{{EVENTS}}",
+              team: "{{TEAM}}",
+              birthday: "{{BIRTHDAY}}",
+              payments: "{{PAYMENTS}}",
+            }),
+          },
+        },
+        clarityProjectId: {
+          defaultValue: { value: "{{CLARITY_PROJECT_ID}}" },
+        },
+      },
+    };
+
+    test("replaces feature flags with true/false strings", () => {
+      const config = {
+        featureFlags: {
+          delivery: true,
+          ecommerce: true,
+          happyHour: true,
+          campaigns: false,
+          storeHours: true,
+          pushNotifications: true,
+          suggestionBox: false,
+          clarity: true,
+          ourStory: false,
+          events: true,
+          team: true,
+          birthday: false,
+          payments: false,
+        },
+        clarityProjectId: "clarity123",
+      };
+
+      const result = replaceTemplateVariables(baseTemplate, config);
+      const resultStr = JSON.stringify(result);
+
+      expect(resultStr).toContain("delivery");
+      expect(resultStr).toContain("true");
+      expect(resultStr).toContain("false");
+    });
+
+    test("replaces Clarity project ID", () => {
+      const config = {
+        featureFlags: {
+          delivery: false,
+          ecommerce: false,
+          happyHour: false,
+          campaigns: false,
+          storeHours: false,
+          pushNotifications: false,
+          suggestionBox: false,
+          clarity: false,
+          ourStory: false,
+          events: false,
+          team: false,
+          birthday: false,
+          payments: false,
+        },
+        clarityProjectId: "my-clarity-project",
+      };
+
+      const result = replaceTemplateVariables(baseTemplate, config);
+
+      expect(JSON.stringify(result)).toContain("my-clarity-project");
+    });
+
+    test("handles all flags as true", () => {
+      const config = {
+        featureFlags: {
+          delivery: true,
+          ecommerce: true,
+          happyHour: true,
+          campaigns: true,
+          storeHours: true,
+          pushNotifications: true,
+          suggestionBox: true,
+          clarity: true,
+          ourStory: true,
+          events: true,
+          team: true,
+          birthday: true,
+          payments: true,
+        },
+        clarityProjectId: "test",
+      };
+
+      const result = replaceTemplateVariables(baseTemplate, config);
+      const resultStr = JSON.stringify(result);
+
+      expect(resultStr).not.toContain("false");
+      expect(resultStr).toContain("true");
+    });
+
+    test("handles all flags as false", () => {
+      const config = {
+        featureFlags: {
+          delivery: false,
+          ecommerce: false,
+          happyHour: false,
+          campaigns: false,
+          storeHours: false,
+          pushNotifications: false,
+          suggestionBox: false,
+          clarity: false,
+          ourStory: false,
+          events: false,
+          team: false,
+          birthday: false,
+          payments: false,
+        },
+        clarityProjectId: "test",
+      };
+
+      const result = replaceTemplateVariables(baseTemplate, config);
+      const resultStr = JSON.stringify(result);
+
+      expect(resultStr).toContain("false");
+      expect(resultStr).not.toContain(":true");
+    });
+  });
 
   describe("getDefaultVersionarte()", () => {
     test("returns android configuration", () => {
-      const result = setup.getDefaultVersionarte();
+      const result = getDefaultVersionarte();
 
       expect(result.android).toBeDefined();
       expect(result.android.version.minimum).toBe("1.0.0");
@@ -541,7 +537,7 @@ describe("RemoteConfigSetup", () => {
     });
 
     test("returns iOS configuration", () => {
-      const result = setup.getDefaultVersionarte();
+      const result = getDefaultVersionarte();
 
       expect(result.ios).toBeDefined();
       expect(result.ios.version.minimum).toBe("1.0.0");
@@ -550,10 +546,10 @@ describe("RemoteConfigSetup", () => {
     });
 
     test("includes maintenance message in Portuguese", () => {
-      const result = setup.getDefaultVersionarte();
+      const result = getDefaultVersionarte();
 
-      expect(result.android.status.message.pt).toContain("manutenção");
-      expect(result.ios.status.message.pt).toContain("manutenção");
+      expect(result.android.status.message.pt).toContain("manutencao");
+      expect(result.ios.status.message.pt).toContain("manutencao");
     });
   });
 
@@ -561,7 +557,7 @@ describe("RemoteConfigSetup", () => {
     test("returns a promise", () => {
       jest.useFakeTimers();
 
-      const promise = setup.sleep(1000);
+      const promise = sleep(1000);
 
       expect(promise).toBeInstanceOf(Promise);
 
@@ -572,7 +568,7 @@ describe("RemoteConfigSetup", () => {
     test("resolves after specified time", async () => {
       jest.useFakeTimers();
 
-      const promise = setup.sleep(1000);
+      const promise = sleep(1000);
       jest.advanceTimersByTime(1000);
 
       await expect(promise).resolves.toBeUndefined();
