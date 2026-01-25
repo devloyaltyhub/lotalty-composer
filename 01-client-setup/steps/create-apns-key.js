@@ -1,7 +1,6 @@
-const { execSync, spawn } = require('child_process');
+const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
-const chalk = require('chalk');
 
 /**
  * APNs Key Creator

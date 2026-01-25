@@ -8,7 +8,6 @@
  */
 
 const inquirer = require('inquirer');
-const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
 const IOSCertificateSetup = require('../steps/setup-ios-certificates');

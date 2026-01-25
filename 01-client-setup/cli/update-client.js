@@ -5,7 +5,6 @@ const fs = require('fs');
 const inquirer = require('inquirer');
 const logger = require('../../shared/utils/logger');
 const telegram = require('../../shared/utils/telegram');
-const errorHandler = require('../../shared/utils/error-handler');
 const clientSelector = require('../../shared/utils/client-selector');
 const ClientBuilder = require('../../02-build-deploy/build-client');
 

@@ -2,12 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const inquirer = require('inquirer');
 const logger = require('./logger');
-const {
-  CLIENTS_DIR,
-  LOYALTY_APP_ROOT,
-  getClientDir,
-  getClientConfigPath,
-} = require('./paths');
+const { CLIENTS_DIR, LOYALTY_APP_ROOT } = require('./paths');
 
 /**
  * Shared utility for client selection operations

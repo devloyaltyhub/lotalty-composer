@@ -4,7 +4,6 @@ const path = require('path');
 const fs = require('fs');
 const inquirer = require('inquirer');
 const logger = require('../../shared/utils/logger');
-const errorHandler = require('../../shared/utils/error-handler');
 const clientSelector = require('../../shared/utils/client-selector');
 const MetadataGenerator = require('../steps/generate-metadata');
 

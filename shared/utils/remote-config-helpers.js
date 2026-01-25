@@ -21,6 +21,8 @@ const FEATURE_FLAG_MAPPINGS = [
   { placeholder: "{{TEAM}}", key: "team" },
   { placeholder: "{{BIRTHDAY}}", key: "birthday" },
   { placeholder: "{{PAYMENTS}}", key: "payments" },
+  { placeholder: "{{DIETARY_PREFERENCES}}", key: "dietaryPreferences" },
+  { placeholder: "{{AI_ASSISTANT}}", key: "aiAssistant" },
 ];
 
 /**

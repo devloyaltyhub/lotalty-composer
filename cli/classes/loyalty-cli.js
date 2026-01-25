@@ -172,6 +172,7 @@ class LoyaltyCLI {
         return;
       }
 
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const selection = await this.showMainMenu();
         const shouldContinue = await this.handleSelection(selection);

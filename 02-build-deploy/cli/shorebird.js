@@ -99,6 +99,7 @@ async function handleMenuChoice(choice) {
  * Run interactive menu loop
  */
 async function runInteractiveMenu() {
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const choice = await showMenu();
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 
-const { execSync } = require('child_process');
-const path = require('path');
 const fs = require('fs');
 const { WHITE_LABEL_APP_ROOT, WHITE_LABEL_PUBSPEC } = require('../utils/paths');
 
@@ -36,7 +34,7 @@ function checkFlutterProject() {
   return flutterProjectPath;
 }
 
-function runUnusedFilesCheck(flutterProjectPath) {
+function runUnusedFilesCheck(_flutterProjectPath) {
   // dart_code_metrics foi removido do projeto
   // Esta verificação agora é um no-op que sempre retorna sucesso
   log('⏭️  Verificação de arquivos não utilizados pulada (dart_code_metrics removido)', 'yellow');

@@ -12,7 +12,6 @@
  *   node deploy-admin-web.js --message="..."    # Custom commit message
  */
 
-const path = require('path');
 const inquirer = require('inquirer');
 
 // Load environment variables

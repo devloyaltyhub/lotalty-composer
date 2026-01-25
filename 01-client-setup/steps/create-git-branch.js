@@ -1,6 +1,4 @@
 const simpleGit = require('simple-git');
-const path = require('path');
-const fs = require('fs');
 const logger = require('../../shared/utils/logger');
 
 class GitBranchManager {

@@ -61,19 +61,6 @@ class UrlTransformer {
       return this.urlMapping[value];
     }
 
-    // Padrões de URL do Firebase Storage
-    const patterns = [
-      // gs:// URL
-      new RegExp(`gs://${this.escapeRegex(this.sourceBucket)}/`, 'g'),
-      // HTTP URL do Firebase Storage
-      new RegExp(
-        `https://firebasestorage\\.googleapis\\.com/v0/b/${this.escapeRegex(this.sourceBucket)}/o/`,
-        'g'
-      ),
-      // Outro padrão HTTP
-      new RegExp(`https://storage\\.googleapis\\.com/${this.escapeRegex(this.sourceBucket)}/`, 'g'),
-    ];
-
     let result = value;
 
     // Substitui gs:// URL

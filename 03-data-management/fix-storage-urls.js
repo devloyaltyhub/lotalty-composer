@@ -27,8 +27,6 @@ const COLLECTIONS_WITH_IMAGES = [
   'Gallery',
 ];
 
-// Campos que podem conter URLs de imagens
-const IMAGE_FIELDS = ['image', 'imageUrl', 'photo', 'photos', 'fileName', 'url'];
 
 class StorageUrlFixer {
   constructor(projectId, databaseId, storageBucket) {
