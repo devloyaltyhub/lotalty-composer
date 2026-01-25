@@ -21,9 +21,11 @@ class RemoteConfigSetup {
    * @param {Object} config.featureFlags - Feature flags object
    * @param {string} config.clarityProjectId - Clarity project ID
    * @param {string} config.clientCode - Client code for logging
+   * @param {string} config.planType - Subscription plan type
+   * @param {Object} config.planLimits - Plan-based limits
    */
   async setupRemoteConfig(config) {
-    const { featureFlags, clarityProjectId, clientCode } = config;
+    const { featureFlags, clarityProjectId, clientCode, planType, planLimits } = config;
 
     console.log(chalk.blue("\n📡 Setting up Firebase Remote Config..."));
 
@@ -33,6 +35,8 @@ class RemoteConfigSetup {
       const processedTemplate = replaceTemplateVariables(template, {
         featureFlags,
         clarityProjectId,
+        planType: planType || "profissional",
+        planLimits: planLimits || {},
       });
 
       await this.publishTemplate(processedTemplate, clientCode);
@@ -44,6 +48,7 @@ class RemoteConfigSetup {
       return {
         featureFlags,
         clarityProjectId,
+        planType,
         versionarte: getDefaultVersionarte(),
       };
     } catch (error) {
@@ -198,6 +203,61 @@ class RemoteConfigSetup {
       template.parameters.clarityProjectId.defaultValue.value;
     if (publishedClarityId !== expectedClarityId) {
       throw new Error("Clarity Project ID mismatch");
+    }
+  }
+
+  /**
+   * Update plan-related config in Remote Config
+   * @param {Object} config - Configuration object
+   * @param {string} config.planType - New plan type
+   * @param {Object} config.featureFlags - Feature flags for the new plan
+   * @param {Object} config.planLimits - Limits for the new plan
+   */
+  async updatePlanConfig(config) {
+    const admin = require("firebase-admin");
+    const { planType, featureFlags, planLimits } = config;
+
+    console.log(chalk.blue("\n📡 Updating Remote Config for plan change..."));
+
+    try {
+      const remoteConfig = admin.remoteConfig(this.app);
+      let currentTemplate = await remoteConfig.getTemplate();
+
+      if (!currentTemplate.parameters) {
+        currentTemplate.parameters = {};
+      }
+
+      currentTemplate.parameters.planType = {
+        defaultValue: { value: planType },
+        description: "Client subscription plan type",
+        valueType: "STRING",
+      };
+
+      currentTemplate.parameters.planLimits = {
+        defaultValue: { value: JSON.stringify(planLimits) },
+        description: "Plan-based limits",
+        valueType: "JSON",
+      };
+
+      if (featureFlags) {
+        currentTemplate.parameters.featureFlags = {
+          defaultValue: { value: JSON.stringify(featureFlags) },
+          description: "Feature flags for the client app",
+          valueType: "JSON",
+        };
+      }
+
+      const publishedTemplate = await remoteConfig.publishTemplate(currentTemplate);
+
+      console.log(
+        chalk.green(
+          `  ✓ Remote Config updated for plan change (version: ${publishedTemplate.version.versionNumber})`,
+        ),
+      );
+
+      return true;
+    } catch (error) {
+      throw new Error(`Failed to update Remote Config: ${error.message}`);
     }
   }
 }

@@ -7,6 +7,7 @@ const {
 } = require("../../shared/input-validator");
 const { BusinessTypeRepository } = require("../../shared/business-type-manager");
 const logger = require("../../../shared/utils/logger");
+const { getPlanChoicesForPrompt, getPlanFeatureFlags, PLAN_TYPES } = require("../../../shared/constants/plans");
 
 const FEATURE_FLAGS_CHOICES = [
   { name: "Delivery", value: "delivery", checked: false },
@@ -148,6 +149,13 @@ async function collectClientInfo(firebaseClient) {
       })),
     },
     {
+      type: "list",
+      name: "planType",
+      message: "Subscription Plan:",
+      choices: getPlanChoicesForPrompt(),
+      default: PLAN_TYPES.PROFISSIONAL,
+    },
+    {
       type: "input",
       name: "primaryColor",
       message: 'Primary Brand Color (hex, e.g., "#FF5733"):',
@@ -162,10 +170,23 @@ async function collectClientInfo(firebaseClient) {
       },
     },
     {
+      type: "confirm",
+      name: "customizeFeatures",
+      message: "Customize feature flags? (No = use plan defaults)",
+      default: false,
+    },
+    {
       type: "checkbox",
-      name: "featureFlags",
+      name: "featureFlagsCustom",
       message: "Select features to enable for this client:",
-      choices: FEATURE_FLAGS_CHOICES,
+      choices: (prevAnswers) => {
+        const planFlags = getPlanFeatureFlags(prevAnswers.planType);
+        return FEATURE_FLAGS_CHOICES.map((choice) => ({
+          ...choice,
+          checked: planFlags ? planFlags[choice.value] : choice.checked,
+        }));
+      },
+      when: (prevAnswers) => prevAnswers.customizeFeatures,
     },
     {
       type: "input",
@@ -184,7 +205,11 @@ async function collectClientInfo(firebaseClient) {
     },
   ]);
 
-  answers.featureFlags = convertFeatureFlagsToObject(answers.featureFlags);
+  if (answers.customizeFeatures && answers.featureFlagsCustom) {
+    answers.featureFlags = convertFeatureFlagsToObject(answers.featureFlagsCustom);
+  } else {
+    answers.featureFlags = getPlanFeatureFlags(answers.planType);
+  }
   answers.websiteUrl = "https://www.loyaltyhub.club";
   answers.supportUrl = "https://www.loyaltyhub.club/contact";
   answers.privacyUrl = "https://www.loyaltyhub.club/legal#privacy";
@@ -219,6 +244,8 @@ async function collectClientInfo(firebaseClient) {
 }
 
 async function confirmCreation(config) {
+  const { PLAN_DISPLAY_NAMES } = require("../../../shared/constants/plans");
+
   logger.blank();
   logger.subSection("Review Configuration");
   logger.keyValue("Client Name", config.clientName);
@@ -226,6 +253,7 @@ async function confirmCreation(config) {
   logger.keyValue("Bundle ID", config.bundleId);
   logger.keyValue("Firebase Project", config.firebaseProjectId);
   logger.keyValue("Admin Email", config.adminEmail);
+  logger.keyValue("Subscription Plan", PLAN_DISPLAY_NAMES[config.planType] || config.planType);
   logger.blank();
 
   const { confirmed } = await inquirer.prompt([

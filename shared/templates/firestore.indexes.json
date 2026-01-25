@@ -20,7 +20,7 @@
       "collectionGroup": "Notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "clubId", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "creationTime", "order": "ASCENDING" }
       ]
     },
@@ -28,7 +28,7 @@
       "collectionGroup": "Notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "clubId", "order": "ASCENDING" },
+        { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "creationTime", "order": "DESCENDING" }
       ]
     },

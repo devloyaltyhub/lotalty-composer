@@ -50,6 +50,7 @@ function generateLocalConfig(config) {
     loversName: config.loversName,
     companyHint: getCompanyHintFromBusinessType(config.businessType),
     businessType: config.businessType,
+    planType: config.planType || "profissional",
     firebaseProjectId: config.firebaseProjectId,
     adminEmail: config.adminEmail,
     locale: config.locale || "pt-BR",

@@ -235,9 +235,19 @@ class FirebaseClient {
     return admin.firestore(app);
   }
 
-  async saveClientToMaster(clientCode, firebaseOptions, isActive = true, tinifyApiKey = null) {
+  async saveClientToMaster(clientCode, firebaseOptions, isActive = true, tinifyApiKey = null, planType = 'profissional') {
     const firestore = await this.getMasterFirestore();
-    return dataUtils.saveClientToMaster(firestore, clientCode, firebaseOptions, isActive, tinifyApiKey);
+    return dataUtils.saveClientToMaster(firestore, clientCode, firebaseOptions, isActive, tinifyApiKey, planType);
+  }
+
+  async updateClientPlan(clientCode, newPlanType, previousPlanType = null) {
+    const firestore = await this.getMasterFirestore();
+    return dataUtils.updateClientPlan(firestore, clientCode, newPlanType, previousPlanType);
+  }
+
+  async getAllClients(activeOnly = true) {
+    const firestore = await this.getMasterFirestore();
+    return dataUtils.getAllClients(firestore, activeOnly);
   }
 
   async getClientFromMaster(clientCode) {

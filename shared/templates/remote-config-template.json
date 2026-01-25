@@ -15,6 +15,20 @@
       "valueType": "STRING",
       "description": "Microsoft Clarity project ID for analytics tracking"
     },
+    "planType": {
+      "defaultValue": {
+        "value": "{{PLAN_TYPE}}"
+      },
+      "valueType": "STRING",
+      "description": "Client subscription plan type (essencial, profissional, ilimitado)"
+    },
+    "planLimits": {
+      "defaultValue": {
+        "value": "{{PLAN_LIMITS}}"
+      },
+      "valueType": "STRING",
+      "description": "Plan-based limits (maxClients, maxProducts, showBranding, etc)"
+    },
     "versionarte": {
       "defaultValue": {
         "value": "{\"android\":{\"version\":{\"minimum\":\"1.0.0\",\"latest\":\"0.0.1\"},\"download_url\":\"\",\"status\":{\"active\":true,\"message\":{\"pt\":\"O Aplicativo está em manutenção. Por favor, tente mais tarde.\"}}},\"ios\":{\"version\":{\"minimum\":\"1.0.0\",\"latest\":\"0.0.1\"},\"download_url\":\"\",\"status\":{\"active\":true,\"message\":{\"pt\":\"O Aplicativo está em manutenção. Por favor, tente mais tarde.\"}}}}"

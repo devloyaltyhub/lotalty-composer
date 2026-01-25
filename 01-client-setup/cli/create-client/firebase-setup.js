@@ -5,6 +5,7 @@ const telegram = require("../../../shared/utils/telegram");
 const { getClientDir } = require("../../../shared/utils/paths");
 const FirebaseProjectCreator = require("../../steps/create-firebase-project");
 const RemoteConfigSetup = require("../../steps/setup-remote-config");
+const { getPlanLimits } = require("../../../shared/constants/plans");
 
 async function createFirebaseProject(config, _firebaseClient) {
   logger.section("Firebase Project Setup");
@@ -42,6 +43,7 @@ async function saveToMasterFirebase(config, firebaseClient) {
     config.firebaseOptions,
     true,
     config.tinifyApiKey || null,
+    config.planType || 'profissional',
   );
 
   logger.success("Client saved to Master Firebase");
@@ -101,6 +103,8 @@ async function setupRemoteConfig(config, firebaseClient) {
     featureFlags: config.featureFlags,
     clarityProjectId: config.clarityProjectId,
     clientCode: config.clientCode,
+    planType: config.planType || 'profissional',
+    planLimits: getPlanLimits(config.planType || 'profissional'),
   });
 
   logger.success("Remote Config setup completed");

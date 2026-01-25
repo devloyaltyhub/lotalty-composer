@@ -42,17 +42,22 @@ function replaceFeatureFlags(templateStr, featureFlags) {
 /**
  * Replace variables in the Remote Config template
  * @param {Object} template - The template object
- * @param {Object} config - Configuration with featureFlags and clarityProjectId
+ * @param {Object} config - Configuration with featureFlags, clarityProjectId, planType, planLimits
  * @returns {Object} - Processed template object
  */
 function replaceTemplateVariables(template, config) {
-  const { featureFlags, clarityProjectId } = config;
+  const { featureFlags, clarityProjectId, planType, planLimits } = config;
 
   let templateStr = JSON.stringify(template, null, 2);
 
   templateStr = replaceFeatureFlags(templateStr, featureFlags);
 
   templateStr = templateStr.replace("{{CLARITY_PROJECT_ID}}", clarityProjectId);
+
+  templateStr = templateStr.replace("{{PLAN_TYPE}}", planType || "profissional");
+
+  const limitsStr = planLimits ? JSON.stringify(planLimits).replace(/"/g, '\\"') : '{}';
+  templateStr = templateStr.replace("{{PLAN_LIMITS}}", limitsStr);
 
   return JSON.parse(templateStr);
 }
