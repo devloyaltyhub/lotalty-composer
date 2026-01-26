@@ -16,8 +16,8 @@
   "Products": {
     "prod_001": {
       "id": "prod_001",
-      "title": "Café Expresso",
-      "description": "Café expresso tradicional",
+      "title": "Café espresso",
+      "description": "Café espresso tradicional",
       "price": 5.0,
       "categories": [
         {
