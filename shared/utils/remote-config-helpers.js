@@ -23,6 +23,7 @@ const FEATURE_FLAG_MAPPINGS = [
   { placeholder: "{{PAYMENTS}}", key: "payments" },
   { placeholder: "{{DIETARY_PREFERENCES}}", key: "dietaryPreferences" },
   { placeholder: "{{AI_ASSISTANT}}", key: "aiAssistant" },
+  { placeholder: "{{LAUNCH_SCREEN}}", key: "launchScreen" },
 ];
 
 /**

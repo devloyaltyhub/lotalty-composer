@@ -3,10 +3,17 @@
   "parameters": {
     "featureFlags": {
       "defaultValue": {
-        "value": "{\"delivery\":{{DELIVERY}},\"ecommerce\":{{ECOMMERCE}},\"happyHour\":{{HAPPY_HOUR}},\"campaigns\":{{CAMPAIGNS}},\"storeHours\":{{STORE_HOURS}},\"pushNotifications\":{{PUSH_NOTIFICATIONS}},\"suggestionBox\":{{SUGGESTION_BOX}},\"clarity\":{{CLARITY}},\"ourStory\":{{OUR_STORY}},\"events\":{{EVENTS}},\"team\":{{TEAM}},\"birthday\":{{BIRTHDAY}},\"payments\":{{PAYMENTS}},\"dietaryPreferences\":{{DIETARY_PREFERENCES}},\"aiAssistant\":{{AI_ASSISTANT}}}"
+        "value": "{\"delivery\":{{DELIVERY}},\"ecommerce\":{{ECOMMERCE}},\"happyHour\":{{HAPPY_HOUR}},\"campaigns\":{{CAMPAIGNS}},\"storeHours\":{{STORE_HOURS}},\"pushNotifications\":{{PUSH_NOTIFICATIONS}},\"suggestionBox\":{{SUGGESTION_BOX}},\"clarity\":{{CLARITY}},\"ourStory\":{{OUR_STORY}},\"events\":{{EVENTS}},\"team\":{{TEAM}},\"birthday\":{{BIRTHDAY}},\"payments\":{{PAYMENTS}},\"dietaryPreferences\":{{DIETARY_PREFERENCES}},\"aiAssistant\":{{AI_ASSISTANT}},\"launchScreen\":{{LAUNCH_SCREEN}}}"
       },
       "valueType": "STRING",
       "description": "Feature flags controlling which features are enabled in the app"
+    },
+    "launchScreenConfig": {
+      "defaultValue": {
+        "value": "{\"launchDateTime\":null}"
+      },
+      "valueType": "STRING",
+      "description": "Launch screen countdown configuration (launchDateTime in ISO 8601 UTC format, e.g. 2026-02-15T18:00:00Z)"
     },
     "clarityProjectId": {
       "defaultValue": {

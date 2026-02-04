@@ -73,6 +73,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     payments: true,
     dietaryPreferences: false,
     aiAssistant: false,
+    launchScreen: false,
   },
   profissional: {
     delivery: true,
@@ -90,6 +91,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     payments: true,
     dietaryPreferences: true,
     aiAssistant: true,
+    launchScreen: false,
   },
   ilimitado: {
     delivery: true,
@@ -107,6 +109,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     payments: true,
     dietaryPreferences: true,
     aiAssistant: true,
+    launchScreen: false,
   },
 };
 
