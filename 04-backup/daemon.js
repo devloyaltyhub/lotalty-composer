@@ -12,7 +12,11 @@ const { existsSync, readdirSync, readFileSync } = require('fs');
 const { join } = require('path');
 const { cert, getApps, initializeApp } = require('firebase-admin/app');
 const { getFirestore: getFirestoreFromSDK } = require('firebase-admin/firestore');
-const { BackupOrchestrator } = require('@loyaltyhub/backup');
+const {
+  FirestoreExporter,
+  StorageExporter,
+  GitHubBatchUploader,
+} = require('@loyaltyhub/backup');
 const { TelegramSender } = require('@loyaltyhub/reports');
 const { CONFIG, validateConfig } = require('./config');
 
@@ -44,6 +48,10 @@ function formatTime(date) {
   return date.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
 }
 
+function getTodayDate() {
+  return new Date().toISOString().split('T')[0];
+}
+
 function discoverClients() {
   const clients = {};
 
@@ -72,14 +80,14 @@ function discoverClients() {
   return clients;
 }
 
-async function initializeFirebaseApp(projectId) {
+function initializeFirebaseApp(projectId) {
   try {
     const existingApp = getApps().find(
       (app) => app.options?.projectId === projectId
     );
 
     if (existingApp) {
-      return true;
+      return existingApp;
     }
 
     const files = readdirSync(credentialsDir).filter((f) => f.endsWith('.json'));
@@ -89,34 +97,28 @@ async function initializeFirebaseApp(projectId) {
       const serviceAccount = JSON.parse(readFileSync(filePath, 'utf8'));
 
       if (serviceAccount.project_id === projectId) {
-        const appName = `${projectId}-${Math.random().toString(36).slice(2, 9)}`;
-        initializeApp(
+        // Set GOOGLE_APPLICATION_CREDENTIALS for Storage SDK
+        process.env.GOOGLE_APPLICATION_CREDENTIALS = filePath;
+
+        const app = initializeApp(
           {
             credential: cert(serviceAccount),
             projectId,
-            storageBucket: `${projectId}.firebasestorage.app`,
+            storageBucket: `${projectId}.appspot.com`,
           },
-          appName
+          projectId
         );
         console.log(`Firebase initialized: ${projectId}`);
-        return true;
+        return app;
       }
     }
 
     console.error(`Credentials not found for: ${projectId}`);
-    return false;
+    return null;
   } catch (error) {
-    console.error(`Firebase init error for ${projectId}:`, error);
-    return false;
+    console.error(`Firebase init error for ${projectId}:`, error.message);
+    return null;
   }
-}
-
-function getFirestore(projectId) {
-  const app = getApps().find((a) => a.options?.projectId === projectId);
-  if (!app) {
-    throw new Error(`Firebase app not found: ${projectId}`);
-  }
-  return getFirestoreFromSDK(app);
 }
 
 function createTelegramSender() {
@@ -126,7 +128,7 @@ function createTelegramSender() {
   });
 }
 
-async function sendNotification(telegram, success, message, duration, clientName) {
+async function sendNotification(telegram, success, message, duration) {
   if (!telegram.isConfigured()) {
     return;
   }
@@ -138,7 +140,6 @@ async function sendNotification(telegram, success, message, duration, clientName
   const text = [
     `${emoji} *Backup ${status}*`,
     '',
-    clientName ? `Client: \`${clientName}\`` : '',
     `Message: ${message}`,
     `Duration: ${durationSec}s`,
     '',
@@ -147,71 +148,165 @@ async function sendNotification(telegram, success, message, duration, clientName
     .filter(Boolean)
     .join('\n');
 
-  await telegram.sendMessage(text);
+  try {
+    await telegram.sendMessage(text);
+  } catch (error) {
+    console.error('Failed to send Telegram notification:', error.message);
+  }
 }
 
-async function runBackup(orchestrator, telegram) {
+function getFirestore(pid) {
+  const app = getApps().find((a) => a.options?.projectId === pid);
+  if (!app) {
+    throw new Error(`Firebase app not found: ${pid}`);
+  }
+  return getFirestoreFromSDK(app);
+}
+
+function getFirebaseApp(pid) {
+  return getApps().find((a) => a.options?.projectId === pid);
+}
+
+async function backupClient(clientName, projectId, uploader, date) {
   const startTime = Date.now();
-  const results = [];
+
+  const app = initializeFirebaseApp(projectId);
+  if (!app) {
+    return { success: false, error: `Failed to initialize Firebase for ${projectId}` };
+  }
+
+  let firestoreData = null;
+  let storageData = null;
+
+  // Export Firestore
+  console.log(`  [${clientName}] Exporting Firestore...`);
+  try {
+    const firestoreExporter = new FirestoreExporter(projectId, getFirestore);
+    firestoreData = await firestoreExporter.exportAllCollections();
+    console.log(`  [${clientName}] Firestore: ${firestoreData.stats.totalDocuments} docs in ${firestoreData.stats.totalCollections} collections`);
+  } catch (error) {
+    console.error(`  [${clientName}] Firestore export error:`, error.message);
+  }
+
+  // Export Storage
+  console.log(`  [${clientName}] Exporting Storage...`);
+  try {
+    const storageExporter = new StorageExporter(projectId, getFirebaseApp);
+    storageData = await storageExporter.exportAllFiles();
+    console.log(`  [${clientName}] Storage: ${storageData.stats.totalFiles} files`);
+  } catch (error) {
+    console.error(`  [${clientName}] Storage export error:`, error.message);
+    // Create empty storage data if export fails
+    storageData = {
+      exportedAt: new Date().toISOString(),
+      projectId,
+      files: [],
+      stats: { totalFiles: 0, totalSize: 0, skippedFiles: 0 },
+    };
+  }
+
+  // Upload to GitHub
+  if (!firestoreData && !storageData) {
+    return { success: false, error: 'No data to backup', duration: Date.now() - startTime };
+  }
+
+  // If no firestore data, create empty structure
+  if (!firestoreData) {
+    firestoreData = {
+      exportedAt: new Date().toISOString(),
+      projectId,
+      collections: [],
+      stats: { totalCollections: 0, totalDocuments: 0 },
+    };
+  }
+
+  console.log(`  [${clientName}] Uploading to GitHub...`);
+  const uploadResult = await uploader.uploadBackup(date, clientName, firestoreData, storageData);
+
+  const duration = Date.now() - startTime;
+
+  return {
+    success: uploadResult.success,
+    duration,
+    results: {
+      firestore: {
+        collections: firestoreData.stats.totalCollections,
+        documents: firestoreData.stats.totalDocuments,
+      },
+      storage: {
+        files: storageData.stats.totalFiles,
+      },
+      filesUploaded: uploadResult.filesUploaded,
+    },
+    errors: uploadResult.errors,
+  };
+}
+
+async function runBackup(clients, telegram) {
+  const startTime = Date.now();
+  const date = getTodayDate();
+  const clientNames = Object.keys(clients);
+  const backupResults = [];
   let hasError = false;
 
-  try {
-    while (true) {
-      const result = await orchestrator.processBackup({ forceBackup: true });
+  console.log(`\nStarting backup for ${clientNames.length} clients (${date})\n`);
 
-      console.log(`[${result.clientName || 'all'}] ${result.message}`);
+  const uploader = new GitHubBatchUploader({
+    token: CONFIG.GITHUB_BACKUP_TOKEN,
+    owner: CONFIG.GITHUB_BACKUP_OWNER,
+    repo: CONFIG.GITHUB_BACKUP_REPO,
+  });
 
-      if (result.status === 'completed' && result.data?.allCompleted) {
-        console.log('\nAll clients completed!');
-        break;
-      }
+  for (const clientName of clientNames) {
+    const projectId = clients[clientName];
+    console.log(`\n[${clientName}] Starting backup (${projectId})`);
 
-      if (result.status === 'failed') {
+    try {
+      const result = await backupClient(clientName, projectId, uploader, date);
+      backupResults.push({ clientName, ...result });
+
+      if (!result.success) {
         hasError = true;
-        results.push({
-          client: result.clientName,
-          success: false,
-          message: result.message,
-        });
-      } else {
-        results.push({
-          client: result.clientName,
-          success: true,
-          message: result.message,
-        });
+        if (result.errors?.length > 0) {
+          console.error(`[${clientName}] Errors:`, result.errors.join(', '));
+        }
       }
+
+      console.log(`[${clientName}] Completed in ${(result.duration / 1000).toFixed(1)}s`);
+    } catch (error) {
+      hasError = true;
+      backupResults.push({
+        clientName,
+        success: false,
+        error: error.message,
+      });
+      console.error(`[${clientName}] Failed:`, error.message);
     }
-
-    const totalDuration = Date.now() - startTime;
-    const successCount = results.filter((r) => r.success).length;
-    const failCount = results.filter((r) => !r.success).length;
-
-    const summary = [
-      `Completed: ${successCount} phases`,
-      failCount > 0 ? `Failed: ${failCount}` : null,
-      `Duration: ${(totalDuration / 1000).toFixed(1)}s`,
-    ]
-      .filter(Boolean)
-      .join(', ');
-
-    console.log(`\nSummary: ${summary}`);
-
-    await sendNotification(
-      telegram,
-      !hasError,
-      hasError ? `Backup finished with errors. ${summary}` : `All backups completed. ${summary}`,
-      totalDuration
-    );
-
-    return !hasError;
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    console.error('\nBackup failed:', message);
-
-    await sendNotification(telegram, false, message, Date.now() - startTime);
-
-    return false;
   }
+
+  const totalDuration = Date.now() - startTime;
+  const successCount = backupResults.filter((r) => r.success).length;
+  const failCount = backupResults.filter((r) => !r.success).length;
+
+  const summary = [
+    `Clients: ${successCount}/${clientNames.length} successful`,
+    failCount > 0 ? `Failed: ${failCount}` : null,
+    `Duration: ${(totalDuration / 1000).toFixed(1)}s`,
+  ]
+    .filter(Boolean)
+    .join(', ');
+
+  console.log(`\n=== Backup Summary ===`);
+  console.log(summary);
+
+  await sendNotification(
+    telegram,
+    !hasError,
+    hasError ? `Backup finished with errors. ${summary}` : `All backups completed. ${summary}`,
+    totalDuration
+  );
+
+  return !hasError;
 }
 
 async function main() {
@@ -233,21 +328,9 @@ async function main() {
 
   const telegram = createTelegramSender();
 
-  const orchestrator = new BackupOrchestrator({
-    getPool: async () => null,
-    initializeFirebaseApp,
-    getFirestore,
-    backupClients: clients,
-    github: {
-      token: CONFIG.GITHUB_BACKUP_TOKEN,
-      owner: CONFIG.GITHUB_BACKUP_OWNER,
-      repo: CONFIG.GITHUB_BACKUP_REPO,
-    },
-  });
-
   if (runOnce) {
-    console.log('\nRunning backup once...\n');
-    const success = await runBackup(orchestrator, telegram);
+    console.log('\nRunning backup once...');
+    const success = await runBackup(clients, telegram);
     process.exit(success ? 0 : 1);
   }
 
@@ -263,8 +346,8 @@ async function main() {
 
     await new Promise((resolve) => setTimeout(resolve, waitMs));
 
-    console.log(`\n[${formatTime(new Date())}] Starting scheduled backup...\n`);
-    await runBackup(orchestrator, telegram);
+    console.log(`\n[${formatTime(new Date())}] Starting scheduled backup...`);
+    await runBackup(clients, telegram);
     console.log('');
   }
 }
