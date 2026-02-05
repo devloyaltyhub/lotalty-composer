@@ -194,6 +194,33 @@ const SCRIPTS = {
     category: CATEGORIES.CLIENT_OPS,
     script: '03-data-management/cli/export-demo-data.js',
   },
+
+  // Backup & Restore
+  BACKUP_ONCE: {
+    name: 'Executar Backup Agora',
+    description: 'Backup imediato de todos os clientes (Firestore + Storage) para GitHub',
+    category: CATEGORIES.BACKUP,
+    script: '04-backup/daemon.js',
+    args: ['--once'],
+  },
+  BACKUP_CLI: {
+    name: 'Menu de Backup',
+    description: 'Menu interativo para listar e restaurar backups',
+    category: CATEGORIES.BACKUP,
+    script: '04-backup/cli-menu.js',
+  },
+  BACKUP_LIST: {
+    name: 'Listar Backups',
+    description: 'Ver todos os backups disponíveis no GitHub',
+    category: CATEGORIES.BACKUP,
+    script: '04-backup/list-backups.js',
+  },
+  BACKUP_RESTORE: {
+    name: 'Restaurar Backup',
+    description: 'Restaurar Firestore/Storage de um backup específico',
+    category: CATEGORIES.BACKUP,
+    script: '04-backup/restore-backup/index.js',
+  },
 };
 
 // ============================================================================

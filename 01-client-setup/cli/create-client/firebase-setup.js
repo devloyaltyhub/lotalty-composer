@@ -112,26 +112,35 @@ async function setupRemoteConfig(config, firebaseClient) {
 }
 
 async function copyCredentialsToCloudService(config) {
-  logger.section("Copying Firebase Credentials to Cloud Service");
+  logger.section("Copying Firebase Credentials");
 
   const serviceAccountPath = config.serviceAccountPath;
   if (!serviceAccountPath || !fs.existsSync(serviceAccountPath)) {
-    logger.warn("Service account file not found, skipping cloud service credentials copy");
+    logger.warn("Service account file not found, skipping credentials copy");
     return;
   }
 
+  // Copy to Cloud Service
   const cloudServiceCredentialsDir = path.resolve(__dirname, "../../../../loyalty-cloud-service/credentials");
-
   if (!fs.existsSync(cloudServiceCredentialsDir)) {
     fs.mkdirSync(cloudServiceCredentialsDir, { recursive: true });
     logger.info(`Created credentials directory: ${cloudServiceCredentialsDir}`);
   }
+  const cloudServicePath = path.join(cloudServiceCredentialsDir, `${config.clientCode}.json`);
+  fs.copyFileSync(serviceAccountPath, cloudServicePath);
+  logger.success(`Credentials copied to Cloud Service: ${cloudServicePath}`);
 
-  const destinationPath = path.join(cloudServiceCredentialsDir, `${config.clientCode}.json`);
-  fs.copyFileSync(serviceAccountPath, destinationPath);
+  // Copy to Composer (for backup daemon)
+  const composerCredentialsDir = path.resolve(__dirname, "../../../credentials");
+  if (!fs.existsSync(composerCredentialsDir)) {
+    fs.mkdirSync(composerCredentialsDir, { recursive: true });
+    logger.info(`Created credentials directory: ${composerCredentialsDir}`);
+  }
+  const composerPath = path.join(composerCredentialsDir, `${config.clientCode}.json`);
+  fs.copyFileSync(serviceAccountPath, composerPath);
+  logger.success(`Credentials copied to Composer: ${composerPath}`);
 
-  logger.success(`Firebase credentials copied to: ${destinationPath}`);
-  logger.info("Cloud Service will auto-detect this credential on next restart");
+  logger.info("Cloud Service and Backup Daemon will auto-detect this credential");
 }
 
 module.exports = {

@@ -6,6 +6,11 @@
   "scripts": {
     "loyalty": "node loyalty-cli.js",
     "start": "node 01-client-setup/steps/setup-white-label.js",
+    "backup": "node 04-backup/daemon.js",
+    "backup:once": "node 04-backup/daemon.js --once",
+    "backup:cli": "node 04-backup/cli-menu.js",
+    "backup:list": "node 04-backup/list-backups.js",
+    "backup:restore": "node 04-backup/restore-backup/index.js",
     "reset-to-dev": "node 01-client-setup/steps/setup-white-label.js demo",
     "check-unused-files": "node shared/validators/check-unused-files.js",
     "minify:animations": "node shared/validators/minify-animations.js",
@@ -57,6 +62,8 @@
   },
   "dependencies": {
     "@google-cloud/resource-manager": "^5.0.0",
+    "@loyaltyhub/backup": "file:../loyalty_modules/cloud/node/loyalty_backup/dist",
+    "@loyaltyhub/reports": "file:../loyalty_modules/cloud/node/loyalty_reports/dist",
     "dotenv": "^16.4.5",
     "firebase-admin": "^12.0.0",
     "fs-extra": "^10.0.0",
