@@ -10,7 +10,7 @@ class WorkflowEngine {
     this.configManager = configManager;
     this.currentStep = 0;
     this.startTime = null;
-    this.automationDir = path.join(__dirname, '..');
+    this.automationDir = path.join(__dirname, '..', '..');
   }
 
   async execute() {
@@ -140,7 +140,7 @@ class WorkflowEngine {
 
       const child = spawn('node', [scriptPath, ...args], {
         stdio: 'inherit',
-        cwd: path.join(this.automationDir, '..'),
+        cwd: this.automationDir,
         env,
       });
 

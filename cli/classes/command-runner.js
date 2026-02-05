@@ -6,7 +6,7 @@ const boxen = require('boxen');
 class CommandRunner {
   constructor(configManager) {
     this.configManager = configManager;
-    this.automationDir = path.join(__dirname, '..');
+    this.automationDir = path.join(__dirname, '..', '..');
   }
 
   async runScript(scriptConfig) {
@@ -26,7 +26,7 @@ class CommandRunner {
     return new Promise((resolve, reject) => {
       const child = spawn('node', [scriptPath, ...args], {
         stdio: 'inherit',
-        cwd: path.join(this.automationDir, '..'),
+        cwd: this.automationDir,
       });
 
       child.on('close', (code) => {
