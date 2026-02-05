@@ -228,6 +228,14 @@ const SCRIPTS = {
 // ============================================================================
 
 const WORKFLOWS = {
+  BACKUP_NOW: {
+    name: '💾 Executar Backup Agora',
+    description: 'Backup imediato de todos os clientes (Firestore + Storage) para GitHub',
+    category: CATEGORIES.WORKFLOWS,
+    steps: [
+      { action: 'backup', script: SCRIPTS.BACKUP_ONCE },
+    ],
+  },
   COMPLETE_SETUP: {
     name: 'Configuração Completa de Cliente',
     description: 'Setup completo: valida ambiente → cria cliente → verifica saúde',

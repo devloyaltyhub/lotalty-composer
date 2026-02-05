@@ -3,7 +3,7 @@
  */
 
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
+require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const CONFIG = {
   GITHUB_BACKUP_TOKEN: process.env.GITHUB_BACKUP_TOKEN || '',
