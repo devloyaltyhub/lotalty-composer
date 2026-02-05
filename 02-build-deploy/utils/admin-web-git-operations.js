@@ -58,6 +58,13 @@ class AdminWebGitOperations {
   copyBuildToRepo() {
     logger.info('Copying build to GitHub Pages repo...');
 
+    // Safety check: remove stray .git from build output if present
+    const strayGit = path.join(this.buildOutput, '.git');
+    if (fs.existsSync(strayGit)) {
+      logger.warn('Found .git in build output - removing to prevent corruption');
+      fs.removeSync(strayGit);
+    }
+
     const preservedFiles = {};
 
     for (const file of PRESERVE_FILES) {

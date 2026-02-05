@@ -142,6 +142,13 @@ class AdminWebBuilder {
           );
         }
 
+        // Safety check: remove stray .git from build output if present
+        const strayGit = path.join(this.buildOutput, '.git');
+        if (fs.existsSync(strayGit)) {
+          logger.warn('Found stray .git in build/web - removing to prevent corruption');
+          fs.removeSync(strayGit);
+        }
+
         const indexPath = path.join(this.buildOutput, 'index.html');
         this.injectCacheBusting(indexPath);
       }
