@@ -70,6 +70,20 @@ class AdminWebBuildOperations {
   buildWeb() {
     logger.info('Building Flutter Web...');
 
+    // Safety check: detect contaminated web/ source folder
+    const webSourceDir = path.join(this.adminRoot, 'web');
+    const contaminationIndicators = ['.git', 'main.dart.js', 'flutter.js', 'canvaskit'];
+    for (const indicator of contaminationIndicators) {
+      const indicatorPath = path.join(webSourceDir, indicator);
+      if (fs.existsSync(indicatorPath)) {
+        throw new Error(
+          `CRITICAL: web/ source folder is contaminated with build artifacts (${indicator}). ` +
+            'This causes build corruption. Remove stray files from loyalty-admin-main/web/ ' +
+            'and keep only: index.html, manifest.json, favicon.png, icons/'
+        );
+      }
+    }
+
     const strayGit = path.join(this.buildOutput, '.git');
     if (fs.existsSync(strayGit)) {
       logger.warn('Found stray .git in build/web - removing to prevent build corruption');
