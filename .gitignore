@@ -4,6 +4,9 @@ node_modules/
 # Environment files (contain secrets)
 .env
 
+# Service account credentials (sensitive)
+credentials/
+
 # Logs
 logs/
 *.log
