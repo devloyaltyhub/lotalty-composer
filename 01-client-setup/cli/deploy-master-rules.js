@@ -27,7 +27,7 @@ const {
 } = require('../shared/rules-deployment-utils');
 
 const MASTER_PROJECT_ID = 'loyalty-hub-1f47c';
-const RULES_FILE_PATH = path.join(__dirname, '../../../loyalty-admin-main/firestore.rules');
+const RULES_FILE_PATH = path.join(__dirname, '../../shared/templates/firestore-master.rules');
 const AUDIT_LOG_DIR = path.join(__dirname, '../../logs');
 const AUDIT_LOG_FILE = path.join(AUDIT_LOG_DIR, 'rules-deployment.log');
 

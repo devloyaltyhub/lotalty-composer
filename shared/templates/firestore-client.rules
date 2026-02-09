@@ -186,10 +186,10 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // Store Configs Collection - Public store information
+    // Store Configs Collection - Authenticated users only
     // ==========================================
     match /Store_Configs/{docId} {
-      allow read: if true;  // Public: store info (hours, location, contact)
+      allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
@@ -314,11 +314,7 @@ service cloud.firestore {
     // Notifications Collection - Privacy protected
     // ==========================================
     match /Notifications/{docId} {
-      // Read access: authenticated users can query/listen to notifications
-      // Using 'read' to support both queries and real-time listeners
-      // App filters by userId client-side
-      allow read: if isAppUser();
-
+      allow read: if isAdmin() || isAppUser();
       allow write: if isAdmin();
     }
 

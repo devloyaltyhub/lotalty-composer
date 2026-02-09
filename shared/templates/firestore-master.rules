@@ -1,0 +1,172 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // === HELPERS (simples, sem micro-gerenciamento) ===
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/Users_Admin/$(request.auth.uid));
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // === CLIENTS (credenciais dos projetos Firebase dos clientes) ===
+    match /clients/{clientId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // === USERS_ADMIN ===
+    match /Users_Admin/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // === USERS (público para validar CPF no registro) ===
+    match /Users/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId);
+      allow update, delete: if isOwner(userId) || isAdmin();
+
+      // === NOTIFICATIONS (subcollection do usuário) ===
+      match /Notifications/{docId} {
+        allow read: if isAdmin() || isOwner(userId);
+        allow write: if isAdmin();
+      }
+    }
+
+    // === CONSUMPTIONS (apenas admin escreve) ===
+    match /Consumptions/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // === CLIENTS_SCORE (app pode criar para si, admin pode tudo) ===
+    match /Clients_Score/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // === NOTIFICATIONS ===
+    match /Notifications/{docId} {
+      allow read: if isAdmin() ||
+                    resource.data.isGlobal == true ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid) ||
+                    (isAuthenticated() && resource.data.targetUserIds != null &&
+                     request.auth.uid in resource.data.targetUserIds);
+      allow write: if isAdmin();
+    }
+
+    // === SUGGESTIONS_BOX ===
+    match /Suggestions_Box/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+
+    // === ORDERS ===
+    match /Orders/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // === CONTEÚDO PÚBLICO (leitura livre, escrita admin) ===
+    match /Products/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Categories/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Campaigns/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Happy_Hours/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Store_Configs/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Team_Members/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Team/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Our_Story/{docId} { allow read: if true; allow write: if isAdmin(); }
+    match /Image_Mappings/{docId} { allow read: if true; allow write: if isAdmin(); }
+
+    // === EVENTS (conteúdo público, inscrição requer auth) ===
+    match /Events/{eventId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // === EVENT_CATEGORIES (conteúdo público, admin gerencia) ===
+    match /Event_Categories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // === EVENT_REGISTRATIONS (usuário lê próprias, cria próprias, admin gerencia) ===
+    match /Event_Registrations/{registrationId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // === PAYMENTS (admin cria e monitora, user vê próprios) ===
+    match /Payments/{paymentId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // === LEGACY ===
+    match /Consumption/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+    match /Suggestions/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdmin();
+    }
+    match /Store_Consumption/{docId} { allow read, write: if isAdmin(); }
+
+    // === EVENT_FEEDBACKS (feedback de eventos) ===
+    match /Event_Feedbacks/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // === ORDERS_INVOICED (notas fiscais) ===
+    match /Orders_Invoiced/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // === PDV_INTEGRATIONS (integrações PDV) ===
+    match /Pdv_Integrations/{docId} { allow read, write: if isAdmin(); }
+
+    // === BIRTHDAY_GIFTS (presentes de aniversário) ===
+    match /Birthday_Gifts/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // === DEFAULT DENY ===
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

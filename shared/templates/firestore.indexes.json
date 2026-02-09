@@ -17,6 +17,14 @@
       ]
     },
     {
+      "collectionGroup": "Consumptions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clubCoinsValid", "order": "ASCENDING" },
+        { "fieldPath": "clubCoinsExpiration", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "Notifications",
       "queryScope": "COLLECTION",
       "fields": [
@@ -49,6 +57,31 @@
       ]
     },
     {
+      "collectionGroup": "Clients_Score",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Clients_Score",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "scoreType", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Events",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "enabled", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "Event_Registrations",
       "queryScope": "COLLECTION",
       "fields": [
@@ -71,6 +104,41 @@
         { "fieldPath": "eventId", "order": "ASCENDING" },
         { "fieldPath": "userId", "order": "ASCENDING" },
         { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Event_Registrations",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "paymentStatus", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "Payments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "metadata.registrationId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
       ]
     }
   ],

@@ -14,13 +14,15 @@ service firebase.storage {
 
     function isValidImage() {
       return request.resource.contentType.matches('image/.*') &&
-             request.resource.size < 10 * 1024 * 1024;
+             request.resource.size < 15 * 1024 * 1024;
     }
 
     // === PROFILE PHOTOS (usuário gerencia própria) ===
-    match /profile_photos/{userId} {
+    match /profile_photos/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
+      allow write: if isAuthenticated() &&
+                      fileName.matches('.*' + request.auth.uid + '.*') &&
+                      isValidImage();
     }
 
     // === CONTEÚDO ADMIN ===

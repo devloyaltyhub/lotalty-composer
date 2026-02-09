@@ -52,7 +52,7 @@ async function saveToMasterFirebase(config, firebaseClient) {
 async function deployFirestoreRules(config, firebaseClient) {
   logger.section("Deploying Firestore Security Rules");
 
-  const rulesPath = path.join(__dirname, "../../../shared/templates/firestore.rules");
+  const rulesPath = path.join(__dirname, "../../../shared/templates/firestore-client.rules");
   const tempRulesPath = path.join(config.clientFolder, "firestore.rules");
 
   fs.copyFileSync(rulesPath, tempRulesPath);

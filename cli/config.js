@@ -68,6 +68,12 @@ const SCRIPTS = {
     category: CATEGORIES.SECURITY,
     script: '01-client-setup/cli/deploy-master-rules.js',
   },
+  DEPLOY_CLIENT_RULES: {
+    name: 'Deploy Rules Clientes',
+    description: 'Deploy das regras de segurança do Firestore para projetos dos clientes',
+    category: CATEGORIES.SECURITY,
+    script: '01-client-setup/cli/deploy-client-rules.js',
+  },
   COMPLETE_SECURITY_SETUP: {
     name: 'Setup Completo de Segurança',
     description: 'Criar usuário master + deploy de rules (tudo automatizado)',
