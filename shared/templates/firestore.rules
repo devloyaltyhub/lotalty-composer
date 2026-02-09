@@ -88,6 +88,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // === EVENT_CATEGORIES (conteúdo público, admin gerencia) ===
+    match /Event_Categories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // === EVENT_REGISTRATIONS (usuário lê próprias, cria próprias, admin gerencia) ===
     match /Event_Registrations/{registrationId} {
       allow read: if isAdmin() ||
