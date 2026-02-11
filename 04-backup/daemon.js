@@ -104,7 +104,7 @@ function initializeFirebaseApp(projectId) {
           {
             credential: cert(serviceAccount),
             projectId,
-            storageBucket: `${projectId}.appspot.com`,
+            storageBucket: `${projectId}.firebasestorage.app`,
           },
           projectId
         );
@@ -164,6 +164,9 @@ function getFirestore(pid) {
 }
 
 function getFirebaseApp(pid) {
+  console.log("[getFirebaseApp] Looking for app with projectId:", pid);
+  const apps = getApps();
+  console.log("[getFirebaseApp] Available apps:", apps.map(a => a.options?.projectId));
   return getApps().find((a) => a.options?.projectId === pid);
 }
 
