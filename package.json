@@ -58,7 +58,9 @@
     "optimize:lottie": "find shared/shared_assets/animations -name '*.json' -type f -exec sh -c 'cat \"{}\" | jq -c . > \"{}.min\" && mv \"{}.min\" \"{}\"' \\;",
     "optimize:lottie:prettier": "prettier --write --print-width 0 'shared/shared_assets/animations/**/*.json'",
     "optimize:svg": "svgo -f shared/shared_assets/images --recursive",
-    "optimize:assets": "npm run optimize:lottie:prettier && npm run optimize:svg"
+    "optimize:assets": "npm run optimize:lottie:prettier && npm run optimize:svg",
+    "pdv-sync:install": "bash 05-raspberry/pdv-sync/install.sh",
+    "pdv-sync:test": "bash 05-raspberry/pdv-sync/pdv-sync.sh"
   },
   "dependencies": {
     "@google-cloud/resource-manager": "^5.0.0",
