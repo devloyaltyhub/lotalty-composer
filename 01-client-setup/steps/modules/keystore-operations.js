@@ -25,13 +25,11 @@ function getKeystoreFiles(clientCredentialsDir) {
 function updateKeystorePaths(content) {
   let updatedContent = content;
 
-  updatedContent = updatedContent.replace(
-    /debug\.storeFile=.*/,
-    'debug.storeFile=./app/keystore-debug.jks'
-  );
+  // Paths are relative to android/app/ (where build.gradle's file() resolves)
+  updatedContent = updatedContent.replace(/debug\.storeFile=.*/, 'debug.storeFile=keystore-debug.jks');
   updatedContent = updatedContent.replace(
     /release\.storeFile=.*/,
-    'release.storeFile=./app/keystore-release.jks'
+    'release.storeFile=keystore-release.jks'
   );
 
   return updatedContent;

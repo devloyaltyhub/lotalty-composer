@@ -20,6 +20,7 @@ const {
   createClientServiceAccountKey,
 } = require('./create-firebase-project/iam-setup');
 const { enableFirestore } = require('./create-firebase-project/firestore-setup');
+const { enableRealtimeDatabase } = require('./create-firebase-project/rtdb-setup');
 
 class FirebaseProjectCreator {
   constructor() {
@@ -110,6 +111,10 @@ class FirebaseProjectCreator {
     return enableFirestore(this.projectId);
   }
 
+  async enableRealtimeDatabase() {
+    return enableRealtimeDatabase(this.projectId);
+  }
+
   grantFirestorePermissions() {
     return grantFirestorePermissions(this.projectId);
   }
@@ -134,6 +139,7 @@ class FirebaseProjectCreator {
       await this.addAdminAndroidApp();
       await this.addAdminWebApp();
       await this.enableFirestore();
+      await this.enableRealtimeDatabase();
 
       this.grantServiceAccountAccess();
 
