@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
-const { validateBusinessTypeKey } = require('../../../../shared/input-validator');
+const { validateBusinessTypeKey } = require('../../../shared/input-validator');
 
 function validateAssetsStructure(generalAssetsDir, clientsDir, businessTypes) {
   console.log('Validating assets structure...');
