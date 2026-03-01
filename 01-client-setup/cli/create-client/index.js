@@ -9,4 +9,5 @@ module.exports = {
   ...require("./assets-setup"),
   ...require("./git-setup"),
   ...require("./summary-display"),
+  ...require("./payment-setup"),
 };

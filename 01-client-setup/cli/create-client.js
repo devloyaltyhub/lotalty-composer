@@ -36,6 +36,7 @@ const {
   copyBusinessTypeAssets,
   commitClientConfig,
   generateMetadata,
+  setupPaymentConfig,
   formatDuration,
   displayFinalSummary,
   displayManualActionsSection,
@@ -188,6 +189,11 @@ class ClientCreationWizard {
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Products", firebaseClient);
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Store_Configs", firebaseClient);
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Our_Story", firebaseClient);
+      });
+
+      await this.executeStep("setup_payment_config", async () => {
+        const paymentConfig = await setupPaymentConfig(this.config, firebaseClient);
+        this.config.paymentConfig = paymentConfig;
       });
 
       await this.executeStep("create_test_user", async () => {
