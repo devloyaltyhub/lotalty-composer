@@ -12,7 +12,7 @@ require 'time'
 # From: 02-build-deploy/fastlane/scripts/ -> ../../../../loyalty-credentials
 LOYALTY_CREDENTIALS_PATH = File.expand_path('../../../../loyalty-credentials', __dir__)
 MATCH_PROFILES_PATH = File.join(LOYALTY_CREDENTIALS_PATH, 'profiles')
-CLIENTS_PATH = File.expand_path('../../../clients', __dir__)
+CLIENTS_PATH = File.expand_path('../../../loyalty-app/clients', __dir__)
 
 # Dynamically discover clients and their bundle IDs from config.json files
 def discover_client_bundle_ids

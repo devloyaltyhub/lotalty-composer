@@ -5,10 +5,14 @@
 ENV['LANG'] = 'en_US.UTF-8'
 ENV['LC_ALL'] = 'en_US.UTF-8'
 
-# Use Homebrew Ruby for CocoaPods compatibility
-ENV['PATH'] = "/usr/local/opt/ruby/bin:/usr/local/lib/ruby/gems/3.4.0/bin:/usr/local/opt/cocoapods/bin:#{ENV['PATH']}"
-ENV['GEM_HOME'] = '/usr/local/lib/ruby/gems/3.4.0'
-ENV['GEM_PATH'] = '/usr/local/lib/ruby/gems/3.4.0'
+# Ensure Homebrew Ruby and CocoaPods are discoverable in PATH
+# NOTE: Do NOT override GEM_HOME/GEM_PATH - it breaks CocoaPods when Flutter
+# calls `pod install` as a subprocess (Flutter detects CocoaPods as "broken")
+ruby_bin = `brew --prefix ruby 2>/dev/null`.strip + '/bin'
+gem_bin = Gem.bindir rescue nil
+[ruby_bin, gem_bin].compact.each do |dir|
+  ENV['PATH'] = "#{dir}:#{ENV['PATH']}" if dir && Dir.exist?(dir) && !ENV['PATH'].include?(dir)
+end
 
 # Shorebird wrapper script path (handles Ruby/CocoaPods environment)
 SHOREBIRD_WRAPPER = File.expand_path('../scripts/shorebird-wrapper.sh', __dir__)
@@ -111,7 +115,7 @@ def get_debug_symbols_path(client_name, platform)
   # Sanitize version for folder name (1.0.0+1 -> 1.0.0_1)
   version_folder = version.gsub('+', '_')
 
-  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+  symbols_path = File.join(__dir__, '..', '..', '..', 'loyalty-app', 'clients', client_name, 'debug-symbols', version_folder, platform)
   FileUtils.mkdir_p(symbols_path)
 
   UI.message("📁 Debug symbols path: #{symbols_path}")
@@ -193,7 +197,7 @@ end
 def upload_crashlytics_symbols(client_name, platform)
   version = get_app_version
   version_folder = version.gsub('+', '_')
-  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+  symbols_path = File.join(__dir__, '..', '..', '..', 'loyalty-app', 'clients', client_name, 'debug-symbols', version_folder, platform)
 
   UI.message("📤 Preparing Crashlytics symbol upload...")
   UI.message("   Client: #{client_name}")
@@ -423,7 +427,7 @@ end
 # ==========================================
 
 # Path to white_label_app (absolute to avoid working directory issues)
-WHITE_LABEL_APP_PATH = File.expand_path('../../../white_label_app', __dir__)
+WHITE_LABEL_APP_PATH = File.expand_path('../../../loyalty-app/white_label_app', __dir__)
 
 platform :android do
   desc "Build Android release AAB (uses Shorebird if configured)"
@@ -875,7 +879,7 @@ platform :ios do
   # Helper function to get client config
   # Reads from clients/{client_name}/config.json dynamically
   def get_client_config(client_name)
-    config_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'config.json')
+    config_path = File.join(__dir__, '..', '..', '..', 'loyalty-app', 'clients', client_name, 'config.json')
 
     unless File.exist?(config_path)
       UI.user_error!("❌ Client config not found: #{config_path}\n   Make sure client '#{client_name}' exists in clients/ directory")
@@ -1580,7 +1584,7 @@ lane :shorebird_patch do |options|
   # Get debug symbols path - MUST use the same path as the original release
   # The version folder is derived from release_version parameter
   version_folder = release_version.gsub('+', '_')
-  symbols_path = File.join(__dir__, '..', '..', '..', 'clients', client_name, 'debug-symbols', version_folder, platform)
+  symbols_path = File.join(__dir__, '..', '..', '..', 'loyalty-app', 'clients', client_name, 'debug-symbols', version_folder, platform)
 
   unless File.exist?(symbols_path)
     UI.user_error!("❌ Debug symbols não encontrados para esta versão: #{symbols_path}\n   O patch DEVE usar os mesmos símbolos do release original.\n   Verifique se o release foi feito com --split-debug-info e se os símbolos existem.")

@@ -25,7 +25,7 @@ team_id(ENV['APPLE_TEAM_ID'] || "84LT77P2DM")
 require 'json'
 
 def discover_bundle_ids
-  clients_dir = File.expand_path('../../../clients', __dir__)
+  clients_dir = File.expand_path('../../../loyalty-app/clients', __dir__)
   bundle_ids = []
 
   if Dir.exist?(clients_dir)
