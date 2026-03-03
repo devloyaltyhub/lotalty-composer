@@ -364,7 +364,7 @@ service cloud.firestore {
     // App Config Collection - Feature flags, plan, versionarte
     // ==========================================
     match /App_Config/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public: feature flags needed before login
       allow write: if isAdmin();
     }
 
