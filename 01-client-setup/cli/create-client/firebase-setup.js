@@ -4,7 +4,7 @@ const logger = require("../../../shared/utils/logger");
 const telegram = require("../../../shared/utils/telegram");
 const { getClientDir } = require("../../../shared/utils/paths");
 const FirebaseProjectCreator = require("../../steps/create-firebase-project");
-const RemoteConfigSetup = require("../../steps/setup-remote-config");
+const AppConfigSetup = require("../../steps/setup-app-config");
 const { getPlanLimits } = require("../../../shared/constants/plans");
 
 async function createFirebaseProject(config, _firebaseClient) {
@@ -86,8 +86,8 @@ async function deployFirestoreIndexes(config, firebaseClient) {
   logger.success("Firestore indexes deployed");
 }
 
-async function setupRemoteConfig(config, firebaseClient) {
-  logger.section("Setting up Firebase Remote Config");
+async function setupAppConfig(config, firebaseClient) {
+  logger.section("Setting up App Config (Firestore)");
 
   if (!firebaseClient.apps.has(config.clientCode)) {
     await firebaseClient.initializeClientFirebase(
@@ -97,9 +97,9 @@ async function setupRemoteConfig(config, firebaseClient) {
     );
   }
 
-  const remoteConfigSetup = new RemoteConfigSetup(firebaseClient.apps.get(config.clientCode));
+  const appConfigSetup = new AppConfigSetup(firebaseClient.apps.get(config.clientCode));
 
-  const remoteConfigData = await remoteConfigSetup.setupRemoteConfig({
+  const appConfigData = await appConfigSetup.setupAppConfig({
     featureFlags: config.featureFlags,
     clarityProjectId: config.clarityProjectId,
     clientCode: config.clientCode,
@@ -107,8 +107,8 @@ async function setupRemoteConfig(config, firebaseClient) {
     planLimits: getPlanLimits(config.planType || 'profissional'),
   });
 
-  logger.success("Remote Config setup completed");
-  return remoteConfigData;
+  logger.success("App Config setup completed");
+  return appConfigData;
 }
 
 async function copyCredentialsToCloudService(config) {
@@ -148,6 +148,6 @@ module.exports = {
   saveToMasterFirebase,
   deployFirestoreRules,
   deployFirestoreIndexes,
-  setupRemoteConfig,
+  setupAppConfig,
   copyCredentialsToCloudService,
 };

@@ -13,7 +13,7 @@ require('dotenv').config();
 const inquirer = require('inquirer');
 const logger = require('../../shared/utils/logger');
 const firebaseClient = require('../shared/firebase-manager');
-const RemoteConfigSetup = require('../steps/setup-remote-config');
+const AppConfigSetup = require('../steps/setup-app-config');
 const {
   PLANS,
   PLAN_TYPES,
@@ -116,7 +116,7 @@ async function main() {
     logger.succeedSpinner('Master Firebase updated');
 
     if (updateFeatureFlags) {
-      logger.startSpinner('Updating Remote Config...');
+      logger.startSpinner('Updating App Config...');
 
       try {
         await firebaseClient.initializeClientFirebase(
@@ -125,21 +125,21 @@ async function main() {
         );
 
         const clientApp = firebaseClient.apps.get(selectedClient.clientCode);
-        const remoteConfigSetup = new RemoteConfigSetup(clientApp);
+        const appConfigSetup = new AppConfigSetup(clientApp);
 
         const newFeatureFlags = getPlanFeatureFlags(newPlanType);
         const newLimits = getPlanLimits(newPlanType);
 
-        await remoteConfigSetup.updatePlanConfig({
+        await appConfigSetup.updatePlanConfig({
           planType: newPlanType,
           featureFlags: newFeatureFlags,
           planLimits: newLimits,
         });
 
-        logger.succeedSpinner('Remote Config updated');
+        logger.succeedSpinner('App Config updated');
       } catch (error) {
-        logger.failSpinner(`Failed to update Remote Config: ${error.message}`);
-        logger.warn('You may need to update Remote Config manually');
+        logger.failSpinner(`Failed to update App Config: ${error.message}`);
+        logger.warn('You may need to update App Config manually');
       }
     }
 

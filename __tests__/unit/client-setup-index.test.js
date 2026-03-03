@@ -36,7 +36,7 @@ jest.mock('../../01-client-setup/steps/create-git-branch', () => jest.fn());
 jest.mock('../../01-client-setup/steps/generate-metadata', () => jest.fn());
 jest.mock('../../01-client-setup/steps/seed-firestore-data', () => jest.fn());
 jest.mock('../../01-client-setup/steps/setup-ios-certificates', () => jest.fn());
-jest.mock('../../01-client-setup/steps/setup-remote-config', () => jest.fn());
+jest.mock('../../01-client-setup/steps/setup-app-config', () => jest.fn());
 jest.mock('../../01-client-setup/steps/git-credentials-manager', () => jest.fn());
 jest.mock('../../01-client-setup/steps/generate-android-keystore', () => ({
   generateKeystore: jest.fn(),
@@ -149,8 +149,8 @@ describe('01-client-setup/index.js', () => {
       expect(clientSetup.steps.setupIosCertificates).toBeDefined();
     });
 
-    test('setupRemoteConfig is exported', () => {
-      expect(clientSetup.steps.setupRemoteConfig).toBeDefined();
+    test('setupAppConfig is exported', () => {
+      expect(clientSetup.steps.setupAppConfig).toBeDefined();
     });
 
     test('gitCredentialsManager is exported', () => {

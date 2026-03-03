@@ -1,8 +1,8 @@
 /**
- * Update Versionarte in Firebase Remote Config
+ * Update Versionarte in Firestore App Config
  *
- * This module updates the versionarte parameter in Remote Config
- * after a successful deployment to stores.
+ * This module updates the versionarte field in the App_Config/config
+ * Firestore document after a successful deployment to stores.
  *
  * It updates:
  * - latest version for the deployed platform(s)
@@ -115,7 +115,7 @@ class VersionarteUpdater {
   }
 
   /**
-   * Update versionarte in Remote Config
+   * Update versionarte in Firestore App Config
    * @param {Object} options - Update options
    * @param {string} options.version - New version (e.g., "1.2.0")
    * @param {string[]} options.platforms - Platforms to update ("android", "ios")
@@ -125,15 +125,16 @@ class VersionarteUpdater {
   async updateVersionarte(options) {
     const { version, platforms, disableMaintenance = true, downloadUrls = {} } = options;
 
-    logger.startSpinner('Updating versionarte in Remote Config...');
+    logger.startSpinner('Updating versionarte in App Config...');
 
     try {
-      const remoteConfig = admin.remoteConfig(this.app);
-      const template = await remoteConfig.getTemplate();
+      const db = admin.firestore(this.app);
+      const docRef = db.collection('App_Config').doc('config');
+      const docSnap = await docRef.get();
 
       // Get current versionarte or create default
-      const currentValue = template.parameters.versionarte?.defaultValue?.value;
-      const versionarte = currentValue ? JSON.parse(currentValue) : this.getDefaultVersionarte();
+      const currentData = docSnap.exists ? docSnap.data() : {};
+      const versionarte = currentData.versionarte || this.getDefaultVersionarte();
 
       // Update each platform
       for (const platform of platforms) {
@@ -144,14 +145,8 @@ class VersionarteUpdater {
         });
       }
 
-      // Update template
-      template.parameters.versionarte = {
-        defaultValue: { value: JSON.stringify(versionarte) },
-        valueType: 'STRING',
-        description: 'Version control and maintenance status for Android and iOS platforms',
-      };
-
-      await remoteConfig.publishTemplate(template);
+      // Update Firestore document
+      await docRef.update({ versionarte });
       logger.succeedSpinner('Versionarte updated successfully');
 
       return versionarte;

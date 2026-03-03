@@ -21,7 +21,7 @@ const {
   saveToMasterFirebase,
   deployFirestoreRules,
   deployFirestoreIndexes,
-  setupRemoteConfig,
+  setupAppConfig,
   copyCredentialsToCloudService,
   seedDefaultData,
   createTestUser,
@@ -178,9 +178,9 @@ class ClientCreationWizard {
         generateAppCheckSetup(this.config),
       );
 
-      await this.executeStep("setup_remote_config", async () => {
-        const remoteConfigData = await setupRemoteConfig(this.config, firebaseClient);
-        this.config.remoteConfig = remoteConfigData;
+      await this.executeStep("setup_app_config", async () => {
+        const appConfigData = await setupAppConfig(this.config, firebaseClient);
+        this.config.appConfig = appConfigData;
       });
 
       await this.executeStep("seed_default_data", async () => {

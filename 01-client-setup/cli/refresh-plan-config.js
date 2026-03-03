@@ -2,7 +2,7 @@
 
 /**
  * Refresh Plan Config CLI
- * Updates Remote Config with current plan feature flags
+ * Updates App Config with current plan feature flags
  * Useful when new feature flags are added to the system
  *
  * Usage:
@@ -14,7 +14,7 @@ require('dotenv').config();
 const inquirer = require('inquirer');
 const logger = require('../../shared/utils/logger');
 const firebaseClient = require('../shared/firebase-manager');
-const RemoteConfigSetup = require('../steps/setup-remote-config');
+const AppConfigSetup = require('../steps/setup-app-config');
 const {
   PLAN_DISPLAY_NAMES,
   getPlanFeatureFlags,
@@ -23,7 +23,7 @@ const {
 
 async function main() {
   logger.section('Refresh Plan Config');
-  logger.info('Update Remote Config with current plan feature flags\n');
+  logger.info('Update App Config with current plan feature flags\n');
 
   try {
     firebaseClient.initializeMasterFirebase();
@@ -68,7 +68,7 @@ async function main() {
       {
         type: 'confirm',
         name: 'confirmed',
-        message: `Refresh Remote Config for ${selectedClients.length} client(s)?`,
+        message: `Refresh App Config for ${selectedClients.length} client(s)?`,
         default: false,
       },
     ]);
@@ -93,12 +93,12 @@ async function main() {
         );
 
         const clientApp = firebaseClient.apps.get(client.clientCode);
-        const remoteConfigSetup = new RemoteConfigSetup(clientApp);
+        const appConfigSetup = new AppConfigSetup(clientApp);
 
         const featureFlags = getPlanFeatureFlags(planType);
         const limits = getPlanLimits(planType);
 
-        await remoteConfigSetup.updatePlanConfig({
+        await appConfigSetup.updatePlanConfig({
           planType: planType,
           featureFlags: featureFlags,
           planLimits: limits,

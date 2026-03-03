@@ -7,9 +7,9 @@
  *   node setup-payment.js <clientCode>
  *
  * Requires .env with:
- *   OPENPIX_API_KEY, ASAAS_API_KEY,
- *   OPENPIX_PLATFORM_PIX_KEY, ASAAS_PLATFORM_WALLET_ID,
  *   MASTER_FIREBASE_SERVICE_ACCOUNT, MASTER_FIREBASE_PROJECT_ID
+ *   And at least one gateway: ASAAS_API_KEY + ASAAS_PLATFORM_WALLET_ID
+ *   Optional: OPENPIX_API_KEY + OPENPIX_PLATFORM_PIX_KEY
  */
 
 const path = require("path");
@@ -37,10 +37,9 @@ async function main() {
   logger.section(`Payment Setup: ${clientCode}`);
 
   try {
-    await firebaseClient.initialize();
+    await firebaseClient.initializeMasterFirebase();
 
-    const masterApp = firebaseClient.masterApp;
-    const masterFirestore = admin.firestore(masterApp);
+    const masterFirestore = await firebaseClient.getMasterFirestore();
 
     const clientDoc = await masterFirestore
       .collection("clients")
@@ -53,7 +52,8 @@ async function main() {
     }
 
     const clientData = clientDoc.data();
-    const projectId = clientData.firebaseProjectId;
+    const firebaseOptions = clientData.firebase_options || {};
+    const projectId = firebaseOptions.projectId;
     const serviceAccountPath = clientData.serviceAccountPath;
 
     if (!projectId) {
@@ -66,7 +66,7 @@ async function main() {
     // Initialize client Firebase
     await firebaseClient.initializeClientFirebase(
       clientCode,
-      clientData.firebaseOptions || {},
+      firebaseOptions,
       serviceAccountPath,
     );
 
@@ -111,10 +111,15 @@ async function main() {
     await writePaymentConfig(clientApp, paymentConfig);
     logger.succeedSpinner("Configuração salva");
 
+    const modeLabels = {
+      full: "OpenPix (PIX) + Asaas (cartão + fallback)",
+      "asaas-only": "Asaas (PIX + cartão)",
+      "openpix-only": "OpenPix (PIX apenas)",
+    };
+
     logger.success("Pagamento configurado para " + clientCode);
-    logger.info(`  PIX: OpenPix (fallback: Asaas)`);
-    logger.info(`  Cartão: Asaas`);
-    logger.info(`  Split: habilitado`);
+    logger.info(`  Modo: ${modeLabels[paymentInfo.mode]}`);
+    logger.info(`  Split: ${paymentConfig.split.enabled ? "habilitado" : "desabilitado"}`);
     logger.info(
       `  Ambiente: ${paymentInfo.isProduction ? "produção" : "sandbox"}`,
     );

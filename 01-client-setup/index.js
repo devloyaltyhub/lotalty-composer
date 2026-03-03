@@ -38,7 +38,7 @@ const steps = {
   seedFirestoreData: require('./steps/seed-firestore-data'),
   setupIosCertificates: require('./steps/setup-ios-certificates'),
   setupAndroidCredentials: require('./steps/setup-android-credentials'),
-  setupRemoteConfig: require('./steps/setup-remote-config'),
+  setupAppConfig: require('./steps/setup-app-config'),
   setupWhiteLabel: './steps/setup-white-label.js',
   gitCredentialsManager: require('./steps/git-credentials-manager'),
   generateAndroidKeystore: require('./steps/generate-android-keystore'), // Legacy - use setupAndroidCredentials

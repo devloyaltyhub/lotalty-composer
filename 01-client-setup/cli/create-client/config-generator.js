@@ -60,7 +60,7 @@ function generateLocalConfig(config) {
     },
     colors: generateColorPalette(config.primaryColor),
     firebaseOptions: config.firebaseOptions,
-    remoteConfig: config.remoteConfig || {
+    appConfig: config.appConfig || {
       featureFlags: config.featureFlags || {},
       clarityProjectId: config.clarityProjectId || "",
       versionarte: {

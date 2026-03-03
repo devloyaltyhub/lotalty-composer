@@ -212,7 +212,7 @@ async function finalize(deployer, platforms) {
 
   let versionarteUpdated = false;
   if (isProductionDeploy) {
-    logger.info('Atualizando versionarte no Remote Config...');
+    logger.info('Atualizando versionarte no App Config...');
     versionarteUpdated = await updateVersionarteAfterDeploy({
       clientCode: deployer.clientCode,
       config: deployer.config,

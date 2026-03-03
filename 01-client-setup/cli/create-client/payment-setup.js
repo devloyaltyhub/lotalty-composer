@@ -7,49 +7,82 @@ const CALLBACK_BASE_URL =
   "https://loyalty-cloud-service.vercel.app";
 
 /**
+ * Detects which gateways are available based on env vars.
+ * Returns { hasOpenpix, hasAsaas, mode }
+ */
+function detectAvailableGateways() {
+  const hasOpenpix = !!process.env.OPENPIX_API_KEY;
+  const hasAsaas = !!process.env.ASAAS_API_KEY;
+
+  if (hasOpenpix && hasAsaas) return { hasOpenpix, hasAsaas, mode: "full" };
+  if (hasAsaas) return { hasOpenpix, hasAsaas, mode: "asaas-only" };
+  if (hasOpenpix) return { hasOpenpix, hasAsaas, mode: "openpix-only" };
+  return { hasOpenpix, hasAsaas, mode: "none" };
+}
+
+/**
  * Builds the Firestore payment config document from collected data.
  */
-function buildPaymentConfig({
-  openpixApiKey,
-  asaasApiKey,
-  merchantPixKey,
-  asaasWalletId,
-  platformPixKey,
-  platformWalletId,
-  isProduction,
-}) {
-  return {
-    enabled: true,
-    isProduction,
-    callbackBaseUrl: CALLBACK_BASE_URL,
-    gateways: {
-      openpix: {
-        apiKey: openpixApiKey,
-        secretKey: "",
-      },
-      asaas: {
-        apiKey: asaasApiKey,
-        secretKey: "",
-      },
-    },
-    routing: {
+function buildPaymentConfig(info) {
+  const { mode } = info;
+
+  const gateways = {};
+  const recipients = {};
+
+  if (info.openpixApiKey) {
+    gateways.openpix = { apiKey: info.openpixApiKey, secretKey: "" };
+    if (info.platformPixKey && info.merchantPixKey) {
+      recipients.openpix = {
+        platformRecipientId: info.platformPixKey,
+        partnerRecipientId: info.merchantPixKey,
+      };
+    }
+  }
+
+  if (info.asaasApiKey) {
+    gateways.asaas = { apiKey: info.asaasApiKey, secretKey: "" };
+    if (info.platformWalletId && info.asaasWalletId) {
+      recipients.asaas = {
+        platformRecipientId: info.platformWalletId,
+        partnerRecipientId: info.asaasWalletId,
+      };
+    }
+  }
+
+  // Routing depends on available gateways
+  let routing;
+  if (mode === "full") {
+    routing = {
       pix: "openpix",
       card: "asaas",
       fallback: "asaas",
       enableFallback: true,
-    },
+    };
+  } else if (mode === "asaas-only") {
+    routing = {
+      pix: "asaas",
+      card: "asaas",
+      fallback: null,
+      enableFallback: false,
+    };
+  } else {
+    routing = {
+      pix: "openpix",
+      card: null,
+      fallback: null,
+      enableFallback: false,
+    };
+  }
+
+  return {
+    enabled: true,
+    isProduction: info.isProduction,
+    callbackBaseUrl: CALLBACK_BASE_URL,
+    gateways,
+    routing,
     split: {
-      enabled: true,
-      recipients: {
-        openpix: {
-          platformRecipientId: platformPixKey,
-          merchantRecipientId: merchantPixKey,
-        },
-        asaas: {
-          platformRecipientId: platformWalletId,
-          merchantRecipientId: asaasWalletId,
-        },
-      },
+      enabled: Object.keys(recipients).length > 0,
+      recipients,
       delivery: { fixedFeeCents: 99, feePercentage: 5 },
       events: { fixedFeeCents: 99, feePercentage: 3 },
       ecommerce: { fixedFeeCents: 99, feePercentage: 5 },
@@ -62,57 +95,83 @@ function buildPaymentConfig({
  * Collects payment configuration from CLI prompts.
  */
 async function collectPaymentInfo() {
+  const { hasOpenpix, hasAsaas, mode } = detectAvailableGateways();
+
+  if (mode === "none") {
+    logger.warn(
+      "Nenhuma API key de gateway encontrada no .env. " +
+        "Defina ASAAS_API_KEY e/ou OPENPIX_API_KEY.",
+    );
+    return null;
+  }
+
+  // Log detected mode
+  const modeLabels = {
+    full: "OpenPix (PIX) + Asaas (cartão + fallback PIX)",
+    "asaas-only": "Asaas (PIX + cartão)",
+    "openpix-only": "OpenPix (PIX apenas, sem cartão)",
+  };
+  logger.info(`Modo detectado: ${modeLabels[mode]}`);
+
+  if (mode === "openpix-only") {
+    logger.warn("Sem ASAAS_API_KEY: pagamento por cartão não disponível.");
+  }
+
   const openpixApiKey = process.env.OPENPIX_API_KEY;
   const asaasApiKey = process.env.ASAAS_API_KEY;
   const platformPixKey = process.env.OPENPIX_PLATFORM_PIX_KEY;
   const platformWalletId = process.env.ASAAS_PLATFORM_WALLET_ID;
 
-  if (!openpixApiKey || !asaasApiKey) {
-    logger.warn(
-      "OPENPIX_API_KEY ou ASAAS_API_KEY não definidas no .env. " +
-        "Defina-as e tente novamente.",
-    );
+  // Validate required platform IDs per mode
+  if (hasAsaas && !platformWalletId) {
+    logger.warn("ASAAS_PLATFORM_WALLET_ID não definida no .env.");
+    return null;
+  }
+  if (hasOpenpix && !platformPixKey) {
+    logger.warn("OPENPIX_PLATFORM_PIX_KEY não definida no .env.");
     return null;
   }
 
-  if (!platformPixKey || !platformWalletId) {
-    logger.warn(
-      "OPENPIX_PLATFORM_PIX_KEY ou ASAAS_PLATFORM_WALLET_ID não definidas. " +
-        "Defina-as no .env.",
-    );
-    return null;
-  }
+  // Build prompts based on available gateways
+  const prompts = [];
 
-  const answers = await inquirer.prompt([
-    {
+  if (hasOpenpix) {
+    prompts.push({
       type: "input",
       name: "merchantPixKey",
       message: "Chave PIX do lojista (para recebimentos OpenPix):",
       validate: (v) =>
         v.trim().length > 0 ? true : "Informe a chave PIX do lojista",
-    },
-    {
+    });
+  }
+
+  if (hasAsaas) {
+    prompts.push({
       type: "input",
       name: "asaasWalletId",
       message: "Wallet ID Asaas do lojista (subconta):",
       validate: (v) =>
         v.trim().length > 0 ? true : "Informe o wallet ID Asaas",
-    },
-    {
-      type: "confirm",
-      name: "isProduction",
-      message: "Usar ambiente de produção?",
-      default: false,
-    },
-  ]);
+    });
+  }
+
+  prompts.push({
+    type: "confirm",
+    name: "isProduction",
+    message: "Usar ambiente de produção?",
+    default: false,
+  });
+
+  const answers = await inquirer.prompt(prompts);
 
   return {
-    openpixApiKey,
-    asaasApiKey,
-    merchantPixKey: answers.merchantPixKey.trim(),
-    asaasWalletId: answers.asaasWalletId.trim(),
-    platformPixKey,
-    platformWalletId,
+    mode,
+    openpixApiKey: openpixApiKey || null,
+    asaasApiKey: asaasApiKey || null,
+    merchantPixKey: answers.merchantPixKey?.trim() || null,
+    asaasWalletId: answers.asaasWalletId?.trim() || null,
+    platformPixKey: platformPixKey || null,
+    platformWalletId: platformWalletId || null,
     isProduction: answers.isProduction,
   };
 }
@@ -181,11 +240,18 @@ async function setupPaymentConfig(config, firebaseClient) {
     return null;
   }
 
+  const modeLabels = {
+    full: "OpenPix (PIX) + Asaas (cartão)",
+    "asaas-only": "Asaas (PIX + cartão)",
+    "openpix-only": "OpenPix (PIX apenas)",
+  };
+
   logger.success("Pagamento configurado:");
-  logger.info(`  PIX: OpenPix (fallback: Asaas)`);
-  logger.info(`  Cartão: Asaas`);
-  logger.info(`  Split: habilitado`);
-  logger.info(`  Ambiente: ${paymentInfo.isProduction ? "produção" : "sandbox"}`);
+  logger.info(`  Modo: ${modeLabels[paymentInfo.mode]}`);
+  logger.info(`  Split: ${paymentConfig.split.enabled ? "habilitado" : "desabilitado"}`);
+  logger.info(
+    `  Ambiente: ${paymentInfo.isProduction ? "produção" : "sandbox"}`,
+  );
 
   return paymentConfig;
 }

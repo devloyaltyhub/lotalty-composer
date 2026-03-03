@@ -19,7 +19,7 @@ const fs = require('fs');
 const path = require('path');
 const logger = require('../../shared/utils/logger');
 const firebaseClient = require('../../01-client-setup/shared/firebase-manager');
-const RemoteConfigSetup = require('../../01-client-setup/steps/setup-remote-config');
+const AppConfigSetup = require('../../01-client-setup/steps/setup-app-config');
 const {
   PLAN_TYPES,
   PLAN_DISPLAY_NAMES,
@@ -75,7 +75,7 @@ async function main() {
 
     logger.blank();
 
-    let updateRemoteConfig = true;
+    let updateAppConfig = true;
     let confirmed = false;
 
     if (autoConfirm) {
@@ -85,8 +85,8 @@ async function main() {
       const answers = await inquirer.prompt([
         {
           type: 'confirm',
-          name: 'updateRemoteConfig',
-          message: 'Also update Remote Config for each client?',
+          name: 'updateAppConfig',
+          message: 'Also update App Config for each client?',
           default: true,
         },
         {
@@ -96,7 +96,7 @@ async function main() {
           default: false,
         },
       ]);
-      updateRemoteConfig = answers.updateRemoteConfig;
+      updateAppConfig = answers.updateAppConfig;
       confirmed = answers.confirmed;
     }
 
@@ -116,7 +116,7 @@ async function main() {
       try {
         await firebaseClient.updateClientPlan(client.clientCode, DEFAULT_PLAN, null);
 
-        if (updateRemoteConfig && client.firebase_options) {
+        if (updateAppConfig && client.firebase_options) {
           try {
             await firebaseClient.initializeClientFirebase(
               client.clientCode,
@@ -124,18 +124,18 @@ async function main() {
             );
 
             const clientApp = firebaseClient.apps.get(client.clientCode);
-            const remoteConfigSetup = new RemoteConfigSetup(clientApp);
+            const appConfigSetup = new AppConfigSetup(clientApp);
 
             const featureFlags = getPlanFeatureFlags(DEFAULT_PLAN);
             const limits = getPlanLimits(DEFAULT_PLAN);
 
-            await remoteConfigSetup.updatePlanConfig({
+            await appConfigSetup.updatePlanConfig({
               planType: DEFAULT_PLAN,
               featureFlags: featureFlags,
               planLimits: limits,
             });
           } catch (rcError) {
-            logger.warn(`  Remote Config update failed: ${rcError.message}`);
+            logger.warn(`  App Config update failed: ${rcError.message}`);
           }
         }
 
