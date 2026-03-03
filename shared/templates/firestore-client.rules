@@ -361,6 +361,14 @@ service cloud.firestore {
     }
 
     // ==========================================
+    // App Config Collection - Feature flags, plan, versionarte
+    // ==========================================
+    match /App_Config/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
     // Default: Deny all other collections
     // ==========================================
     match /{document=**} {

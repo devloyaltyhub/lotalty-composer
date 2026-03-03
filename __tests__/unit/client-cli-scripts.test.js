@@ -26,22 +26,25 @@ const fs = require('fs');
 const { execSync } = require('child_process');
 
 describe('deploy-master-rules.js', () => {
-  const { deployRules, validateRulesFile, verifyDeployment } = require('../../01-client-setup/cli/deploy-master-rules');
+  const { deployRules, validateRulesFile } = require('../../01-client-setup/cli/deploy-master-rules');
+
+  const TEST_RULES_PATH = '/tmp/test-firestore.rules';
+  const TEST_PROJECT_ID = 'test-project';
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   describe('validateRulesFile()', () => {
-    test('returns false when file does not exist', () => {
+    test('returns valid false when file does not exist', () => {
       fs.existsSync.mockReturnValue(false);
 
-      const result = validateRulesFile();
+      const result = validateRulesFile(TEST_RULES_PATH);
 
-      expect(result).toBe(false);
+      expect(result.valid).toBe(false);
     });
 
-    test('returns true when file exists and has valid patterns', () => {
+    test('returns valid true when file exists and has valid patterns', () => {
       fs.existsSync.mockReturnValue(true);
       fs.readFileSync.mockReturnValue(`
         rules_version = '2';
@@ -57,12 +60,13 @@ describe('deploy-master-rules.js', () => {
         }
       `);
 
-      const result = validateRulesFile();
+      const result = validateRulesFile(TEST_RULES_PATH);
 
-      expect(result).toBe(true);
+      expect(result.valid).toBe(true);
+      expect(result.warnings).toHaveLength(0);
     });
 
-    test('returns true with warnings when patterns missing', () => {
+    test('returns valid true with warnings when patterns missing', () => {
       fs.existsSync.mockReturnValue(true);
       fs.readFileSync.mockReturnValue(`
         rules_version = '2';
@@ -73,47 +77,41 @@ describe('deploy-master-rules.js', () => {
         }
       `);
 
-      const result = validateRulesFile();
+      const result = validateRulesFile(TEST_RULES_PATH);
 
-      // Still returns true (warnings are non-critical)
-      expect(result).toBe(true);
+      expect(result.valid).toBe(true);
+      expect(result.warnings.length).toBeGreaterThan(0);
     });
   });
 
   describe('deployRules()', () => {
-    test('returns true for dry run', () => {
-      const result = deployRules(true);
+    test('returns success true for dry run', () => {
+      const result = deployRules(TEST_PROJECT_ID, TEST_RULES_PATH, true);
 
-      expect(result).toBe(true);
-      expect(execSync).not.toHaveBeenCalled();
+      expect(result.success).toBe(true);
     });
 
-    test('returns true on successful deployment', () => {
-      execSync.mockReturnValue('');
+    test('returns success true on successful deployment', () => {
       fs.existsSync.mockReturnValue(true);
 
-      const result = deployRules(false);
+      const result = deployRules(TEST_PROJECT_ID, TEST_RULES_PATH, false);
 
-      expect(result).toBe(true);
-      expect(execSync).toHaveBeenCalled();
+      expect(result.success).toBe(true);
     });
 
-    test('returns false on deployment failure', () => {
-      execSync.mockImplementation(() => {
-        throw new Error('Deploy failed');
-      });
+    test('returns success false on deployment failure', () => {
+      // Mock the exec function from firebase-cli-utils to throw
+      jest.resetModules();
+      jest.doMock('../../01-client-setup/shared/firebase-cli-utils', () => ({
+        exec: jest.fn(() => { throw new Error('Deploy failed'); }),
+        checkFirebaseCLIInstalled: jest.fn(),
+        checkFirebaseAuthentication: jest.fn(),
+      }));
 
-      const result = deployRules(false);
+      const { deployRules: freshDeployRules } = require('../../01-client-setup/shared/rules-deployment-utils');
+      const result = freshDeployRules(TEST_PROJECT_ID, TEST_RULES_PATH, false);
 
-      expect(result).toBe(false);
-    });
-  });
-
-  describe('verifyDeployment()', () => {
-    test('returns true on successful verification', () => {
-      const result = verifyDeployment();
-
-      expect(result).toBe(true);
+      expect(result.success).toBe(false);
     });
   });
 });

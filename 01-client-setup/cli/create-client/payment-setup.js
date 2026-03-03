@@ -1,6 +1,11 @@
 const admin = require("firebase-admin");
 const inquirer = require("inquirer");
 const logger = require("../../../shared/utils/logger");
+const { isAsaasProduction } = require("../../shared/asaas-subaccount");
+const {
+  selectGateways,
+  createAsaasWallet,
+} = require("./payment-gateway-setup");
 
 const CALLBACK_BASE_URL =
   process.env.LOYALTY_CALLBACK_URL ||
@@ -8,7 +13,6 @@ const CALLBACK_BASE_URL =
 
 /**
  * Detects which gateways are available based on env vars.
- * Returns { hasOpenpix, hasAsaas, mode }
  */
 function detectAvailableGateways() {
   const hasOpenpix = !!process.env.OPENPIX_API_KEY;
@@ -49,7 +53,6 @@ function buildPaymentConfig(info) {
     }
   }
 
-  // Routing depends on available gateways
   let routing;
   if (mode === "full") {
     routing = {
@@ -93,11 +96,12 @@ function buildPaymentConfig(info) {
 
 /**
  * Collects payment configuration from CLI prompts.
+ * @param {Object} [config={}] - Wizard config (clientName, adminEmail) for defaults
  */
-async function collectPaymentInfo() {
-  const { hasOpenpix, hasAsaas, mode } = detectAvailableGateways();
+async function collectPaymentInfo(config = {}) {
+  const detected = detectAvailableGateways();
 
-  if (mode === "none") {
+  if (detected.mode === "none") {
     logger.warn(
       "Nenhuma API key de gateway encontrada no .env. " +
         "Defina ASAAS_API_KEY e/ou OPENPIX_API_KEY.",
@@ -105,74 +109,63 @@ async function collectPaymentInfo() {
     return null;
   }
 
-  // Log detected mode
   const modeLabels = {
     full: "OpenPix (PIX) + Asaas (cartão + fallback PIX)",
     "asaas-only": "Asaas (PIX + cartão)",
     "openpix-only": "OpenPix (PIX apenas, sem cartão)",
   };
-  logger.info(`Modo detectado: ${modeLabels[mode]}`);
+  logger.info(`Gateways disponíveis: ${modeLabels[detected.mode]}`);
 
-  if (mode === "openpix-only") {
-    logger.warn("Sem ASAAS_API_KEY: pagamento por cartão não disponível.");
-  }
+  const { useAsaas, useOpenpix, mode } = await selectGateways(detected);
 
   const openpixApiKey = process.env.OPENPIX_API_KEY;
   const asaasApiKey = process.env.ASAAS_API_KEY;
   const platformPixKey = process.env.OPENPIX_PLATFORM_PIX_KEY;
   const platformWalletId = process.env.ASAAS_PLATFORM_WALLET_ID;
 
-  // Validate required platform IDs per mode
-  if (hasAsaas && !platformWalletId) {
+  if (useAsaas && !platformWalletId) {
     logger.warn("ASAAS_PLATFORM_WALLET_ID não definida no .env.");
     return null;
   }
-  if (hasOpenpix && !platformPixKey) {
+  if (useOpenpix && !platformPixKey) {
     logger.warn("OPENPIX_PLATFORM_PIX_KEY não definida no .env.");
     return null;
   }
 
-  // Build prompts based on available gateways
-  const prompts = [];
-
-  if (hasOpenpix) {
-    prompts.push({
-      type: "input",
-      name: "merchantPixKey",
-      message: "Chave PIX do lojista (para recebimentos OpenPix):",
-      validate: (v) =>
-        v.trim().length > 0 ? true : "Informe a chave PIX do lojista",
-    });
+  let asaasWalletId = null;
+  if (useAsaas) {
+    asaasWalletId = await createAsaasWallet(config);
+    if (!asaasWalletId) {
+      logger.warn("Asaas não configurado (subconta não criada).");
+    }
   }
 
-  if (hasAsaas) {
-    prompts.push({
-      type: "input",
-      name: "asaasWalletId",
-      message: "Wallet ID Asaas do lojista (subconta):",
-      validate: (v) =>
-        v.trim().length > 0 ? true : "Informe o wallet ID Asaas",
-    });
+  let merchantPixKey = null;
+  if (useOpenpix) {
+    const { pixKey } = await inquirer.prompt([
+      {
+        type: "input",
+        name: "pixKey",
+        message: "Chave PIX do lojista (para recebimentos OpenPix):",
+        validate: (v) =>
+          v.trim().length > 0 ? true : "Informe a chave PIX do lojista",
+      },
+    ]);
+    merchantPixKey = pixKey.trim();
   }
 
-  prompts.push({
-    type: "confirm",
-    name: "isProduction",
-    message: "Usar ambiente de produção?",
-    default: false,
-  });
-
-  const answers = await inquirer.prompt(prompts);
+  const isProduction = isAsaasProduction();
+  logger.info(`  Ambiente: ${isProduction ? "produção" : "sandbox"}`);
 
   return {
     mode,
-    openpixApiKey: openpixApiKey || null,
-    asaasApiKey: asaasApiKey || null,
-    merchantPixKey: answers.merchantPixKey?.trim() || null,
-    asaasWalletId: answers.asaasWalletId?.trim() || null,
-    platformPixKey: platformPixKey || null,
-    platformWalletId: platformWalletId || null,
-    isProduction: answers.isProduction,
+    openpixApiKey: useOpenpix ? openpixApiKey : null,
+    asaasApiKey: useAsaas ? asaasApiKey : null,
+    merchantPixKey,
+    asaasWalletId,
+    platformPixKey: useOpenpix ? platformPixKey : null,
+    platformWalletId: useAsaas ? platformWalletId : null,
+    isProduction,
   };
 }
 
@@ -220,7 +213,7 @@ async function setupPaymentConfig(config, firebaseClient) {
     return null;
   }
 
-  const paymentInfo = await collectPaymentInfo();
+  const paymentInfo = await collectPaymentInfo(config);
   if (!paymentInfo) return null;
 
   const paymentConfig = buildPaymentConfig(paymentInfo);
@@ -248,7 +241,9 @@ async function setupPaymentConfig(config, firebaseClient) {
 
   logger.success("Pagamento configurado:");
   logger.info(`  Modo: ${modeLabels[paymentInfo.mode]}`);
-  logger.info(`  Split: ${paymentConfig.split.enabled ? "habilitado" : "desabilitado"}`);
+  logger.info(
+    `  Split: ${paymentConfig.split.enabled ? "habilitado" : "desabilitado"}`,
+  );
   logger.info(
     `  Ambiente: ${paymentInfo.isProduction ? "produção" : "sandbox"}`,
   );
@@ -261,4 +256,5 @@ module.exports = {
   buildPaymentConfig,
   writePaymentConfig,
   collectPaymentInfo,
+  detectAvailableGateways,
 };
