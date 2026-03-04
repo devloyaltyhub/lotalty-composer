@@ -42,7 +42,7 @@ USO:
   npm run backup:restore -- --client=<nome> --date=<YYYY-MM-DD> [opcoes]
 
 ARGUMENTOS OBRIGATORIOS:
-  --client=<nome>     Nome do cliente (ex: na-rede, demo)
+  --client=<nome>     Nome do cliente (ex: demo)
   --date=<data>       Data do backup (formato: YYYY-MM-DD)
 
 OPCOES:
@@ -52,9 +52,9 @@ OPCOES:
   --help, -h          Mostra esta ajuda
 
 EXEMPLOS:
-  npm run backup:restore -- --client=na-rede --date=2025-12-12
-  npm run backup:restore -- --client=na-rede --date=2025-12-12 --firestore-only
-  npm run backup:restore -- --client=na-rede --date=2025-12-12 --dry-run
+  npm run backup:restore -- --client=demo --date=2025-12-12
+  npm run backup:restore -- --client=demo --date=2025-12-12 --firestore-only
+  npm run backup:restore -- --client=demo --date=2025-12-12 --dry-run
 
 VARIAVEIS DE AMBIENTE NECESSARIAS:
   GITHUB_BACKUP_TOKEN   Token de acesso ao GitHub

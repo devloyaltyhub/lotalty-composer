@@ -27,3 +27,7 @@ coverage/
 # Temporary files
 *.tmp
 *.temp
+
+# Fastlane generated files
+**/fastlane/Preview.html
+**/fastlane/report.xml

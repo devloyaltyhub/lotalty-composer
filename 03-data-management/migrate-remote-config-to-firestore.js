@@ -17,8 +17,11 @@
 
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
+const fs = require('fs');
+const path = require('path');
 const admin = require('firebase-admin');
 const logger = require('../shared/utils/logger');
+const { CLIENTS_DIR } = require('../shared/utils/paths');
 const {
   resolveServiceAccountPath,
   getMasterServiceAccountPath,
@@ -27,16 +30,26 @@ const {
 
 const DRY_RUN = process.argv.includes('--dry-run');
 
-const KNOWN_CLIENTS = [
-  {
-    code: 'demo',
-    projectId: 'loyalty-hub-1f47c',
-  },
-  {
-    code: 'na-rede',
-    projectId: 'na-rede-loyalty-hub-club-4948',
-  },
-];
+function discoverClients() {
+  const clients = [];
+  const entries = fs.readdirSync(CLIENTS_DIR, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isDirectory()) continue;
+    const configPath = path.join(CLIENTS_DIR, entry.name, 'config.json');
+    if (!fs.existsSync(configPath)) continue;
+
+    const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    if (config.firebaseProjectId) {
+      clients.push({
+        code: config.clientCode || entry.name,
+        projectId: config.firebaseProjectId,
+      });
+    }
+  }
+
+  return clients;
+}
 
 function initializeApp(projectId, serviceAccountPath, appName) {
   const resolvedPath = resolveServiceAccountPath(serviceAccountPath);
@@ -221,7 +234,10 @@ async function main() {
     results.failed.push('master');
   }
 
-  for (const client of KNOWN_CLIENTS) {
+  const clients = discoverClients();
+  logger.info(`Clientes encontrados: ${clients.map(c => c.code).join(', ')}\n`);
+
+  for (const client of clients) {
     try {
       const clientSaPath =
         process.env[`${client.code.toUpperCase().replace(/-/g, '_')}_SERVICE_ACCOUNT`] ||

@@ -73,7 +73,7 @@ const CREDENTIALS_CERTS_DIR = path.join(LOYALTY_CREDENTIALS_ROOT, 'certs');
 
 /**
  * Get path to a specific client's directory
- * @param {string} clientCode - The client code (e.g., 'demo', 'na-rede')
+ * @param {string} clientCode - The client code (e.g., 'demo', 'acme-corp')
  * @returns {string} Absolute path to client directory
  */
 function getClientDir(clientCode) {

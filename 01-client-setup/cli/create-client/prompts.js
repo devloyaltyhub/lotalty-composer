@@ -73,7 +73,7 @@ async function collectClientInfo(firebaseClient) {
     {
       type: "input",
       name: "clientCode",
-      message: 'Client Code (e.g., "na-rede", "acme-corp"):',
+      message: 'Client Code (e.g., "demo", "acme-corp"):',
       validate: (input) => {
         try {
           validateClientCode(input);
@@ -86,7 +86,7 @@ async function collectClientInfo(firebaseClient) {
     {
       type: "input",
       name: "clientName",
-      message: 'Client Display Name (e.g., "Na Rede"):',
+      message: 'Client Display Name (e.g., "Acme Corp"):',
       validate: (input) => {
         if (!input.trim()) return "Client name is required";
         if (input.trim().length < 4)
@@ -117,7 +117,7 @@ async function collectClientInfo(firebaseClient) {
     {
       type: "input",
       name: "loversName",
-      message: 'Nome dos "lovers" da loja (ex: "Na Redeiros", "Biriteiros", "Cafeinados"):',
+      message: 'Nome dos "lovers" da loja (ex: "Biriteiros", "Cafeinados", "Clubistas"):',
       validate: (input) => input.trim().length > 0 || "Lovers name is required",
     },
     {

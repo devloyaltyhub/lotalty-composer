@@ -8,7 +8,7 @@
  * 3. Atualiza todos os documentos do Firestore com as novas URLs
  *
  * Uso: node fix-storage-urls.js <projectId> <databaseId> <storageBucket>
- * Exemplo: node fix-storage-urls.js na-rede-loyalty-hub-club-4948 narede na-rede-loyalty-hub-club-4948.firebasestorage.app
+ * Exemplo: node fix-storage-urls.js <projectId> <databaseId> <storageBucket>
  */
 
 const path = require('path');
@@ -231,7 +231,7 @@ async function main() {
 
   if (args.length < 3) {
     console.log('Uso: node fix-storage-urls.js <projectId> <databaseId> <storageBucket>');
-    console.log('Exemplo: node fix-storage-urls.js na-rede-loyalty-hub-club-4948 narede na-rede-loyalty-hub-club-4948.firebasestorage.app');
+    console.log('Exemplo: node fix-storage-urls.js <projectId> <databaseId> <storageBucket>');
     process.exit(1);
   }
 

@@ -9,7 +9,7 @@
  *
  * Usage:
  *   node add-client-to-master.js <client-code>
- *   node add-client-to-master.js na-rede
+ *   node add-client-to-master.js demo
  */
 
 const admin = require('firebase-admin');
@@ -189,7 +189,7 @@ async function main() {
   if (!clientCode) {
     log('❌ Missing required argument: client-code', colors.red);
     log('\nUsage: node add-client-to-master.js <client-code>', colors.yellow);
-    log('Example: node add-client-to-master.js na-rede', colors.yellow);
+    log('Example: node add-client-to-master.js demo', colors.yellow);
     process.exit(1);
   }
 

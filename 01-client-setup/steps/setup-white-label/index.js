@@ -34,6 +34,8 @@ const {
   copyFirebaseConfigs,
   copyFirebaseJson,
   copyShorebirdConfig,
+  generateGHAExportOptions,
+  copyServiceAccount,
 } = require('./firebase-config');
 
 const {
@@ -156,6 +158,8 @@ async function main(clientArg) {
     copyFirebaseConfigs(client, clientConfig);
     copyFirebaseJson(client, clientConfig);
     copyShorebirdConfig(client);
+    generateGHAExportOptions(clientConfig);
+    copyServiceAccount(client);
     generatePackageRenameConfig(clientConfig);
     iosOps.postProcess(TARGET_ROOT);
 

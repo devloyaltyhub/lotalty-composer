@@ -710,7 +710,7 @@ platform :android do
     rollout = options[:rollout] || 1.0 # Default: 100% rollout
 
     unless version_code
-      UI.user_error!("❌ version_code é obrigatório.\n   Uso: fastlane android promote_to_production client:na-rede version_code:5")
+      UI.user_error!("❌ version_code é obrigatório.\n   Uso: fastlane android promote_to_production client:<client-code> version_code:5")
     end
 
     package_name = get_android_package_name
@@ -1328,7 +1328,7 @@ platform :ios do
     phased_release = options[:phased_release] != false # Default to true
 
     unless build_number
-      UI.user_error!("❌ build_number é obrigatório.\n   Uso: fastlane ios submit_existing_build client:na-rede build_number:5")
+      UI.user_error!("❌ build_number é obrigatório.\n   Uso: fastlane ios submit_existing_build client:<client-code> build_number:5")
     end
 
     # Get bundle ID from client config

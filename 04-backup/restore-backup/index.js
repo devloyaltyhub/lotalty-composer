@@ -6,10 +6,10 @@
  * Baixa backups do GitHub e restaura no Firebase do cliente
  *
  * Uso:
- *   npm run backup:restore -- --client=na-rede --date=2025-12-12
- *   npm run backup:restore -- --client=na-rede --date=2025-12-12 --firestore-only
- *   npm run backup:restore -- --client=na-rede --date=2025-12-12 --storage-only
- *   npm run backup:restore -- --client=na-rede --date=2025-12-12 --dry-run
+ *   npm run backup:restore -- --client=demo --date=2025-12-12
+ *   npm run backup:restore -- --client=demo --date=2025-12-12 --firestore-only
+ *   npm run backup:restore -- --client=demo --date=2025-12-12 --storage-only
+ *   npm run backup:restore -- --client=demo --date=2025-12-12 --dry-run
  */
 
 const { CLIENTS } = require('./types');

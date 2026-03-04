@@ -219,8 +219,80 @@ function copyShorebirdConfig(clientCode) {
   }
 }
 
+function generateGHAExportOptions(clientConfig) {
+  console.log('\nGenerating GHAExportOptions.plist...');
+
+  const { bundleId } = clientConfig;
+  if (!bundleId) {
+    console.log('  ATENCAO: bundleId nao encontrado no config.json, pulando GHAExportOptions.plist');
+    return;
+  }
+
+  const teamId = process.env.APPLE_TEAM_ID || '84LT77P2DM';
+
+  const plistContent = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key>
+  <string>app-store</string>
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>${bundleId}</key>
+    <string>match AppStore ${bundleId}</string>
+  </dict>
+  <key>signingCertificate</key>
+  <string>Apple Distribution</string>
+  <key>signingStyle</key>
+  <string>automatic</string>
+  <key>teamID</key>
+  <string>${teamId}</string>
+  <key>stripSwiftSymbols</key>
+  <true/>
+  <key>testFlightInternalTestingOnly</key>
+  <false/>
+  <key>uploadSymbols</key>
+  <true/>
+</dict>
+</plist>
+`;
+
+  const targetPath = path.join(TARGET_ROOT, 'ios', 'GHAExportOptions.plist');
+  const iosDir = path.join(TARGET_ROOT, 'ios');
+  if (!fs.existsSync(iosDir)) {
+    fs.mkdirSync(iosDir, { recursive: true });
+  }
+
+  fs.writeFileSync(targetPath, plistContent, 'utf8');
+  console.log(`  GHAExportOptions.plist gerado com bundleId: ${bundleId}`);
+}
+
+function copyServiceAccount(clientCode) {
+  console.log('\nCopying service-account.json...');
+
+  const clientDir = path.join(CLIENTS_DIR, clientCode);
+
+  // Limpar residual na raiz do white_label_app
+  const residualPath = path.join(TARGET_ROOT, 'service-account.json');
+  if (fs.existsSync(residualPath)) {
+    fs.unlinkSync(residualPath);
+    console.log('  Removido service-account.json residual da raiz');
+  }
+
+  const sourcePath = path.join(clientDir, 'service-account.json');
+  if (fs.existsSync(sourcePath)) {
+    fs.copyFileSync(sourcePath, residualPath);
+    console.log('  service-account.json copiado para white_label_app/');
+  } else {
+    console.log('  service-account.json nao encontrado para este cliente');
+    console.log('     Alguns scripts de administracao podem nao funcionar');
+  }
+}
+
 module.exports = {
   copyFirebaseConfigs,
   copyFirebaseJson,
   copyShorebirdConfig,
+  generateGHAExportOptions,
+  copyServiceAccount,
 };

@@ -255,7 +255,7 @@ const projectId = args.find(arg => !arg.startsWith('-'));
 
 if (!projectId) {
   console.error('Usage: node migrate-admins-to-auth.js <projectId> [--yes]');
-  console.error('Example: node migrate-admins-to-auth.js na-rede-loyalty-hub-club-4948 --yes');
+  console.error('Example: node migrate-admins-to-auth.js <projectId> --yes');
   process.exit(1);
 }
 
