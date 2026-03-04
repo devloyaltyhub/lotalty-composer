@@ -305,59 +305,6 @@ Submeter build existente do TestFlight para App Store (sem nova build)
 
 ----
 
-
-## admin
-
-### admin build
-
-```sh
-[bundle exec] fastlane admin build
-```
-
-Build Admin Android release AAB (uses Shorebird)
-
-### admin deploy_internal
-
-```sh
-[bundle exec] fastlane admin deploy_internal
-```
-
-Deploy Admin to Play Store (Internal Testing)
-
-### admin deploy_production
-
-```sh
-[bundle exec] fastlane admin deploy_production
-```
-
-Deploy Admin to Play Store (Production)
-
-### admin release_internal
-
-```sh
-[bundle exec] fastlane admin release_internal
-```
-
-Build and deploy Admin to Internal Testing
-
-### admin release_production
-
-```sh
-[bundle exec] fastlane admin release_production
-```
-
-Build and deploy Admin to Production
-
-### admin promote_to_production
-
-```sh
-[bundle exec] fastlane admin promote_to_production
-```
-
-Promote Admin build from Internal to Production
-
-----
-
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.
 
 More information about _fastlane_ can be found on [fastlane.tools](https://fastlane.tools).
