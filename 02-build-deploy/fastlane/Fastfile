@@ -108,6 +108,78 @@ def get_app_version
   match[1].strip
 end
 
+# Get current build number from pubspec.yaml version (e.g., "0.1.0+9" -> 9)
+def get_current_build_number
+  version = get_app_version
+  build_number = version.split('+').last.to_i
+  UI.message("🔢 Build number atual (pubspec): #{build_number}")
+  build_number
+end
+
+# Validate build number against Play Store before uploading
+# Returns true if OK, raises error if build number already exists
+def validate_android_build_number!
+  current_build = get_current_build_number
+  package_name = get_android_package_name
+
+  begin
+    versions = google_play_track_version_codes(
+      package_name: package_name,
+      track: 'internal',
+      json_key: ENV['GOOGLE_PLAY_JSON_KEY']
+    )
+    latest_code = versions.max || 0
+    UI.message("🔢 Último version code no Play Store (internal): #{latest_code}")
+
+    if current_build <= latest_code
+      UI.user_error!(
+        "❌ Build number #{current_build} já existe no Play Store (último: #{latest_code}).\n" \
+        "   Atualize a versão no pubspec.yaml para pelo menos +#{latest_code + 1}"
+      )
+    end
+
+    UI.success("✓ Build number #{current_build} é válido (> #{latest_code})")
+  rescue => e
+    if e.message.include?('já existe') || e.message.include?('Build number')
+      raise e
+    end
+    UI.important("⚠️  Não foi possível verificar version code no Play Store: #{e.message}")
+    UI.message("   Continuando com build number #{current_build}...")
+  end
+  true
+end
+
+# Validate build number against App Store Connect before uploading
+# Returns true if OK, raises error if build number already exists
+def validate_ios_build_number!(api_key, bundle_id)
+  current_build = get_current_build_number
+
+  begin
+    latest_build = app_store_build_number(
+      api_key: api_key,
+      app_identifier: bundle_id,
+      live: false
+    )
+    UI.message("🔢 Último build number no App Store Connect: #{latest_build}")
+
+    if current_build <= latest_build.to_i
+      UI.user_error!(
+        "❌ Build number #{current_build} já existe no App Store Connect (último: #{latest_build}).\n" \
+        "   Atualize a versão no pubspec.yaml para pelo menos +#{latest_build.to_i + 1}"
+      )
+    end
+
+    UI.success("✓ Build number #{current_build} é válido (> #{latest_build})")
+  rescue => e
+    if e.message.include?('já existe') || e.message.include?('Build number')
+      raise e
+    end
+    UI.important("⚠️  Não foi possível verificar build number no App Store Connect: #{e.message}")
+    UI.message("   Continuando com build number #{current_build}...")
+  end
+  true
+end
+
 # Get debug symbols path for a client (creates directory if needed)
 # Symbols are stored per version to support Crashlytics stack trace mapping
 def get_debug_symbols_path(client_name, platform)
@@ -496,6 +568,9 @@ platform :android do
 
     UI.message("📤 Deploying Android app to Play Store (Internal Testing)")
 
+    # Validate build number before uploading (avoids wasting builds)
+    validate_android_build_number!
+
     # Validate build artifact exists
     aab_path = "#{WHITE_LABEL_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
     validate_build_artifact(aab_path, "Android")
@@ -540,6 +615,9 @@ platform :android do
 
     UI.message("📤 Deploying Android app to Play Store (Production)")
     UI.message("   Auto-release: #{auto_release ? 'enabled' : 'disabled'}")
+
+    # Validate build number before uploading (avoids wasting builds)
+    validate_android_build_number!
 
     # Validate build artifact exists
     aab_path = "#{WHITE_LABEL_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
@@ -997,6 +1075,9 @@ platform :ios do
 
     UI.message("📤 Deploying iOS app to TestFlight")
 
+    # Validate build number before uploading (avoids wasting builds)
+    validate_ios_build_number!(@api_key, get_bundle_id(client_name)) if @api_key
+
     # Validate build artifact exists and get resolved path
     ipa_path = "#{WHITE_LABEL_APP_PATH}/build/ios/ipa/*.ipa"
     ipa_path = validate_build_artifact(ipa_path, "iOS")
@@ -1040,6 +1121,9 @@ platform :ios do
     UI.message("📤 Deploying iOS app to App Store")
     UI.message("   Auto-submit for review: #{auto_submit ? 'enabled' : 'disabled'}")
     UI.message("   Phased release: #{phased_release ? 'enabled' : 'disabled'}")
+
+    # Validate build number before uploading (avoids wasting builds)
+    validate_ios_build_number!(@api_key, get_bundle_id(client_name)) if @api_key
 
     # Validate build artifact exists and get resolved path
     ipa_path = "#{WHITE_LABEL_APP_PATH}/build/ios/ipa/*.ipa"
