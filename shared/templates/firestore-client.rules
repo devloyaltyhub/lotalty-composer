@@ -93,10 +93,10 @@ service cloud.firestore {
              newData.emailVerified == true;
     }
 
-    function canSelfSoftDelete(newData, oldData) {
-      // Allow owner to soft-delete their own account
+    function canSelfToggleSoftDelete(newData, oldData) {
+      // Allow owner to soft-delete (or undo on failed deletion rollback)
       return newData.diff(oldData).affectedKeys().hasOnly(['softDeleted']) &&
-             newData.softDeleted == true;
+             newData.softDeleted is bool;
     }
 
     function canUpdateClubScore(newData, oldData) {
@@ -149,7 +149,7 @@ service cloud.firestore {
       allow update: if (isOwner(userId) && canUpdateUserFields(request.resource.data, resource.data)) ||
                        (isOwner(userId) && canUpdateClubScore(request.resource.data, resource.data)) ||
                        (isOwner(userId) && canSelfMarkEmailVerified(request.resource.data, resource.data)) ||
-                       (isOwner(userId) && canSelfSoftDelete(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canSelfToggleSoftDelete(request.resource.data, resource.data)) ||
                        isAdmin();
       allow delete: if isAdmin();
 

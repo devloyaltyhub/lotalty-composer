@@ -26,6 +26,7 @@ const FEATURE_FLAGS_CHOICES = [
   { name: "AI Assistant", value: "aiAssistant", checked: true },
   { name: "Launch Screen", value: "launchScreen", checked: false },
   { name: "Affiliates", value: "affiliates", checked: false },
+  { name: "Referral Program (Indique e Ganhe)", value: "referralProgram", checked: false },
 ];
 
 function convertFeatureFlagsToObject(featureFlagsArray) {
@@ -46,6 +47,7 @@ function convertFeatureFlagsToObject(featureFlagsArray) {
     aiAssistant: featureFlagsArray.includes("aiAssistant"),
     launchScreen: featureFlagsArray.includes("launchScreen"),
     affiliates: featureFlagsArray.includes("affiliates"),
+    referralProgram: featureFlagsArray.includes("referralProgram"),
   };
 }
 

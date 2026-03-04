@@ -74,6 +74,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     aiAssistant: false,
     launchScreen: false,
     affiliates: false,
+    referralProgram: false,
   },
   profissional: {
     delivery: true,
@@ -92,6 +93,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     aiAssistant: true,
     launchScreen: false,
     affiliates: false,
+    referralProgram: false,
   },
   ilimitado: {
     delivery: true,
@@ -110,6 +112,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     aiAssistant: true,
     launchScreen: false,
     affiliates: true,
+    referralProgram: true,
   },
 };
 
