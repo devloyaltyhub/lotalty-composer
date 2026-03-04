@@ -116,7 +116,12 @@ class DataSeeder {
       let totalDocuments = 0;
       let totalCollections = 0;
 
-      for (const collectionName of dataManagementConfig.collections) {
+      const seedSkipCollections = ['Users_Admin'];
+      const collectionsToSeed = dataManagementConfig.collections.filter(
+        (c) => !seedSkipCollections.includes(c)
+      );
+
+      for (const collectionName of collectionsToSeed) {
         const collectionData = this.loadSnapshotCollection(collectionName);
 
         if (!collectionData || !collectionData.documents) {

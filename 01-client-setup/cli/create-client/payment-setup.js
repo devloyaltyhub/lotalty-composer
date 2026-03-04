@@ -191,11 +191,10 @@ async function writePaymentConfig(clientApp, paymentConfig) {
 async function setupPaymentConfig(config, firebaseClient) {
   logger.section("Payment Configuration Setup");
 
-  const hasPayments =
-    config.featureFlags?.payments || config.featureFlags?.ecommerce;
+  const hasPayments = config.featureFlags?.ecommerce;
 
   if (!hasPayments) {
-    logger.info("Pagamento desabilitado (sem ecommerce/payments flag)");
+    logger.info("Pagamento desabilitado (sem ecommerce flag)");
     return null;
   }
 

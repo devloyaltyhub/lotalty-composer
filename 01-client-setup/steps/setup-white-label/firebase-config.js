@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const firebaseOptionsGenerator = require('../modules/firebase-options-generator');
 const { TARGET_ROOT, CLIENTS_DIR } = require('./config');
+const { downloadFreshConfigs } = require('./firebase-config-download');
 
-function copyFirebaseConfigs(clientCode, clientConfig) {
+async function copyFirebaseConfigs(clientCode, clientConfig) {
   console.log('\nCopying Firebase configuration files...');
 
   const clientDir = path.join(CLIENTS_DIR, clientCode);
@@ -22,6 +23,8 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
     }
   });
 
+  const downloaded = await downloadFreshConfigs(clientDir, clientConfig.firebaseProjectId);
+
   const androidPossiblePaths = [
     path.join(clientDir, 'android', 'google-services.json'),
     path.join(clientDir, 'google-services.json'),
@@ -31,8 +34,8 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
   const androidSource = androidPossiblePaths.find((p) => fs.existsSync(p));
   if (androidSource) {
     fs.copyFileSync(androidSource, androidDest);
-    const relativePath = path.relative(clientDir, androidSource);
-    console.log(`  google-services.json copiado para android/app/ (de ${relativePath})`);
+    const source = downloaded.android ? 'baixado do Firebase' : 'cache local';
+    console.log(`  google-services.json copiado para android/app/ (${source})`);
     copied++;
   } else {
     missing.push('google-services.json');
@@ -48,8 +51,8 @@ function copyFirebaseConfigs(clientCode, clientConfig) {
   const iosSource = iosPossiblePaths.find((p) => fs.existsSync(p));
   if (iosSource) {
     fs.copyFileSync(iosSource, iosDest);
-    const relativePath = path.relative(clientDir, iosSource);
-    console.log(`  GoogleService-Info.plist copiado para ios/Runner/ (de ${relativePath})`);
+    const source = downloaded.ios ? 'baixado do Firebase' : 'cache local';
+    console.log(`  GoogleService-Info.plist copiado para ios/Runner/ (${source})`);
     copied++;
   } else {
     missing.push('ios/Runner/GoogleService-Info.plist');

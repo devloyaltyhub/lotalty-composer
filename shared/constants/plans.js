@@ -70,10 +70,10 @@ const FEATURE_FLAGS_BY_PLAN = {
     events: true,
     team: true,
     birthday: true,
-    payments: true,
     dietaryPreferences: false,
     aiAssistant: false,
     launchScreen: false,
+    affiliates: false,
   },
   profissional: {
     delivery: true,
@@ -88,10 +88,10 @@ const FEATURE_FLAGS_BY_PLAN = {
     events: true,
     team: true,
     birthday: true,
-    payments: true,
     dietaryPreferences: true,
     aiAssistant: true,
     launchScreen: false,
+    affiliates: false,
   },
   ilimitado: {
     delivery: true,
@@ -106,10 +106,10 @@ const FEATURE_FLAGS_BY_PLAN = {
     events: true,
     team: true,
     birthday: true,
-    payments: true,
     dietaryPreferences: true,
     aiAssistant: true,
     launchScreen: false,
+    affiliates: true,
   },
 };
 

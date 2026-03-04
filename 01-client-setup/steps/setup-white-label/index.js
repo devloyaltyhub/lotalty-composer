@@ -155,7 +155,7 @@ async function main(clientArg) {
     processAssets(businessType, clientConfig);
 
     keystoreOps.copyAndroidKeystore(TARGET_ROOT, client);
-    copyFirebaseConfigs(client, clientConfig);
+    await copyFirebaseConfigs(client, clientConfig);
     copyFirebaseJson(client, clientConfig);
     copyShorebirdConfig(client);
     generateGHAExportOptions(clientConfig);

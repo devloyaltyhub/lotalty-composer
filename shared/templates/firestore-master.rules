@@ -164,6 +164,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // === AFFILIATES (afiliados) ===
+    match /Affiliates/{docId} {
+      allow read: if isAdmin() ||
+                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
     // === MASTER_CONFIG (chaves de infraestrutura global) ===
     match /Master_Config/{docId} {
       allow read: if isAuthenticated();

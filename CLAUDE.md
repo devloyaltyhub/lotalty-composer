@@ -151,6 +151,13 @@ This automation system works with:
 - **loyalty-credentials/** - Certificates and service accounts
 - **Master Firebase** - Stores client configurations
 
+## Feature Flags & Plans
+
+`shared/constants/plans.js` controls feature availability per plan tier:
+- **Essencial**: `affiliates: false`
+- **Profissional**: `affiliates: false`
+- **Ilimitado**: `affiliates: true` (only plan with affiliate system)
+
 ## Guidelines
 
 - **Systemic solutions**: Fix root causes in scripts, not just symptoms in files

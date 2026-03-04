@@ -26,6 +26,7 @@ function generateColorPalette(primaryColor) {
     searchBarBackground: "#FFFFFF1A",
     gradientDark: "#131313",
     gradientContrast: "#303030",
+    splashBackground: primaryColor.toUpperCase(),
   };
 }
 

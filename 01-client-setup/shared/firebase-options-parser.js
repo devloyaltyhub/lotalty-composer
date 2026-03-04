@@ -69,6 +69,7 @@ function parseFirebaseOptions(optionsPath) {
   const storageBucket = extractValue(content, 'storageBucket');
   const authDomain = extractValue(content, 'authDomain');
   const measurementId = extractValue(content, 'measurementId');
+  const databaseURL = extractValue(content, 'databaseURL');
   const genericApiKey = extractValue(content, 'apiKey');
   const genericAppId = extractValue(content, 'appId');
 
@@ -80,6 +81,7 @@ function parseFirebaseOptions(optionsPath) {
     storageBucket,
     authDomain,
     measurementId,
+    databaseURL,
     iosApiKey: iosApiKey || genericApiKey,
     iosAppId: iosAppId || genericAppId,
     androidApiKey: androidApiKey || genericApiKey,
@@ -111,6 +113,7 @@ function parseFirebaseOptionsContent(content) {
   const storageBucket = extractValue(content, 'storageBucket');
   const authDomain = extractValue(content, 'authDomain');
   const measurementId = extractValue(content, 'measurementId');
+  const databaseURL = extractValue(content, 'databaseURL');
   const genericApiKey = extractValue(content, 'apiKey');
   const genericAppId = extractValue(content, 'appId');
 
@@ -122,6 +125,7 @@ function parseFirebaseOptionsContent(content) {
     storageBucket,
     authDomain,
     measurementId,
+    databaseURL,
     iosApiKey: iosApiKey || genericApiKey,
     iosAppId: iosAppId || genericAppId,
     androidApiKey: androidApiKey || genericApiKey,

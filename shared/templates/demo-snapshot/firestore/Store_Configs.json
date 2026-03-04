@@ -33,7 +33,7 @@
           "requiredClientScore": 20000
         }
       ],
-      "globalCashbackPercentage": 2,
+      "globalClubCoinsPercentage": 2,
       "latlng": {
         "latitude": -22.449876522279848,
         "longitude": -43.14301930976656

@@ -91,8 +91,8 @@
     }
   },
   "Store_Configs": {
-    "main": {
-      "id": "main",
+    "config": {
+      "id": "config",
       "storeStatus": true,
       "minimumOrderValue": 0,
       "address": "Rua Exemplo, 123, São Paulo - SP, 00000-000, Brasil",

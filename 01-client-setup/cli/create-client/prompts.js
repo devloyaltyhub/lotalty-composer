@@ -22,7 +22,10 @@ const FEATURE_FLAGS_CHOICES = [
   { name: "Events", value: "events", checked: true },
   { name: "Team", value: "team", checked: true },
   { name: "Birthday Bonus", value: "birthday", checked: false },
-  { name: "Payments (PIX)", value: "payments", checked: false },
+  { name: "Dietary Preferences", value: "dietaryPreferences", checked: true },
+  { name: "AI Assistant", value: "aiAssistant", checked: true },
+  { name: "Launch Screen", value: "launchScreen", checked: false },
+  { name: "Affiliates", value: "affiliates", checked: false },
 ];
 
 function convertFeatureFlagsToObject(featureFlagsArray) {
@@ -39,7 +42,10 @@ function convertFeatureFlagsToObject(featureFlagsArray) {
     events: featureFlagsArray.includes("events"),
     team: featureFlagsArray.includes("team"),
     birthday: featureFlagsArray.includes("birthday"),
-    payments: featureFlagsArray.includes("payments"),
+    dietaryPreferences: featureFlagsArray.includes("dietaryPreferences"),
+    aiAssistant: featureFlagsArray.includes("aiAssistant"),
+    launchScreen: featureFlagsArray.includes("launchScreen"),
+    affiliates: featureFlagsArray.includes("affiliates"),
   };
 }
 

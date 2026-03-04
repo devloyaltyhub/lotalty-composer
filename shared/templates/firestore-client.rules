@@ -17,9 +17,9 @@ service cloud.firestore {
     }
 
     function isAppUser() {
-      // User must be verified and have User document
+      // Email verification enforced at app layer (EmailVerificationBlockScreen)
       // Note: App Check is enforced at Firebase Console level, not in Security Rules
-      return isVerifiedUser() &&
+      return isAuthenticated() &&
              exists(/databases/$(database)/documents/Users/$(request.auth.uid));
     }
 
@@ -86,6 +86,19 @@ service cloud.firestore {
       return !systemFieldsModified && softDeleteProtected;
     }
 
+    function canSelfMarkEmailVerified(newData, oldData) {
+      // Allow owner to set emailVerified=true when their token confirms it
+      return request.auth.token.email_verified == true &&
+             newData.diff(oldData).affectedKeys().hasOnly(['emailVerified']) &&
+             newData.emailVerified == true;
+    }
+
+    function canSelfSoftDelete(newData, oldData) {
+      // Allow owner to soft-delete their own account
+      return newData.diff(oldData).affectedKeys().hasOnly(['softDeleted']) &&
+             newData.softDeleted == true;
+    }
+
     function canUpdateClubScore(newData, oldData) {
       // Allow updating ONLY club.clientScore field (for profile completion rewards)
       // This is a targeted exception to the club system field protection
@@ -126,13 +139,17 @@ service cloud.firestore {
     // Users Collection (App Users/Customers)
     // ==========================================
     match /Users/{userId} {
-      // Read access: supports queries (ranking) and real-time listeners on own document
-      // Using 'read' (includes 'get' and 'list') to support both .doc().snapshots() and queries
-      allow read: if isAdmin() || isOwner(userId) || isAppUser();
+      // get: single document access (own doc or admin)
+      allow get: if isAdmin() || isOwner(userId) || isAppUser();
+      // list: queries (ranking, registration duplicate checks)
+      // isAuthenticated() needed for email/CPF uniqueness checks during registration
+      allow list: if isAdmin() || isAppUser() || isAuthenticated();
 
-      allow create: if isVerifiedUser() && request.auth.uid == userId;
+      allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if (isOwner(userId) && canUpdateUserFields(request.resource.data, resource.data)) ||
                        (isOwner(userId) && canUpdateClubScore(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canSelfMarkEmailVerified(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canSelfSoftDelete(request.resource.data, resource.data)) ||
                        isAdmin();
       allow delete: if isAdmin();
 
@@ -186,10 +203,10 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // Store Configs Collection - Authenticated users only
+    // Store Configs Collection - Public store settings
     // ==========================================
     match /Store_Configs/{docId} {
-      allow read: if isAuthenticated();
+      allow read: if true;  // Public: store hours, settings needed before login
       allow write: if isAdmin();
     }
 
@@ -314,8 +331,9 @@ service cloud.firestore {
     // Notifications Collection - Privacy protected
     // ==========================================
     match /Notifications/{docId} {
-      allow read: if isAdmin() || isAppUser();
-      allow write: if isAdmin();
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (isAppUser() && resource.data.userId != null && resource.data.userId == request.auth.uid);
     }
 
     // ==========================================
@@ -358,6 +376,15 @@ service cloud.firestore {
     match /Birthday_Gifts/{docId} {
       allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Affiliates Collection - Admin manages, app users see ranking
+    // ==========================================
+    match /Affiliates/{docId} {
+      allow read: if isAdmin() || isAppUser();
+      allow create: if isAdmin() || (isAppUser() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
     }
 
     // ==========================================

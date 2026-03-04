@@ -5,6 +5,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:loyalty_core/ui/design_system/app_theme.dart';
 
 abstract class AppColors {
   static const Color dark = Color({{colors.dark}});
@@ -17,103 +18,9 @@ abstract class AppColors {
   static const Color backgroundPage = Color({{colors.backgroundPage}});
   static const Color dividerGrey = Color({{colors.dividerGrey}});
   static const Color buttonBorder = Color({{colors.buttonBorder}});
-}
-
-abstract class HomePageColors {
   static const Color searchBarBackground = Color({{colors.searchBarBackground}});
   static const Color gradientDark = Color({{colors.gradientDark}});
   static const Color gradientContrast = Color({{colors.gradientContrast}});
-}
-
-class PersonalizedTextTheme {
-  static TextTheme textTheme = const TextTheme(
-    titleSmall: TextStyle(
-      fontSize: 12,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    labelSmall: TextStyle(
-      fontSize: 14,
-      fontFamily: 'Sora',
-      color: AppColors.dark,
-    ),
-    labelMedium: TextStyle(
-      fontSize: 14,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    labelLarge: TextStyle(
-      fontSize: 14,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w600,
-      color: AppColors.dark,
-    ),
-    bodySmall: TextStyle(
-      fontSize: 16,
-      fontFamily: 'Sora',
-      color: AppColors.dark,
-    ),
-    bodyMedium: TextStyle(
-      fontSize: 16,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    bodyLarge: TextStyle(
-      fontSize: 16,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w600,
-      color: AppColors.dark,
-    ),
-    headlineSmall: TextStyle(
-      fontSize: 18,
-      fontFamily: 'Sora',
-      color: AppColors.dark,
-    ),
-    headlineMedium: TextStyle(
-      fontSize: 18,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    headlineLarge: TextStyle(
-      fontSize: 18,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w600,
-      color: AppColors.dark,
-    ),
-    titleMedium: TextStyle(
-      fontSize: 20,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    titleLarge: TextStyle(
-      fontSize: 20,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w600,
-      color: AppColors.dark,
-    ),
-    displaySmall: TextStyle(
-      fontSize: 24,
-      fontFamily: 'Sora',
-      color: AppColors.dark,
-    ),
-    displayMedium: TextStyle(
-      fontSize: 24,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w400,
-      color: AppColors.dark,
-    ),
-    displayLarge: TextStyle(
-      fontSize: 24,
-      fontFamily: 'Sora',
-      fontWeight: FontWeight.w600,
-      color: AppColors.dark,
-    ),
-  );
 }
 
 abstract class CardPageColors {
@@ -151,55 +58,55 @@ abstract class InputDecorationProperties {
       hintText: hintText,
       suffixIcon: suffixIcon,
       prefixIcon: prefixIcon,
-      labelStyle: const TextStyle(
+      labelStyle: TextStyle(
         fontFamily: 'Sora',
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.dark,
+        color: AppTheme.dark,
       ),
       hintStyle: TextStyle(
         fontFamily: 'Sora',
         fontSize: 14,
         fontWeight: FontWeight.w400,
-        color: AppColors.dark.withValues(alpha: 0.5),
+        color: AppTheme.dark.withValues(alpha: 0.5),
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.buttonBorder,
+        borderSide: BorderSide(
+          color: AppTheme.buttonBorder,
           width: 1,
         ),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.buttonBorder,
+        borderSide: BorderSide(
+          color: AppTheme.buttonBorder,
           width: 1,
         ),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.primary,
+        borderSide: BorderSide(
+          color: AppTheme.primary,
           width: 2,
         ),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.error,
+        borderSide: BorderSide(
+          color: AppTheme.error,
           width: 1,
         ),
       ),
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(
-          color: AppColors.error,
+        borderSide: BorderSide(
+          color: AppTheme.error,
           width: 2,
         ),
       ),
       filled: true,
-      fillColor: AppColors.light,
+      fillColor: AppTheme.light,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
     );
   }
