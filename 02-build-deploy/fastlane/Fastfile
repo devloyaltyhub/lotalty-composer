@@ -376,15 +376,23 @@ def upload_crashlytics_symbols(client_name, platform)
       UI.user_error!("Deploy abortado: símbolos de debug não encontrados")
     end
 
-    # CRITICAL: Fail if no symbol files exist
+    # Check for symbol files (.symbols from Flutter or .so from Shorebird)
     symbol_files = Dir.glob(File.join(symbols_path, '*.symbols'))
-    if symbol_files.empty?
-      UI.error("❌ ERRO CRÍTICO: Nenhum arquivo .symbols encontrado!")
+    so_files = Dir.glob(File.join(symbols_path, '*.so'))
+
+    if symbol_files.empty? && so_files.empty?
+      UI.error("❌ ERRO CRÍTICO: Nenhum arquivo de símbolos encontrado!")
       UI.error("   Path: #{symbols_path}")
       UI.error("")
       UI.error("   O diretório existe mas está vazio.")
       UI.error("   O Crashlytics NÃO conseguirá decodificar stack traces desta versão.")
-      UI.user_error!("Deploy abortado: arquivos .symbols não encontrados")
+      UI.user_error!("Deploy abortado: arquivos de símbolos não encontrados")
+    end
+
+    # For Shorebird builds, .so files are the native symbols (no .symbols generated)
+    if symbol_files.empty? && so_files.any?
+      UI.message("   ℹ️  Shorebird build detectado: usando .so files para Crashlytics")
+      symbol_files = so_files
     end
 
     UI.success("✅ Símbolos encontrados: #{symbol_files.length} arquivo(s)")
@@ -531,7 +539,7 @@ platform :android do
       # Extract native debug symbols from the build output
       UI.message("📦 Extracting debug symbols from build output...")
       FileUtils.mkdir_p(absolute_symbols_path)
-      symbol_files = Dir.glob("#{WHITE_LABEL_APP_PATH}/build/app/intermediates/merged_native_libs/release/out/lib/**/*.so")
+      symbol_files = Dir.glob("#{WHITE_LABEL_APP_PATH}/build/app/intermediates/merged_native_libs/release/**/out/lib/**/*.so")
       if symbol_files.any?
         symbol_files.each { |f| FileUtils.cp(f, absolute_symbols_path) }
         UI.success("✅ #{symbol_files.length} native symbol(s) extraídos para Crashlytics")
@@ -693,6 +701,8 @@ platform :android do
     UI.message("   📁 Metadata: #{metadata_path}")
     UI.message("   ℹ️  Screenshots existentes serão substituídos automaticamente")
 
+    version_code = options[:version_code]
+
     with_retry("Upload metadata para Play Store") do
       upload_to_play_store(
         package_name: get_android_package_name,
@@ -702,7 +712,9 @@ platform :android do
         metadata_path: metadata_path,
         skip_upload_metadata: false,
         skip_upload_images: false,
-        skip_upload_screenshots: false
+        skip_upload_screenshots: false,
+        skip_upload_changelogs: version_code.nil?,
+        version_code: version_code
       )
     end
 
@@ -1314,15 +1326,19 @@ platform :ios do
     UI.message("   📁 Metadata: #{metadata_path}")
     UI.message("   🗑️  Screenshots existentes serão deletados antes do upload (overwrite_screenshots: true)")
 
+    bundle_id = get_bundle_id(client_name)
+    UI.message("   📦 Bundle ID: #{bundle_id}")
+
     with_retry("Upload metadata para App Store") do
       upload_to_app_store(
         api_key: @api_key,
+        app_identifier: bundle_id,
         skip_binary_upload: true,
         metadata_path: metadata_path,
         screenshots_path: metadata_path,
         skip_metadata: false,
         skip_screenshots: false,
-        overwrite_screenshots: true,  # DELETA screenshots existentes antes do upload
+        overwrite_screenshots: true,
         force: true,
         precheck_include_in_app_purchases: false
       )
