@@ -75,6 +75,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     launchScreen: false,
     affiliates: false,
     referralProgram: false,
+    salesFunnel: false,
   },
   profissional: {
     delivery: true,
@@ -94,6 +95,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     launchScreen: false,
     affiliates: false,
     referralProgram: false,
+    salesFunnel: true,
   },
   ilimitado: {
     delivery: true,
@@ -113,6 +115,7 @@ const FEATURE_FLAGS_BY_PLAN = {
     launchScreen: false,
     affiliates: true,
     referralProgram: true,
+    salesFunnel: true,
   },
 };
 
