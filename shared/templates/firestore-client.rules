@@ -10,14 +10,7 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isVerifiedUser() {
-      // User must be authenticated AND have verified email
-      return isAuthenticated() &&
-             request.auth.token.email_verified == true;
-    }
-
     function isAppUser() {
-      // Email verification enforced at app layer (EmailVerificationBlockScreen)
       // Note: App Check is enforced at Firebase Console level, not in Security Rules
       return isAuthenticated() &&
              exists(/databases/$(database)/documents/Users/$(request.auth.uid));
@@ -67,7 +60,7 @@ service cloud.firestore {
       // Fields that users are allowed to update
       // System fields like club points, email, etc. are protected
       let systemFields = ['userId', 'club', 'totalConsumed', 'clientScore',
-                         'emailVerified', 'softDeleted', 'creationTime', 'email'];
+                         'softDeleted', 'creationTime', 'email'];
 
       // Check if any system field was modified
       let systemFieldsModified = newData.diff(oldData).affectedKeys().hasAny(systemFields);
@@ -84,13 +77,6 @@ service cloud.firestore {
                                newData.softDeleted == true;
 
       return !systemFieldsModified && softDeleteProtected;
-    }
-
-    function canSelfMarkEmailVerified(newData, oldData) {
-      // Allow owner to set emailVerified=true when their token confirms it
-      return request.auth.token.email_verified == true &&
-             newData.diff(oldData).affectedKeys().hasOnly(['emailVerified']) &&
-             newData.emailVerified == true;
     }
 
     function canSelfToggleSoftDelete(newData, oldData) {
@@ -148,7 +134,6 @@ service cloud.firestore {
       allow create: if isAuthenticated() && request.auth.uid == userId;
       allow update: if (isOwner(userId) && canUpdateUserFields(request.resource.data, resource.data)) ||
                        (isOwner(userId) && canUpdateClubScore(request.resource.data, resource.data)) ||
-                       (isOwner(userId) && canSelfMarkEmailVerified(request.resource.data, resource.data)) ||
                        (isOwner(userId) && canSelfToggleSoftDelete(request.resource.data, resource.data)) ||
                        isAdmin();
       allow delete: if isAdmin();
