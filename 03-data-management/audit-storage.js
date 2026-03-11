@@ -12,14 +12,12 @@ const { WHITE_LABEL_APP_ROOT } = require('../shared/utils/paths');
 
 const COLLECTIONS_WITH_IMAGES = [
   { name: 'Products', fields: ['image'] },
-  { name: 'Team_Members', fields: ['image'] },
   { name: 'Campaigns', fields: ['image'] },
   { name: 'Happy_Hours', fields: ['image'] },
-  { name: 'Our_Story', fields: ['photos'] },
   { name: 'Image_Mappings', fields: ['fileName'] },
 ];
 
-const STORAGE_PATHS = ['gallery', 'profile_photos', 'Team_Members', 'Happy_Hours', 'Campaigns', 'Products'];
+const STORAGE_PATHS = ['gallery', 'profile_photos', 'Happy_Hours', 'Campaigns', 'Products'];
 
 class StorageAuditor {
   constructor(projectId, storageBucket) {

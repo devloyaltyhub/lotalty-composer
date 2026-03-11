@@ -18,7 +18,7 @@
       "id": "prod_001",
       "title": "Café espresso",
       "description": "Café espresso tradicional",
-      "price": 5.0,
+      "price": 5,
       "categories": [
         {
           "id": "cat_001",
@@ -33,7 +33,7 @@
       "id": "prod_002",
       "title": "Cappuccino",
       "description": "Cappuccino cremoso com chocolate",
-      "price": 8.0,
+      "price": 8,
       "categories": [
         {
           "id": "cat_001",
@@ -48,7 +48,7 @@
       "id": "prod_003",
       "title": "Sanduíche Natural",
       "description": "Sanduíche natural de frango",
-      "price": 12.0,
+      "price": 12,
       "categories": [
         {
           "id": "cat_002",
@@ -63,7 +63,7 @@
       "id": "prod_004",
       "title": "Pão de Queijo",
       "description": "Pão de queijo mineiro tradicional",
-      "price": 6.0,
+      "price": 6,
       "categories": [
         {
           "id": "cat_002",
@@ -78,7 +78,7 @@
       "id": "prod_005",
       "title": "Brownie",
       "description": "Brownie de chocolate com nozes",
-      "price": 9.0,
+      "price": 9,
       "categories": [
         {
           "id": "cat_003",
@@ -136,15 +136,6 @@
           "happyHourMultiplier": 15
         }
       ]
-    }
-  },
-  "Our_Story": {
-    "main": {
-      "introduction": "Nossa História",
-      "description": "Somos uma empresa dedicada a oferecer os melhores produtos e serviços aos nossos clientes. Nossa missão é proporcionar experiências memoráveis através de produtos de qualidade e atendimento excepcional.",
-      "photos": [],
-      "videoUrl": null,
-      "lastUpdated": "{{TIMESTAMP}}"
     }
   }
 }

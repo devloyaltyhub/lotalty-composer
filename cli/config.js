@@ -200,6 +200,12 @@ const SCRIPTS = {
     category: CATEGORIES.CLIENT_OPS,
     script: '03-data-management/cli/export-demo-data.js',
   },
+  SEND_PUSH: {
+    name: 'Enviar Push Notification',
+    description: 'Enviar notificação push para todos os usuários de um cliente',
+    category: CATEGORIES.CLIENT_OPS,
+    script: '03-data-management/cli/send-push-notification.js',
+  },
 
   // Backup & Restore
   BACKUP_ONCE: {
@@ -234,6 +240,14 @@ const SCRIPTS = {
 // ============================================================================
 
 const WORKFLOWS = {
+  SEND_PUSH_NOTIFICATION: {
+    name: '📲 Enviar Push Notification',
+    description: 'Enviar notificação push para todos os usuários de um cliente',
+    category: CATEGORIES.WORKFLOWS,
+    steps: [
+      { action: 'send-push', script: SCRIPTS.SEND_PUSH },
+    ],
+  },
   BACKUP_NOW: {
     name: '💾 Executar Backup Agora',
     description: 'Backup imediato de todos os clientes (Firestore + Storage) para GitHub',

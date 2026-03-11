@@ -188,7 +188,6 @@ class ClientCreationWizard {
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Categories", firebaseClient);
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Products", firebaseClient);
         this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Store_Configs", firebaseClient);
-        this.resourceTracker.trackFirestoreCollection(this.config.clientCode, "Our_Story", firebaseClient);
       });
 
       await this.executeStep("setup_payment_config", async () => {

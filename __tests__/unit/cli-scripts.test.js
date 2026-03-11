@@ -279,9 +279,7 @@ describe("CLI Scripts", () => {
       campaigns: featureFlagsArray.includes("campaigns"),
       storeHours: featureFlagsArray.includes("storeHours"),
       pushNotifications: featureFlagsArray.includes("pushNotifications"),
-      suggestionBox: featureFlagsArray.includes("suggestionBox"),
       clarity: featureFlagsArray.includes("clarity"),
-      ourStory: featureFlagsArray.includes("ourStory"),
     });
 
     test("converts array to object with all flags", () => {
@@ -306,9 +304,7 @@ describe("CLI Scripts", () => {
         "campaigns",
         "storeHours",
         "pushNotifications",
-        "suggestionBox",
         "clarity",
-        "ourStory",
       ];
       const flags = convertFeatureFlags(allFlags);
 

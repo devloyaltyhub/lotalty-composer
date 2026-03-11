@@ -19,10 +19,8 @@ const { WHITE_LABEL_APP_ROOT } = require('../shared/utils/paths');
 // Coleções que podem ter URLs de imagens
 const COLLECTIONS_WITH_IMAGES = [
   'Products',
-  'Team_Members',
   'Campaigns',
   'Happy_Hours',
-  'Our_Story',
   'Image_Mappings',
   'Gallery',
 ];

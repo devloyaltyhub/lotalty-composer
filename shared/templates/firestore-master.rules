@@ -67,14 +67,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // === SUGGESTIONS_BOX ===
-    match /Suggestions_Box/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
-    }
-
     // === ORDERS ===
     match /Orders/{docId} {
       allow read: if isAdmin() ||
@@ -89,31 +81,7 @@ service cloud.firestore {
     match /Campaigns/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /Happy_Hours/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /Store_Configs/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Team_Members/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Team/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Our_Story/{docId} { allow read: if true; allow write: if isAdmin(); }
     match /Image_Mappings/{docId} { allow read: if true; allow write: if isAdmin(); }
-
-    // === EVENTS (conteúdo público, inscrição requer auth) ===
-    match /Events/{eventId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // === EVENT_CATEGORIES (conteúdo público, admin gerencia) ===
-    match /Event_Categories/{docId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // === EVENT_REGISTRATIONS (usuário lê próprias, cria próprias, admin gerencia) ===
-    match /Event_Registrations/{registrationId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() ||
-                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
-    }
 
     // === PAYMENTS (admin cria e monitora, user vê próprios) ===
     match /Payments/{paymentId} {
@@ -130,22 +98,7 @@ service cloud.firestore {
                     (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
     }
-    match /Suggestions/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
-    }
     match /Store_Consumption/{docId} { allow read, write: if isAdmin(); }
-
-    // === EVENT_FEEDBACKS (feedback de eventos) ===
-    match /Event_Feedbacks/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() ||
-                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
-    }
 
     // === ORDERS_INVOICED (notas fiscais) ===
     match /Orders_Invoiced/{docId} {

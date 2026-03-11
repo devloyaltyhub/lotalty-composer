@@ -31,10 +31,6 @@
         "documentCount": 13,
         "filePath": "firestore/Image_Mappings.json"
       },
-      "Our_Story": {
-        "documentCount": 1,
-        "filePath": "firestore/Our_Story.json"
-      },
       "Products": {
         "documentCount": 4,
         "filePath": "firestore/Products.json"
@@ -42,14 +38,6 @@
       "Store_Configs": {
         "documentCount": 1,
         "filePath": "firestore/Store_Configs.json"
-      },
-      "Suggestions_Box": {
-        "documentCount": 1,
-        "filePath": "firestore/Suggestions_Box.json"
-      },
-      "Team_Members": {
-        "documentCount": 2,
-        "filePath": "firestore/Team_Members.json"
       },
       "Users": {
         "documentCount": 1,
@@ -60,7 +48,7 @@
         "filePath": "firestore/Users_Admin.json"
       }
     },
-    "totalDocuments": 44
+    "totalDocuments": 40
   },
   "storage": {
     "paths": {

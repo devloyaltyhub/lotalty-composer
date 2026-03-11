@@ -26,6 +26,7 @@
     "deploy": "node 02-build-deploy/cli/deploy-client.js",
     "export-demo": "node 03-data-management/cli/export-demo-data.js",
     "migrate-plans": "node 03-data-management/cli/migrate-plans.js",
+    "send-push": "node 03-data-management/cli/send-push-notification.js",
     "screenshots": "node 02-build-deploy/cli/generate-screenshots.js",
     "update-screenshots": "node 02-build-deploy/cli/update-screenshots.js",
     "build-only": "node 02-build-deploy/build-client.js --no-deploy",

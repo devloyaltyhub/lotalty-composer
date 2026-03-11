@@ -203,29 +203,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ==========================================
-    // Team Members Collection - Public team info
-    // ==========================================
-    match /Team_Members/{docId} {
-      allow read: if true;  // Public: team member info viewable by all
-      allow write: if isAdmin();
-    }
-
-    // ==========================================
-    // Team Collection (legacy) - Public team info
-    // ==========================================
-    match /Team/{docId} {
-      allow read: if true;  // Public: legacy team info viewable by all
-      allow write: if isAdmin();
-    }
-
-    // ==========================================
-    // Our Story Collection - Public brand story
-    // ==========================================
-    match /Our_Story/{docId} {
-      allow read: if true;  // Public: brand story viewable by all
-      allow write: if isAdmin();
-    }
 
     // ==========================================
     // Consumptions Collection - Validated writes
@@ -259,23 +236,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // ==========================================
-    // Suggestions Box Collection - User creates, admin manages
-    // ==========================================
-    match /Suggestions_Box/{docId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAppUser();
-      allow update, delete: if isAdmin();
-    }
-
-    // ==========================================
-    // Suggestions Collection (legacy) - User creates, admin manages
-    // ==========================================
-    match /Suggestions/{docId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAppUser();
-      allow update, delete: if isAdmin();
-    }
 
     // ==========================================
     // Clients Score Collection - User sees own
@@ -287,30 +247,6 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // ==========================================
-    // Events Collection - Public event data
-    // ==========================================
-    match /Events/{eventId} {
-      allow read: if true;  // Public: users can browse events
-      allow write: if isAdmin();
-    }
-
-    // ==========================================
-    // Event Categories Collection - Public event data
-    // ==========================================
-    match /Event_Categories/{docId} {
-      allow read: if true;  // Public: users can see event categories
-      allow write: if isAdmin();
-    }
-
-    // ==========================================
-    // Event Registrations Collection - User creates own, admin manages
-    // ==========================================
-    match /Event_Registrations/{registrationId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() || (isAppUser() && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
-    }
 
     // ==========================================
     // Notifications Collection - Privacy protected
@@ -331,14 +267,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ==========================================
-    // Event Feedbacks Collection - User creates own, admin manages
-    // ==========================================
-    match /Event_Feedbacks/{docId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() || (isAppUser() && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
-    }
 
     // ==========================================
     // Orders Invoiced Collection - Admin manages invoices
@@ -364,7 +292,7 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // Affiliates Collection - Admin manages, app users see ranking
+    // Affiliates Collection - Used by Referral (Indique e Ganhe) system
     // ==========================================
     match /Affiliates/{docId} {
       allow read: if isAdmin() || isAppUser();
