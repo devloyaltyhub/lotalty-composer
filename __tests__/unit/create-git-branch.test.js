@@ -120,14 +120,14 @@ describe('GitBranchManager', () => {
 
   describe('createBranch()', () => {
     test('checks out existing branch if it exists', async () => {
-      mockGit.branch.mockResolvedValue({ all: ['main', 'deploy/test'] });
+      mockGit.branch.mockResolvedValue({ all: ['main', 'feature/test'] });
       mockGit.checkout.mockResolvedValue();
 
-      const result = await gitManager.createBranch('deploy/test');
+      const result = await gitManager.createBranch('feature/test');
 
       expect(result.exists).toBe(true);
-      expect(result.branchName).toBe('deploy/test');
-      expect(mockGit.checkout).toHaveBeenCalledWith('deploy/test');
+      expect(result.branchName).toBe('feature/test');
+      expect(mockGit.checkout).toHaveBeenCalledWith('feature/test');
     });
 
     test('creates new branch from main if not exists', async () => {
@@ -136,13 +136,13 @@ describe('GitBranchManager', () => {
       mockGit.pull.mockResolvedValue();
       mockGit.checkoutLocalBranch.mockResolvedValue();
 
-      const result = await gitManager.createBranch('deploy/new-client');
+      const result = await gitManager.createBranch('feature/new-client');
 
       expect(result.exists).toBe(false);
-      expect(result.branchName).toBe('deploy/new-client');
+      expect(result.branchName).toBe('feature/new-client');
       expect(mockGit.checkout).toHaveBeenCalledWith('main');
       expect(mockGit.pull).toHaveBeenCalledWith('origin', 'main');
-      expect(mockGit.checkoutLocalBranch).toHaveBeenCalledWith('deploy/new-client');
+      expect(mockGit.checkoutLocalBranch).toHaveBeenCalledWith('feature/new-client');
     });
 
     test('creates branch from specified base branch', async () => {

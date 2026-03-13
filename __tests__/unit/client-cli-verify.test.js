@@ -225,7 +225,6 @@ describe('ClientHealthCheck', () => {
     test('passes when client config exists in main branch', () => {
       healthCheck.config = { clientCode: 'demo' };
       mockExecSync.mockImplementation((cmd) => {
-        if (cmd.includes('git branch')) return 'main\n  deploy/demo';
         if (cmd.includes('git ls-tree')) return 'clients/demo/config.json';
         return '';
       });
@@ -238,7 +237,6 @@ describe('ClientHealthCheck', () => {
     test('fails when client config not in main branch', () => {
       healthCheck.config = { clientCode: 'demo' };
       mockExecSync.mockImplementation((cmd) => {
-        if (cmd.includes('git branch')) return 'main';
         if (cmd.includes('git ls-tree')) throw new Error('not found');
         return '';
       });
@@ -461,7 +459,6 @@ describe('ClientHealthCheck', () => {
         if (cmd.includes('firebase projects:list')) {
           return JSON.stringify({ result: [{ projectId: 'demo-firebase' }] });
         }
-        if (cmd.includes('git branch')) return 'main\n  deploy/demo';
         if (cmd.includes('git ls-tree')) return 'clients/demo/config.json';
         return '';
       });

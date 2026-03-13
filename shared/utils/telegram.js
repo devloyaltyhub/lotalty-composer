@@ -173,7 +173,6 @@ Password: ${password}
     const { clientName, clientCode, version, buildNumber, platforms, duration } = data;
 
     const platformList = platforms.join(', ');
-    const deployBranch = `deploy/${clientCode}`;
 
     const message = `
 🎉 *Client Created Successfully!*
@@ -183,8 +182,7 @@ Password: ${password}
 *Platforms:* ${platformList}
 
 *Git Info:*
-• Config saved to: \`main\`
-• Deploy branch: \`${deployBranch}\` (created during build)
+• Branch: \`main\`
 
 ⏱ *Total Time:* ${duration}
 

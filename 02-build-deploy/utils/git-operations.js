@@ -67,74 +67,20 @@ class GitOperations {
     return false;
   }
 
-  async checkoutExistingBranch(branchName) {
-    await this.stashChangesIfNeeded();
-
-    const branches = await this.gitManager.git.branchLocal();
-    const existsLocally = branches.all.includes(branchName);
-
-    if (existsLocally) {
-      await this.gitManager.git.checkout(branchName);
-    } else {
-      await this.gitManager.git.checkout(['-b', branchName, `origin/${branchName}`]);
-    }
-
-    try {
-      await this.gitManager.git.pull('origin', branchName);
-    } catch {
-      logger.info('Branch not on remote yet, skipping pull');
-    }
-    logger.success(`Checked out existing branch: ${branchName}`);
-  }
-
-  async createNewDeployBranch(branchName) {
-    await this.stashChangesIfNeeded();
-
-    await this.gitManager.git.checkout('main');
-    await this.gitManager.git.pull('origin', 'main');
-    try {
-      await this.gitManager.git.checkoutLocalBranch(branchName);
-    } catch {
-      await this.gitManager.git.checkout(branchName);
-    }
-    logger.success(`Created new branch: ${branchName}`);
-  }
-
-  async returnToMainBranch(clientCode) {
-    const deployBranch = `deploy/${clientCode}`;
-    logger.section('Returning to main branch');
-    logger.info(`Leaving deploy branch: ${deployBranch}`);
-
-    try {
-      await this.gitManager.git.checkout('main');
-      logger.success('Switched back to main branch');
-      logger.warn('You are now on main branch - deploy branch changes are preserved');
-    } catch (error) {
-      logger.error(`Failed to return to main: ${error.message}`);
-      logger.warn(`You may still be on branch: ${deployBranch}`);
-    }
-  }
-
-  async createDeployBranch(clientCode) {
-    const branchName = `deploy/${clientCode}`;
-    logger.section(`Setting up deploy branch: ${branchName}`);
+  async ensureOnMainBranch() {
+    logger.section('Verificando branch');
 
     await this.checkUncommittedChanges();
 
-    try {
-      const exists = await this.gitManager.branchExists(branchName);
-      if (exists) {
-        logger.info('Deploy branch already exists, checking out...');
-        await this.checkoutExistingBranch(branchName);
-      } else {
-        logger.info('Creating new deploy branch from main...');
-        await this.createNewDeployBranch(branchName);
-      }
-      return branchName;
-    } catch (error) {
-      logger.error(`Failed to setup deploy branch: ${error.message}`);
-      throw error;
+    const currentBranch = (await this.gitManager.git.branchLocal()).current;
+    if (currentBranch !== 'main') {
+      logger.info(`Branch atual: ${currentBranch}. Mudando para main...`);
+      await this.gitManager.git.checkout('main');
     }
+
+    await this.gitManager.git.pull('origin', 'main');
+    logger.success('Na branch main, atualizada com remote');
+    return 'main';
   }
 
   async createDeploymentTag(clientName, version, buildNumber) {

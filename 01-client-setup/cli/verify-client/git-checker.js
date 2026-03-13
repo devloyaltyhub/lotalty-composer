@@ -16,20 +16,6 @@ class GitChecker {
     }
 
     try {
-      const branches = execSync('git branch -a', {
-        encoding: 'utf8',
-        stdio: 'pipe',
-      });
-
-      const deployBranch = `deploy/${this.config.clientCode}`;
-      const branchExists = branches.includes(deployBranch);
-
-      if (!branchExists) {
-        logger.info(`Deploy branch will be created during build phase: ${deployBranch}`);
-      } else {
-        this.checkResult.pass(`Deploy branch exists: ${deployBranch}`);
-      }
-
       try {
         const clientDir = `clients/${this.config.clientCode}`;
         execSync(`git ls-tree -r main --name-only | grep "^${clientDir}/"`, {

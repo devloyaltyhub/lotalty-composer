@@ -46,7 +46,7 @@ async function setupEnvironment(deployer) {
     deployer.config = deployer.loadClientConfig();
   }
 
-  await deployer.createDeployBranch(deployer.config.clientCode);
+  await deployer.ensureOnMainBranch();
 
   if (deployer.manualVersion) {
     deployer.setVersion(deployer.manualVersion);

@@ -58,10 +58,7 @@ class ClientBuilder {
   async checkoutBranch(branchName) { return this.gitOps.checkoutBranch(branchName); }
   async checkUncommittedChanges() { return this.gitOps.checkUncommittedChanges(); }
   async stashChangesIfNeeded() { return this.gitOps.stashChangesIfNeeded(); }
-  async checkoutExistingBranch(branchName) { return this.gitOps.checkoutExistingBranch(branchName); }
-  async createNewDeployBranch(branchName) { return this.gitOps.createNewDeployBranch(branchName); }
-  async returnToMainBranch(clientCode) { return this.gitOps.returnToMainBranch(clientCode); }
-  async createDeployBranch(clientCode) { return this.gitOps.createDeployBranch(clientCode); }
+  async ensureOnMainBranch() { return this.gitOps.ensureOnMainBranch(); }
   runWhiteLabelSetup(clientName, deployMode = false) { return this.buildExec.runWhiteLabelSetup(clientName, deployMode); }
   validateAssets() { return this.buildExec.validateAssets(); }
   incrementBuildNumber() { return this.buildExec.incrementBuildNumber(); }

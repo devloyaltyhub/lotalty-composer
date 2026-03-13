@@ -543,9 +543,7 @@ describe('ClientHealthCheck', () => {
     });
 
     test('passes if client config in main branch', () => {
-      execSync
-        .mockReturnValueOnce('main\n* deploy/test-client\n')
-        .mockReturnValueOnce('clients/test-client/config.json\n');
+      execSync.mockReturnValueOnce('clients/test-client/config.json\n');
 
       const result = healthCheck.checkGitBranch();
       expect(result).toBe(true);
@@ -553,11 +551,9 @@ describe('ClientHealthCheck', () => {
     });
 
     test('fails if client not in main branch', () => {
-      execSync
-        .mockReturnValueOnce('main\n')
-        .mockImplementationOnce(() => {
-          throw new Error('No match');
-        });
+      execSync.mockImplementationOnce(() => {
+        throw new Error('No match');
+      });
 
       const result = healthCheck.checkGitBranch();
       expect(result).toBe(false);

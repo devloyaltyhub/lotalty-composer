@@ -54,7 +54,7 @@ class ClientUpdater {
     logger.keyValue('Client Name', config.clientName);
     logger.keyValue('Client Code', config.clientCode);
     logger.keyValue('Bundle ID', config.bundleId);
-    logger.keyValue('Deploy Branch', `deploy/${config.clientCode}`);
+    logger.keyValue('Deploy Branch', 'main');
     const versionInfo = this.getVersionInfo();
     logger.keyValue('Current Version', `${versionInfo.version}+${versionInfo.buildNumber}`);
     logger.blank();

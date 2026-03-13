@@ -135,9 +135,8 @@ class ClientRollback {
       await this.gitManager.createTag(rollbackTagName, `Rollback to ${targetTag}`);
       await this.gitManager.pushTag(rollbackTagName);
 
-      // Step 9: Return to deploy branch
-      const deployBranch = `deploy/${config.clientCode}`;
-      await this.gitManager.git.checkout(deployBranch);
+      // Step 9: Return to main branch
+      await this.gitManager.git.checkout('main');
 
       // Step 10: Send completion notification
       await telegram.rollbackCompleted(
