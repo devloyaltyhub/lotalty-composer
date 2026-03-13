@@ -1,5 +1,6 @@
 const path = require('path');
 const logger = require('../../shared/utils/logger');
+const { COMPOSE_ROOT } = require('../../shared/utils/paths');
 
 class BuildExecutor {
   constructor(execFn, repoPath) {
@@ -11,7 +12,7 @@ class BuildExecutor {
   validateAssets() {
     logger.startSpinner('Validating assets...');
     try {
-      this.exec('npm run validate-assets', { silent: true });
+      this.exec('npm run validate-assets', { silent: true, cwd: COMPOSE_ROOT });
       logger.succeedSpinner('Assets validated');
       return true;
     } catch (error) {
@@ -23,7 +24,7 @@ class BuildExecutor {
   incrementBuildNumber() {
     logger.startSpinner('Incrementing build number...');
     try {
-      this.exec('npm run increment-build', { silent: true });
+      this.exec('npm run increment-build', { silent: true, cwd: COMPOSE_ROOT });
       logger.succeedSpinner('Build number incremented');
       return true;
     } catch (error) {
@@ -37,7 +38,7 @@ class BuildExecutor {
     logger.startSpinner(`Running white-label ${modeLabel}...`);
     try {
       const modeFlag = deployMode ? ' --deploy-mode' : '';
-      this.exec(`npm run start -- ${clientName}${modeFlag}`, { silent: false });
+      this.exec(`npm run start -- ${clientName}${modeFlag}`, { silent: false, cwd: COMPOSE_ROOT });
       logger.succeedSpinner(`White-label ${modeLabel} completed`);
       return true;
     } catch (error) {
