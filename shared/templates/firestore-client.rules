@@ -32,7 +32,7 @@ service cloud.firestore {
     function isValidConsumption(data) {
       // Validate required fields exist
       let hasRequiredFields = data.keys().hasAll([
-        'userId', 'amount', 'createdAt', 'clubCoinsAmount',
+        'userId', 'amount', 'createdAt', 'clubCoinsPoints',
         'clubCoinsPercentage', 'clubCoinsValid'
       ]);
 
@@ -40,7 +40,7 @@ service cloud.firestore {
       let validTypes =
         data.userId is string &&
         data.amount is number && data.amount >= 0 && data.amount <= 100000 &&
-        data.clubCoinsAmount is number && data.clubCoinsAmount >= 0 && data.clubCoinsAmount <= 10000 &&
+        data.clubCoinsPoints is number && data.clubCoinsPoints >= 0 && data.clubCoinsPoints <= 10000 &&
         data.clubCoinsPercentage is number && data.clubCoinsPercentage >= 0 && data.clubCoinsPercentage <= 100 &&
         data.clubCoinsValid is bool &&
         data.createdAt is timestamp;
@@ -50,8 +50,8 @@ service cloud.firestore {
         data.createdAt <= request.time + duration.value(5, 'm') &&
         data.createdAt >= request.time - duration.value(30, 'm');
 
-      // // Business logic: clubCoinsAmount must be reasonable (max 20% of amount)
-      // let validClubCoins = data.clubCoinsAmount <= (data.amount * 0.2);
+      // // Business logic: clubCoinsPoints must be reasonable (max 20% of amount)
+      // let validClubCoins = data.clubCoinsPoints <= (data.amount * 0.2);
 
       return hasRequiredFields && validTypes && validTimestamp;
     }
@@ -209,9 +209,10 @@ service cloud.firestore {
     // ==========================================
     match /Consumptions/{docId} {
       allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAppUser() &&
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
                        request.resource.data.userId == request.auth.uid &&
-                       isValidConsumption(request.resource.data);
+                       isValidConsumption(request.resource.data));
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -221,9 +222,10 @@ service cloud.firestore {
     // ==========================================
     match /Consumption/{docId} {
       allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAppUser() &&
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
                        request.resource.data.userId == request.auth.uid &&
-                       isValidConsumption(request.resource.data);
+                       isValidConsumption(request.resource.data));
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
