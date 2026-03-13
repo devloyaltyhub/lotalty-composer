@@ -101,21 +101,13 @@ Criar release Shorebird (para submissão na store)
 
 Criar patch Shorebird (correção OTA sem passar pela store)
 
-### shorebird_releases
+### shorebird_get_apks
 
 ```sh
-[bundle exec] fastlane shorebird_releases
+[bundle exec] fastlane shorebird_get_apks
 ```
 
-Listar releases Shorebird
-
-### shorebird_patches
-
-```sh
-[bundle exec] fastlane shorebird_patches
-```
-
-Listar patches de um release Shorebird
+Gerar APKs de um release Shorebird
 
 ### create_apns_key
 

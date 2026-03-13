@@ -36,12 +36,12 @@ async function createRelease() {
 
   if (platform === 'both') {
     log.info('Criando release para Android...');
-    await runShorebird(['release', 'android', '--no-confirm']);
+    await runShorebird(['release', 'android']);
 
     log.info('Criando release para iOS...');
-    await runShorebird(['release', 'ios', '--no-confirm']);
+    await runShorebird(['release', 'ios']);
   } else {
-    await runShorebird(['release', platform, '--no-confirm']);
+    await runShorebird(['release', platform]);
   }
 
   log.success(`Release ${newVersion} criado com sucesso!`);
@@ -100,7 +100,6 @@ async function createPatch() {
       'patch',
       'android',
       `--release-version=${version}`,
-      '--no-confirm',
     ]);
 
     log.info('Criando patch para iOS...');
@@ -108,14 +107,12 @@ async function createPatch() {
       'patch',
       'ios',
       `--release-version=${version}`,
-      '--no-confirm',
     ]);
   } else {
     await runShorebird([
       'patch',
       platform,
       `--release-version=${version}`,
-      '--no-confirm',
     ]);
   }
 
