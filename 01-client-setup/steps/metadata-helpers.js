@@ -147,8 +147,10 @@ function writeIosReviewInfo(reviewInfoPath) {
  * Write iOS extras (copyright, screenshots README)
  */
 function writeIosExtras(iosBasePath, localePath) {
+  const startYear = 2025;
   const currentYear = new Date().getFullYear();
-  fs.writeFileSync(path.join(iosBasePath, 'copyright.txt'), `${currentYear} LoyaltyHub`);
+  const copyright = currentYear > startYear ? `${startYear}-${currentYear} LoyaltyHub` : `${startYear} LoyaltyHub`;
+  fs.writeFileSync(path.join(iosBasePath, 'copyright.txt'), copyright);
   fs.writeFileSync(path.join(localePath, 'SCREENSHOTS_README.md'), IOS_SCREENSHOTS_README);
 }
 
