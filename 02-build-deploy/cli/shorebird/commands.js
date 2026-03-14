@@ -16,21 +16,21 @@ async function createRelease() {
   log.title('Criar Release Shorebird');
 
   log.info(
-    'Um release e necessario para submissao na store (Play Store / App Store)'
+    'Um release é necessário para submissão na store (Play Store / App Store)'
   );
-  log.info('Apos o release ser aprovado, voce pode criar patches OTA');
+  log.info('Após o release ser aprovado, você pode criar patches OTA');
   console.log('');
 
   const currentVersion = getCurrentVersion();
-  log.info(`Versao atual: ${currentVersion}`);
+  log.info(`Versão atual: ${currentVersion}`);
 
   const { oldVersion, newVersion } = incrementVersion('build');
-  log.success(`Versao incrementada: ${oldVersion} -> ${newVersion}`);
+  log.success(`Versão incrementada: ${oldVersion} -> ${newVersion}`);
   console.log('');
 
   const platform = await getPlatform();
   if (!platform) {
-    log.error('Plataforma invalida');
+    log.error('Plataforma inválida');
     return;
   }
 
@@ -45,7 +45,7 @@ async function createRelease() {
   }
 
   log.success(`Release ${newVersion} criado com sucesso!`);
-  log.info('Proximo passo: Submeta para a store e aguarde aprovacao');
+  log.info('Próximo passo: Submeta para a store e aguarde aprovação');
 }
 
 /**
@@ -54,16 +54,16 @@ async function createRelease() {
 async function createPatch() {
   log.title('Criar Patch Shorebird');
 
-  log.info('Um patch e uma atualizacao OTA que nao passa pela store');
-  log.info('Os usuarios recebem automaticamente na proxima abertura do app');
-  log.info('Nota: O patch e aplicado sobre um RELEASE existente');
+  log.info('Um patch é uma atualização OTA que não passa pela store');
+  log.info('Os usuários recebem automaticamente na próxima abertura do app');
+  log.info('Nota: O patch é aplicado sobre um RELEASE existente');
   console.log('');
 
   const currentVersion = getCurrentVersion();
   if (currentVersion) {
-    log.info(`Versao atual no pubspec.yaml: ${currentVersion}`);
+    log.info(`Versão atual no pubspec.yaml: ${currentVersion}`);
     log.warn(
-      'O patch deve ser para uma versao que ja foi submetida como release!'
+      'O patch deve ser para uma versão que já foi submetida como release!'
     );
   }
 
@@ -74,13 +74,13 @@ async function createPatch() {
   const defaultVersion = currentVersion || '';
   const releaseVersion = await ask(
     rl,
-    `Versao do release existente para aplicar o patch [${defaultVersion}]: `
+    `Versão do release existente para aplicar o patch [${defaultVersion}]: `
   );
 
   const version = releaseVersion || defaultVersion;
 
   if (!version) {
-    log.error('Versao do release e obrigatoria');
+    log.error('Versão do release é obrigatória');
     rl.close();
     return;
   }
@@ -90,7 +90,7 @@ async function createPatch() {
   const platform = await getPlatform();
 
   if (!platform) {
-    log.error('Plataforma invalida');
+    log.error('Plataforma inválida');
     return;
   }
 
@@ -117,9 +117,9 @@ async function createPatch() {
   }
 
   log.success('Patch criado com sucesso!');
-  log.info('Os usuarios receberao a atualizacao na proxima abertura do app');
+  log.info('Os usuários receberão a atualização na próxima abertura do app');
   log.info(
-    'O numero do patch e incrementado automaticamente pelo Shorebird (patch 1, 2, 3...)'
+    'O número do patch é incrementado automaticamente pelo Shorebird (patch 1, 2, 3...)'
   );
 }
 
@@ -129,7 +129,7 @@ async function createPatch() {
 async function openConsole() {
   log.title('Console Shorebird');
   log.info(
-    'O Console Shorebird permite visualizar releases, patches e metricas'
+    'O Console Shorebird permite visualizar releases, patches e métricas'
   );
   console.log('');
 
@@ -160,12 +160,12 @@ function showHelp() {
   console.log('Uso: node shorebird.js [comando]');
   console.log('');
   console.log('Comandos:');
-  console.log('  release       Criar novo release para submissao na store');
+  console.log('  release       Criar novo release para submissão na store');
   console.log(
-    '  patch         Criar patch OTA (correcao sem passar pela store)'
+    '  patch         Criar patch OTA (correção sem passar pela store)'
   );
   console.log('  console       Abrir Console Shorebird no navegador');
-  console.log('  doctor        Verificar instalacao do Shorebird');
+  console.log('  doctor        Verificar instalação do Shorebird');
   console.log('  help          Mostrar esta ajuda');
   console.log('');
 }

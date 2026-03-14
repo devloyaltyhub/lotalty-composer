@@ -32,12 +32,12 @@ class ScreenshotGenerator {
     try {
       const configPath = path.join(this.repoPath, 'white_label_app', 'config.json');
       if (!fs.existsSync(configPath)) {
-        logger.warn('config.json nao encontrado em white_label_app/. Execute o setup primeiro.');
+        logger.warn('config.json não encontrado em white_label_app/. Execute o setup primeiro.');
         return null;
       }
       return JSON.parse(fs.readFileSync(configPath, 'utf8'));
     } catch (error) {
-      logger.warn(`Nao foi possivel carregar config do cliente: ${error.message}`);
+      logger.warn(`Não foi possível carregar config do cliente: ${error.message}`);
       return null;
     }
   }
@@ -69,14 +69,14 @@ class ScreenshotGenerator {
    * Check if Python dependencies are available
    */
   checkPythonDependencies() {
-    logger.startSpinner('Verificando dependencias Python...');
+    logger.startSpinner('Verificando dependências Python...');
 
     try {
       this.exec('python3 --version', { silent: true });
-      logger.succeedSpinner('Python3 disponivel');
+      logger.succeedSpinner('Python3 disponível');
       return true;
     } catch (error) {
-      logger.failSpinner('Python3 nao encontrado');
+      logger.failSpinner('Python3 não encontrado');
       logger.error('Instale Python 3 para gerar screenshots');
       return false;
     }
@@ -99,19 +99,19 @@ class ScreenshotGenerator {
     const pipelineScript = path.join(SCREENSHOTS_DIR, 'main.py');
 
     if (!fs.existsSync(pipelineScript)) {
-      throw new Error(`Pipeline script nao encontrado: ${pipelineScript}`);
+      throw new Error(`Pipeline script não encontrado: ${pipelineScript}`);
     }
 
     const primaryColor = this.getPrimaryColor();
 
-    logger.info('Opcoes do pipeline:');
+    logger.info('Opções do pipeline:');
     logger.keyValue('  Device Choice', deviceChoice);
     logger.keyValue('  Gradient Choice', gradientChoice === 0 ? '0 (Cor do Cliente)' : gradientChoice);
     if (primaryColor && gradientChoice === 0) {
-      logger.keyValue('  Cor Primaria', primaryColor);
+      logger.keyValue('  Cor Primária', primaryColor);
     }
     logger.keyValue('  Angle Choice', angleChoice);
-    logger.keyValue('  Logo', addLogo ? 'Sim' : 'Nao');
+    logger.keyValue('  Logo', addLogo ? 'Sim' : 'Não');
     logger.blank();
 
     const logoFlag = addLogo ? '--with-logo' : '--no-logo';
@@ -131,7 +131,7 @@ class ScreenshotGenerator {
         cwd: this.repoPath,
         env,
       });
-      logger.succeedSpinner('Pipeline de screenshots concluido');
+      logger.succeedSpinner('Pipeline de screenshots concluído');
       return true;
     } catch (error) {
       logger.failSpinner('Pipeline de screenshots falhou');
@@ -173,7 +173,7 @@ class ScreenshotGenerator {
         'Screenshots Android': copyResults.android.phone?.count + copyResults.android.tablet?.count || 0,
         'Screenshots iOS': iosTotal,
         'Tamanhos iOS': Object.keys(IOS_DEVICES).length,
-        Duracao: `${duration}s`,
+        Duração: `${duration}s`,
       });
 
       return {
@@ -183,7 +183,7 @@ class ScreenshotGenerator {
         duration,
       };
     } catch (error) {
-      logger.error(`Geracao de screenshots falhou: ${error.message}`);
+      logger.error(`Geração de screenshots falhou: ${error.message}`);
       return { success: false, error: error.message };
     }
   }

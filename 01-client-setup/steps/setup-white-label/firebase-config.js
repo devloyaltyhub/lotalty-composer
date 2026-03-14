@@ -71,7 +71,7 @@ async function copyFirebaseConfigs(clientCode, clientConfig) {
     console.log(`  firebase_options.dart copiado para lib/ (de ${relativePath})`);
     copied++;
   } else {
-    console.log(`  firebase_options.dart nao encontrado, tentando gerar automaticamente...`);
+    console.log(`  firebase_options.dart não encontrado, tentando gerar automaticamente...`);
     let generated = false;
 
     const projectId = clientConfig.firebaseOptions?.projectId;
@@ -97,7 +97,7 @@ async function copyFirebaseConfigs(clientCode, clientConfig) {
         copied++;
       } catch (flutterfireError) {
         console.log(`  FlutterFire CLI falhou: ${flutterfireError.message}`);
-        console.log('  Tentando gerar a partir dos arquivos de configuracao existentes...');
+        console.log('  Tentando gerar a partir dos arquivos de configuração existentes...');
       }
     }
 
@@ -124,7 +124,7 @@ async function copyFirebaseConfigs(clientCode, clientConfig) {
   }
 
   if (missing.length > 0) {
-    console.log('\n  ATENCAO: Arquivos Firebase nao encontrados no cliente:');
+    console.log('\n  ATENÇÃO: Arquivos Firebase não encontrados no cliente:');
     missing.forEach((file) => console.log(`     - ${file}`));
     console.log('\n  Para corrigir, execute para baixar os arquivos:');
     console.log(`     cd clients/${clientCode}`);
@@ -132,7 +132,7 @@ async function copyFirebaseConfigs(clientCode, clientConfig) {
     console.log(`     firebase apps:sdkconfig ios --project <project-id> > ios/Runner/GoogleService-Info.plist`);
     console.log('\n  Para regenerar firebase_options.dart:');
     console.log(`     cd white_label_app && flutterfire configure --project=<project-id>`);
-    console.log('\n  O app pode nao funcionar corretamente sem esses arquivos!');
+    console.log('\n  O app pode não funcionar corretamente sem esses arquivos!');
   }
 
   if (copied > 0) {
@@ -147,7 +147,7 @@ function copyFirebaseJson(clientCode, clientConfig) {
   const targetPath = path.join(TARGET_ROOT, 'firebase.json');
 
   if (!fs.existsSync(sourcePath)) {
-    console.log('  firebase.json nao encontrado no cliente');
+    console.log('  firebase.json não encontrado no cliente');
     console.log('     FlutterFire CLI pode falhar durante upload de simbolos Crashlytics');
     return;
   }
@@ -156,7 +156,7 @@ function copyFirebaseJson(clientCode, clientConfig) {
     const firebaseConfig = JSON.parse(fs.readFileSync(sourcePath, 'utf8'));
 
     if (!firebaseConfig.flutter?.platforms) {
-      console.log('  flutter.platforms nao encontrado no firebase.json do cliente');
+      console.log('  flutter.platforms não encontrado no firebase.json do cliente');
       console.log('     Gerando a partir do config.json...');
 
       const { firebaseOptions } = clientConfig;
@@ -217,8 +217,8 @@ function copyShorebirdConfig(clientCode) {
       console.log('  shorebird.yaml copiado para white_label_app/');
     }
   } else {
-    console.log('  shorebird.yaml nao encontrado para este cliente');
-    console.log('     OTA updates via Shorebird nao estarao disponiveis');
+    console.log('  shorebird.yaml não encontrado para este cliente');
+    console.log('     OTA updates via Shorebird não estarão disponíveis');
   }
 }
 
@@ -227,7 +227,7 @@ function generateGHAExportOptions(clientConfig) {
 
   const { bundleId } = clientConfig;
   if (!bundleId) {
-    console.log('  ATENCAO: bundleId nao encontrado no config.json, pulando GHAExportOptions.plist');
+    console.log('  ATENÇÃO: bundleId não encontrado no config.json, pulando GHAExportOptions.plist');
     return;
   }
 
@@ -287,8 +287,8 @@ function copyServiceAccount(clientCode) {
     fs.copyFileSync(sourcePath, residualPath);
     console.log('  service-account.json copiado para white_label_app/');
   } else {
-    console.log('  service-account.json nao encontrado para este cliente');
-    console.log('     Alguns scripts de administracao podem nao funcionar');
+    console.log('  service-account.json não encontrado para este cliente');
+    console.log('     Alguns scripts de administração podem não funcionar');
   }
 }
 

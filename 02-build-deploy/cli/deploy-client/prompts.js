@@ -111,7 +111,7 @@ async function handleAndroidPromoteExisting(deployer) {
     versionString =
       selectedInfo?.version !== 'N/A' ? `${selectedInfo.version}+${versionCode}` : `+${versionCode}`;
   } else {
-    logger.warn('Nao foi possivel obter lista de builds do Internal Testing');
+    logger.warn('Não foi possível obter lista de builds do Internal Testing');
     const { manualVersionCode } = await inquirer.prompt([
       {
         type: 'input',
@@ -120,7 +120,7 @@ async function handleAndroidPromoteExisting(deployer) {
         validate: (input) => {
           const versionCodeInt = parseInt(input, 10);
           if (isNaN(versionCodeInt) || versionCodeInt <= 0) {
-            return 'Version code deve ser um numero inteiro positivo';
+            return 'Version code deve ser um número inteiro positivo';
           }
           return true;
         },
@@ -160,16 +160,16 @@ async function handleIosSubmitExisting(deployer) {
     ]);
     versionString = selectedBuild;
   } else {
-    logger.warn('Nao foi possivel obter lista de builds do TestFlight');
+    logger.warn('Não foi possível obter lista de builds do TestFlight');
     const { manualVersion } = await inquirer.prompt([
       {
         type: 'input',
         name: 'manualVersion',
-        message: 'Digite a versao do TestFlight (ex: 0.0.3+5):',
+        message: 'Digite a versão do TestFlight (ex: 0.0.3+5):',
         validate: (input) => {
           const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$/;
           if (!versionRegex.test(input)) {
-            return 'Formato invalido. Use X.Y.Z+B (ex: 0.0.3+5)';
+            return 'Formato inválido. Use X.Y.Z+B (ex: 0.0.3+5)';
           }
           return true;
         },
@@ -192,21 +192,21 @@ async function promptVersionStrategy(getVersionInfo) {
   const nextBuild = parseInt(currentVersionInfo.buildNumber, 10) + 1;
   const autoIncrementVersion = `${currentVersionInfo.version}+${nextBuild}`;
 
-  logger.info(`Versao atual: ${currentVersion}`);
+  logger.info(`Versão atual: ${currentVersion}`);
   logger.blank();
 
   const { versionChoice } = await inquirer.prompt([
     {
       type: 'list',
       name: 'versionChoice',
-      message: 'Como deseja definir a versao?',
+      message: 'Como deseja definir a versão?',
       choices: [
         {
           name: `Incrementar automaticamente (${currentVersion} → ${autoIncrementVersion})`,
           value: 'auto',
         },
         {
-          name: 'Definir versao manualmente',
+          name: 'Definir versão manualmente',
           value: 'manual',
         },
       ],
@@ -221,11 +221,11 @@ async function promptVersionStrategy(getVersionInfo) {
     {
       type: 'input',
       name: 'manualVersion',
-      message: 'Digite a versao (formato X.Y.Z+B, ex: 1.2.3+45):',
+      message: 'Digite a versão (formato X.Y.Z+B, ex: 1.2.3+45):',
       validate: (input) => {
         const versionRegex = /^[0-9]+\.[0-9]+\.[0-9]+\+[0-9]+$/;
         if (!versionRegex.test(input)) {
-          return 'Formato invalido. Use X.Y.Z+B (ex: 1.2.3+45)';
+          return 'Formato inválido. Use X.Y.Z+B (ex: 1.2.3+45)';
         }
         return true;
       },

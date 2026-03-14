@@ -40,7 +40,7 @@ function displayManualActionsSection(config) {
   logger.blank();
   logger.blank();
   logger.section("=".repeat(80));
-  logger.section("ATENCAO: ACOES MANUAIS NECESSARIAS");
+  logger.section("ATENÇÃO: AÇÕES MANUAIS NECESSÁRIAS");
   logger.section("=".repeat(80));
   logger.blank();
 
@@ -62,7 +62,7 @@ function displayAdminCredentials(config) {
     config.adminCredentials.email,
     config.adminCredentials.password,
   );
-  logger.info(`Credenciais tambem salvas em: clients/${config.folderName}/admin-credentials.txt`);
+  logger.info(`Credenciais também salvas em: clients/${config.folderName}/admin-credentials.txt`);
   logger.blank();
   logger.warn("IMPORTANTE: Salve essas credenciais em um local seguro AGORA!");
   logger.blank();
@@ -70,7 +70,7 @@ function displayAdminCredentials(config) {
 }
 
 function displayAppCheckInstructions(config) {
-  logger.subSection("2. CONFIGURACAO DO APP CHECK (2 cliques necessarios)");
+  logger.subSection("2. CONFIGURAÇÃO DO APP CHECK (2 cliques necessários)");
   logger.blank();
   logger.info("Abra o Firebase Console:");
   logger.log(
@@ -80,11 +80,11 @@ function displayAppCheckInstructions(config) {
   logger.info("Passos:");
   logger.info("   a) Encontre seu app Android na lista");
   logger.info('   b) Clique em "Register" (Registrar) sob "Play Integrity"');
-  logger.info('   c) Clique em "Register" (Registrar) sob "App Attest" para iOS (se aplicavel)');
+  logger.info('   c) Clique em "Register" (Registrar) sob "App Attest" para iOS (se aplicável)');
   logger.blank();
-  logger.info("SHA-256 fingerprints ja foram registrados automaticamente!");
+  logger.info("SHA-256 fingerprints já foram registrados automaticamente!");
   logger.info(
-    `Instrucoes detalhadas: clients/${config.folderName}/APP_CHECK_SETUP_${config.clientCode}.md`,
+    `Instruções detalhadas: clients/${config.folderName}/APP_CHECK_SETUP_${config.clientCode}.md`,
   );
   logger.blank();
   logger.blank();

@@ -57,7 +57,7 @@ function copyGeneralAssets(businessType, generalAssetsDir, assetsDir, businessTy
   copyGeneralCategory('images', generalAssetsDir, assetsDir, businessTypes, businessType);
   copyGeneralCategory('configs', generalAssetsDir, assetsDir, businessTypes, businessType);
   copyGeneralCategory('fonts', generalAssetsDir, assetsDir, businessTypes);
-  console.log('Assets genericos copiados com sucesso.');
+  console.log('Assets genéricos copiados com sucesso.');
 }
 
 function copyClientAssets(sourceDir, assetsDir) {
@@ -68,7 +68,7 @@ function copyClientAssets(sourceDir, assetsDir) {
     copyFolderRecursiveSync(src, dest);
     console.log('Pasta client_specific_assets copiada para o projeto.');
   } else {
-    console.log('Atencao: O cliente nao possui a pasta assets/client_specific_assets.');
+    console.log('Atenção: O cliente não possui a pasta assets/client_specific_assets.');
   }
 }
 

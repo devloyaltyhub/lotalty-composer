@@ -31,11 +31,11 @@ async function main() {
   validateGitHubConfig();
 
   console.log('========================================');
-  console.log('   RESTAURACAO DE BACKUP FIREBASE');
+  console.log('   RESTAURAÇÃO DE BACKUP FIREBASE');
   console.log('========================================');
   console.log(`Cliente: ${options.client} (${projectId})`);
   console.log(`Data: ${options.date}`);
-  console.log(`Modo: ${options.dryRun ? 'DRY-RUN (simulacao)' : 'PRODUCAO'}`);
+  console.log(`Modo: ${options.dryRun ? 'DRY-RUN (simulação)' : 'PRODUÇÃO'}`);
   if (options.firestoreOnly) {
     console.log('Escopo: Apenas Firestore');
   }
@@ -45,7 +45,7 @@ async function main() {
   console.log('========================================\n');
 
   if (!options.dryRun) {
-    console.log('ATENCAO: Isso vai SOBRESCREVER dados existentes!');
+    console.log('ATENÇÃO: Isso vai SOBRESCREVER dados existentes!');
     console.log('Pressione Ctrl+C para cancelar ou aguarde 5 segundos...\n');
     await new Promise((resolve) => setTimeout(resolve, 5000));
   }
@@ -77,18 +77,18 @@ async function main() {
     }
 
     console.log('\n========================================');
-    console.log('   RESTAURACAO CONCLUIDA');
+    console.log('   RESTAURAÇÃO CONCLUÍDA');
     console.log('========================================');
     console.log(
       `Firestore: ${results.firestore.collections} collections, ${results.firestore.documents} documentos`
     );
     console.log(`Storage: ${results.storage.files} arquivos`);
     if (options.dryRun) {
-      console.log('\n[DRY-RUN] Nenhuma alteracao foi feita');
+      console.log('\n[DRY-RUN] Nenhuma alteração foi feita');
     }
     console.log('========================================');
   } catch (error) {
-    console.error('\nErro durante restauracao:', error.message);
+    console.error('\nErro durante restauração:', error.message);
     process.exit(1);
   } finally {
     await app.delete();

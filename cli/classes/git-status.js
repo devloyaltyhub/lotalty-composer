@@ -47,9 +47,9 @@ function checkGitStatus() {
 async function promptGitWarning(gitStatus) {
   console.log(
     boxen(
-      chalk.bold.yellow('ATENCAO: Existem alteracoes nao commitadas no repositorio!\n\n') +
+      chalk.bold.yellow('ATENÇÃO: Existem alterações não commitadas no repositório!\n\n') +
         chalk.white(
-          'Executar comandos do CLI pode sobrescrever ou perder suas alteracoes.\n' +
+          'Executar comandos do CLI pode sobrescrever ou perder suas alterações.\n' +
             'Recomendamos fazer commit ou stash antes de continuar.\n'
         ),
       {
@@ -71,7 +71,7 @@ async function promptGitWarning(gitStatus) {
   }
 
   if (gitStatus.unstaged.length > 0) {
-    console.log(chalk.red.bold('Modified (nao staged):'));
+    console.log(chalk.red.bold('Modified (não staged):'));
     gitStatus.unstaged.slice(0, 5).forEach((f) => console.log(chalk.red(`   ${f}`)));
     if (gitStatus.unstaged.length > 5) {
       console.log(chalk.red(`   ... e mais ${gitStatus.unstaged.length - 5} arquivo(s)`));
@@ -92,17 +92,17 @@ async function promptGitWarning(gitStatus) {
     {
       type: 'list',
       name: 'action',
-      message: 'O que voce gostaria de fazer?',
+      message: 'O que você gostaria de fazer?',
       choices: [
-        { name: chalk.yellow('Continuar mesmo assim (nao recomendado)'), value: 'continue' },
-        { name: chalk.green('Fazer stash das alteracoes e continuar'), value: 'stash' },
+        { name: chalk.yellow('Continuar mesmo assim (não recomendado)'), value: 'continue' },
+        { name: chalk.green('Fazer stash das alterações e continuar'), value: 'stash' },
         { name: chalk.red('Cancelar e resolver manualmente'), value: 'cancel' },
       ],
     },
   ]);
 
   if (action === 'cancel') {
-    console.log(chalk.cyan('\nDica: Execute "git status" para ver as alteracoes'));
+    console.log(chalk.cyan('\nDica: Execute "git status" para ver as alterações'));
     console.log(chalk.cyan('   Use "git add . && git commit -m \'msg\'" para commitar'));
     console.log(chalk.cyan('   Ou "git stash" para salvar temporariamente\n'));
     return false;
@@ -114,8 +114,8 @@ async function promptGitWarning(gitStatus) {
         cwd: PROJECT_ROOT,
         stdio: 'inherit',
       });
-      console.log(chalk.green('\nAlteracoes salvas no stash com sucesso!'));
-      console.log(chalk.gray('   Use "git stash pop" para recupera-las depois.\n'));
+      console.log(chalk.green('\nAlterações salvas no stash com sucesso!'));
+      console.log(chalk.gray('   Use "git stash pop" para recuperá-las depois.\n'));
     } catch (error) {
       console.log(chalk.red('\nErro ao fazer stash:', error.message));
       return false;

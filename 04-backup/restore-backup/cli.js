@@ -39,16 +39,16 @@ function showHelp() {
 Restaurar Backup Firebase (Firestore + Storage)
 
 USO:
-  npm run backup:restore -- --client=<nome> --date=<YYYY-MM-DD> [opcoes]
+  npm run backup:restore -- --client=<nome> --date=<YYYY-MM-DD> [opções]
 
-ARGUMENTOS OBRIGATORIOS:
+ARGUMENTOS OBRIGATÓRIOS:
   --client=<nome>     Nome do cliente (ex: demo)
   --date=<data>       Data do backup (formato: YYYY-MM-DD)
 
-OPCOES:
+OPÇÕES:
   --firestore-only    Restaura apenas o Firestore
   --storage-only      Restaura apenas o Storage
-  --dry-run           Simula a restauracao sem fazer alteracoes
+  --dry-run           Simula a restauração sem fazer alterações
   --help, -h          Mostra esta ajuda
 
 EXEMPLOS:
@@ -56,12 +56,12 @@ EXEMPLOS:
   npm run backup:restore -- --client=demo --date=2025-12-12 --firestore-only
   npm run backup:restore -- --client=demo --date=2025-12-12 --dry-run
 
-VARIAVEIS DE AMBIENTE NECESSARIAS:
+VARIÁVEIS DE AMBIENTE NECESSÁRIAS:
   GITHUB_BACKUP_TOKEN   Token de acesso ao GitHub
-  GITHUB_BACKUP_OWNER   Owner do repositorio (org ou usuario)
-  GITHUB_BACKUP_REPO    Nome do repositorio de backup
+  GITHUB_BACKUP_OWNER   Owner do repositório (org ou usuário)
+  GITHUB_BACKUP_REPO    Nome do repositório de backup
 
-CLIENTES DISPONIVEIS:
+CLIENTES DISPONÍVEIS:
 ${Object.entries(CLIENTS)
   .map(([name, projectId]) => `  - ${name} (${projectId})`)
   .join('\n')}
@@ -70,14 +70,14 @@ ${Object.entries(CLIENTS)
 
 function validateOptions(options) {
   if (!options.client) {
-    console.error('Erro: --client eh obrigatorio');
-    console.error('Use --help para ver opcoes');
+    console.error('Erro: --client é obrigatório');
+    console.error('Use --help para ver opções');
     process.exit(1);
   }
 
   if (!options.date) {
-    console.error('Erro: --date eh obrigatorio');
-    console.error('Use --help para ver opcoes');
+    console.error('Erro: --date é obrigatório');
+    console.error('Use --help para ver opções');
     process.exit(1);
   }
 
@@ -88,8 +88,8 @@ function validateOptions(options) {
 
   const projectId = CLIENTS[options.client];
   if (!projectId) {
-    console.error(`Erro: cliente "${options.client}" nao encontrado`);
-    console.error('Clientes disponiveis:', Object.keys(CLIENTS).join(', '));
+    console.error(`Erro: cliente "${options.client}" não encontrado`);
+    console.error('Clientes disponíveis:', Object.keys(CLIENTS).join(', '));
     process.exit(1);
   }
 
