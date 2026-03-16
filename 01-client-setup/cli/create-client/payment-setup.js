@@ -9,7 +9,7 @@ const {
 
 const CALLBACK_BASE_URL =
   process.env.LOYALTY_CALLBACK_URL ||
-  "https://loyalty-cloud-service.vercel.app";
+  "https://loyalty-cloud.vercel.app";
 
 /**
  * Detects which gateways are available based on env vars.

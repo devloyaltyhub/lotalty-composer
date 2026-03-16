@@ -29,8 +29,8 @@ if [ ! -f "$ENV_FILE" ]; then
   echo "Preencha as configuracoes abaixo:"
   echo ""
 
-  read -rp "URL da API [https://loyalty-cloud-service.vercel.app]: " INPUT_URL
-  API_URL="${INPUT_URL:-https://loyalty-cloud-service.vercel.app}"
+  read -rp "URL da API [https://loyalty-cloud.vercel.app]: " INPUT_URL
+  API_URL="${INPUT_URL:-https://loyalty-cloud.vercel.app}"
   sed -i.bak "s|^API_URL=.*|API_URL=${API_URL}|" "$ENV_FILE"
 
   read -rp "API Key (API_SECRET_KEY do cloud-service): " INPUT_KEY

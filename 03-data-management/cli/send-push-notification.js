@@ -16,7 +16,7 @@ const logger = require('../../shared/utils/logger');
 const clientSelector = require('../../shared/utils/client-selector');
 
 const API_URL =
-  'https://loyalty-cloud-service.vercel.app/api/send-broadcast-notification';
+  'https://loyalty-cloud.vercel.app/api/send-broadcast-notification';
 
 async function run() {
   try {
