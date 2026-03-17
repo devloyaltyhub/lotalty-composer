@@ -123,13 +123,22 @@ def validate_android_build_number!
   package_name = get_android_package_name
 
   begin
-    versions = google_play_track_version_codes(
-      package_name: package_name,
-      track: 'internal',
-      json_key: ENV['GOOGLE_PLAY_JSON_KEY']
-    )
-    latest_code = versions.max || 0
-    UI.message("🔢 Último version code no Play Store (internal): #{latest_code}")
+    all_codes = []
+    %w[production beta alpha internal].each do |track|
+      begin
+        codes = google_play_track_version_codes(
+          package_name: package_name,
+          track: track,
+          json_key: ENV['GOOGLE_PLAY_JSON_KEY']
+        )
+        all_codes.concat(codes) if codes.any?
+      rescue
+        # track pode estar vazio ou não existir
+      end
+    end
+
+    latest_code = all_codes.max || 0
+    UI.message("🔢 Último version code no Play Store (todos os tracks): #{latest_code}")
 
     if current_build <= latest_code
       UI.user_error!(
