@@ -311,6 +311,20 @@ service cloud.firestore {
     }
 
     // ==========================================
+    // Customer Flow Collection - Admin manages business mode
+    // ==========================================
+    match /Customer_Flow/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // Customer Flow History Collection - Admin views adjustment history
+    // ==========================================
+    match /Customer_Flow_History/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
     // Default: Deny all other collections
     // ==========================================
     match /{document=**} {
