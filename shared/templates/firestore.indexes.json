@@ -44,7 +44,7 @@
       "collectionGroup": "Orders",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "uidOrderIssuer", "order": "ASCENDING" },
+        { "fieldPath": "cpf", "order": "ASCENDING" },
         { "fieldPath": "createdOn", "order": "ASCENDING" }
       ]
     },
@@ -52,7 +52,7 @@
       "collectionGroup": "Orders",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "uidOrderIssuer", "order": "ASCENDING" },
+        { "fieldPath": "cpf", "order": "ASCENDING" },
         { "fieldPath": "createdOn", "order": "DESCENDING" }
       ]
     },

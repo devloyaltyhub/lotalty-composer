@@ -26,6 +26,10 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
+    function getUserCpf() {
+      return get(/databases/$(database)/documents/Users/$(request.auth.uid)).data.cpf;
+    }
+
     // ==========================================
     // Validation Functions - Data Integrity
     // ==========================================
@@ -162,13 +166,23 @@ service cloud.firestore {
     }
 
     // ==========================================
-    // Orders Collection - User sees own, admin sees all
+    // Orders Collection - User sees own (by cpf), admin sees all
     // ==========================================
     match /Orders/{docId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
-      allow create: if isAppUser() && request.resource.data.userId == request.auth.uid;
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isAdmin() || (isAppUser() && resource.data.cpf == getUserCpf());
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
+                       request.resource.data.cpf == getUserCpf() &&
+                       request.resource.data.keys().hasAll(['cpf', 'orderIssuer', 'items', 'deliveryModality', 'paymentMethod', 'status', 'createdOn', 'subtotal', 'total']));
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Coupons Collection - Users read, admin manages
+    // ==========================================
+    match /Coupons/{docId} {
+      allow read: if isAppUser();
+      allow write: if isAdmin();
     }
 
     // ==========================================
@@ -274,7 +288,7 @@ service cloud.firestore {
     // Orders Invoiced Collection - Admin manages invoices
     // ==========================================
     match /Orders_Invoiced/{docId} {
-      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow read: if isAdmin() || (isAppUser() && resource.data.cpf == getUserCpf());
       allow write: if isAdmin();
     }
 

@@ -57,7 +57,7 @@ function validateGoogleServiceInfoPlist(results, expectedProjectId, expectedBund
   }
 
   if (bundleId && bundleId !== expectedBundleId) {
-    addWarning(warnings, 'ios/Runner/GoogleService-Info.plist', 'BUNDLE_ID diferente do config.json (pode precisar reconfigurar no Firebase Console)', expectedBundleId, bundleId);
+    addError(errors, 'ios/Runner/GoogleService-Info.plist', 'BUNDLE_ID diferente do config.json — build vai falhar. Corrija o bundleId no config.json ou reconfigure o app no Firebase Console', expectedBundleId, bundleId);
   } else if (bundleId) {
     addCheck(checks, 'ios/Runner/GoogleService-Info.plist (BUNDLE_ID)', bundleId);
   }
@@ -81,7 +81,7 @@ function validateGoogleServicesJson(results, expectedProjectId, expectedBundleId
 
   const hasMatchingPackage = info.packageNames.includes(expectedBundleId);
   if (!hasMatchingPackage) {
-    addWarning(warnings, 'android/app/google-services.json', 'Nenhum client com package_name correspondente', expectedBundleId, info.packageNames.join(', '));
+    addError(errors, 'android/app/google-services.json', 'Nenhum client com package_name correspondente — build vai falhar. Corrija o bundleId no config.json ou adicione o app no Firebase Console', expectedBundleId, info.packageNames.join(', '));
   } else {
     addCheck(checks, 'android/app/google-services.json (package_name)', expectedBundleId);
   }
