@@ -14,8 +14,8 @@ fi
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/.env"
 
-if [ -z "${API_URL:-}" ] || [ -z "${API_KEY:-}" ]; then
-  echo "[ERRO] API_URL e API_KEY sao obrigatorios no .env"
+if [ -z "${API_URL:-}" ] || [ -z "${API_KEY:-}" ] || [ -z "${TENANT_ID:-}" ]; then
+  echo "[ERRO] API_URL, API_KEY e TENANT_ID sao obrigatorios no .env"
   exit 1
 fi
 
@@ -72,7 +72,7 @@ RESPONSE=$(curl -s -w "\n%{http_code}|%{time_total}" --max-time 120 \
   -X POST "${API_URL}/api/pdv/sync" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${API_KEY}" \
-  -d '{}' 2>/dev/null || echo -e "\n000|0")
+  -d "{\"tenantId\":\"${TENANT_ID}\"}" 2>/dev/null || echo -e "\n000|0")
 
 BODY=$(echo "$RESPONSE" | sed '$d')
 META=$(echo "$RESPONSE" | tail -1)

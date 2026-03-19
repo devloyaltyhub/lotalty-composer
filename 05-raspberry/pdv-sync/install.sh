@@ -40,6 +40,13 @@ if [ ! -f "$ENV_FILE" ]; then
   fi
   sed -i.bak "s|^API_KEY=.*|API_KEY=${INPUT_KEY}|" "$ENV_FILE"
 
+  read -rp "Tenant ID (Firebase Project ID do cliente): " INPUT_TENANT
+  if [ -z "$INPUT_TENANT" ]; then
+    echo "[ERRO] TENANT_ID e obrigatorio."
+    exit 1
+  fi
+  sed -i.bak "s|^TENANT_ID=.*|TENANT_ID=${INPUT_TENANT}|" "$ENV_FILE"
+
   read -rp "Telegram Bot Token (Enter para pular): " INPUT_TG_TOKEN
   if [ -n "$INPUT_TG_TOKEN" ]; then
     sed -i.bak "s|^TELEGRAM_BOT_TOKEN=.*|TELEGRAM_BOT_TOKEN=${INPUT_TG_TOKEN}|" "$ENV_FILE"
@@ -84,7 +91,7 @@ SYNC_RESPONSE=$(curl -s --max-time 30 --connect-timeout 10 \
   -X POST "${API_URL}/api/pdv/sync" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${API_KEY}" \
-  -d '{}' 2>/dev/null || echo '{"success":false,"message":"Sem resposta"}')
+  -d "{\"tenantId\":\"${TENANT_ID}\"}" 2>/dev/null || echo '{"success":false,"message":"Sem resposta"}')
 
 SYNC_SUCCESS=$(echo "$SYNC_RESPONSE" | grep -o '"success":[a-z]*' | head -1 || echo "")
 SYNC_MSG=$(echo "$SYNC_RESPONSE" | grep -o '"message":"[^"]*"' | head -1 | sed 's/"message":"//;s/"$//' || echo "Sem mensagem")
