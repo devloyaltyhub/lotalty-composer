@@ -1,24 +1,15 @@
 {
   "_metadata": {
     "collection": "Users_Admin",
-    "exportedAt": "2025-11-26T16:18:41.435Z",
-    "documentCount": 1
+    "exportedAt": "2026-03-20T15:35:29.945Z",
+    "documentCount": 3
   },
   "documents": {
-    "default_superadmin": {
-      "createdAt": {
-        "_type": "timestamp",
-        "_value": "2025-11-26T12:30:07.296Z"
-      },
-      "createdBy": null,
-      "email": "admin@loyaltyhub.club",
-      "id": "default_superadmin",
-      "isActive": true,
-      "lastLoginAt": {
-        "_type": "timestamp",
-        "_value": "2025-11-26T14:23:06.887Z"
-      },
+    "2uvwcpp2CCYHUci5F4kcVqBkxK52": {
+      "id": "2uvwcpp2CCYHUci5F4kcVqBkxK52",
+      "email": "vctudo.27@gmail.com",
       "name": "Administrador",
+      "role": "superAdmin",
       "permissions": [
         "viewStoreConfigs",
         "editStoreConfigs",
@@ -29,25 +20,19 @@
         "viewConsumptions",
         "editConsumptions",
         "deleteConsumptions",
-        "useClubCoins",
         "viewOrders",
         "updateOrderStatus",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
         "viewGallery",
         "uploadImages",
         "deleteImages",
         "viewDashboardReport",
         "viewConsumptionsReport",
         "viewClientsReport",
-        "viewHappyHourReport",
         "viewAgeismReport",
-        "viewExpiredClubCoinsReport",
-        "viewUserAccessReport",
-        "viewClubLevelsReport",
-        "viewClvReport",
-        "viewCashbackRoiReport",
-        "viewScoreAttributionReport",
-        "viewAcquisitionReport",
-        "viewPeakHoursReport",
         "viewCampaigns",
         "editCampaigns",
         "deleteCampaigns",
@@ -55,17 +40,144 @@
         "createHappyHours",
         "editHappyHours",
         "deleteHappyHours",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
         "manageAdminUsers",
         "viewUsers",
         "editUsers",
         "deleteUsers",
-        "viewAffiliates",
-        "createAffiliates",
-        "editAffiliates",
-        "deleteAffiliates",
-        "viewAffiliatesReport"
+        "useClubCoins"
       ],
-      "role": "superAdmin"
+      "isActive": true,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-22T18:41:43.461Z"
+      },
+      "lastLoginAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-13T17:52:56.479Z"
+      },
+      "createdBy": null
+    },
+    "8KemflYrl9NkVvu68vh6JYp5eXk2": {
+      "id": "8KemflYrl9NkVvu68vh6JYp5eXk2",
+      "email": "teste@gmail.com",
+      "name": "teste",
+      "role": "admin",
+      "isActive": true,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-28T17:28:55.408Z"
+      },
+      "lastLoginAt": {
+        "_type": "timestamp",
+        "_value": "2026-01-02T02:48:00.002Z"
+      },
+      "createdBy": null,
+      "permissions": [
+        "viewStoreConfigs",
+        "editStoreConfigs",
+        "viewProducts",
+        "createProducts",
+        "editProducts",
+        "deleteProducts",
+        "viewConsumptions",
+        "editConsumptions",
+        "deleteConsumptions",
+        "viewOrders",
+        "updateOrderStatus",
+        "viewTeamMembers",
+        "createTeamMembers",
+        "editTeamMembers",
+        "deleteTeamMembers",
+        "viewGallery",
+        "uploadImages",
+        "deleteImages",
+        "viewDashboardReport",
+        "viewConsumptionsReport",
+        "viewClientsReport",
+        "viewAgeismReport",
+        "viewCampaigns",
+        "editCampaigns",
+        "deleteCampaigns",
+        "viewHappyHours",
+        "createHappyHours",
+        "editHappyHours",
+        "deleteHappyHours",
+        "viewSuggestions",
+        "createSuggestions",
+        "validateSuggestions",
+        "deleteSuggestions",
+        "viewOurStory",
+        "editOurStory",
+        "viewUsers",
+        "editUsers",
+        "deleteUsers",
+        "useClubCoins"
+      ]
+    },
+    "OQe11Fwq2gNGCTKZkFuPXlke26l1": {
+      "id": "OQe11Fwq2gNGCTKZkFuPXlke26l1",
+      "email": "admin@loyaltyhub.club",
+      "name": "Administrador",
+      "role": "superAdmin",
+      "permissions": [
+        "viewStoreConfigs",
+        "editStoreConfigs",
+        "viewProducts",
+        "createProducts",
+        "editProducts",
+        "deleteProducts",
+        "viewConsumptions",
+        "viewConsumptions",
+        "editConsumptions",
+        "deleteConsumptions",
+        "viewOrders",
+        "updateOrderStatus",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewGallery",
+        "uploadImages",
+        "deleteImages",
+        "viewDashboardReport",
+        "viewConsumptionsReport",
+        "viewClientsReport",
+        "viewAgeismReport",
+        "viewCampaigns",
+        "editCampaigns",
+        "deleteCampaigns",
+        "viewHappyHours",
+        "createHappyHours",
+        "editHappyHours",
+        "deleteHappyHours",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "viewConsumptions",
+        "manageAdminUsers",
+        "viewUsers",
+        "editUsers",
+        "deleteUsers",
+        "useClubCoins"
+      ],
+      "isActive": true,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-10T18:41:43.461Z"
+      },
+      "lastLoginAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-18T20:33:37.449Z"
+      },
+      "createdBy": null
     }
   }
 }

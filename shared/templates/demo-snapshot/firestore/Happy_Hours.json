@@ -1,30 +1,30 @@
 {
   "_metadata": {
     "collection": "Happy_Hours",
-    "exportedAt": "2025-11-26T16:18:40.930Z",
+    "exportedAt": "2026-03-20T15:35:29.675Z",
     "documentCount": 2
   },
   "documents": {
     "1760455485635": {
+      "id": "1760455485635",
+      "title": "Café em dose dupla - EDITED",
+      "regulation": "Bora aproveitar! Café em dose dupla acontece nos dias terça-feira e quarta-feira das 09:00 às 11:00. Venha nos visitar!",
+      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120222_66_caf_em_dobro.jpg?alt=media&token=482be582-4410-4b9c-87fb-44fbe9ebd307",
+      "isRecurring": true,
+      "days": [
+        2,
+        3
+      ],
+      "date": null,
+      "startTime": "09:00",
+      "endTime": "11:00",
       "clubLevels": [
         "black",
         "platinum",
         "gold",
         "starter"
       ],
-      "date": null,
-      "days": [
-        2,
-        3
-      ],
-      "enabled": true,
-      "endTime": "11:00",
-      "id": "1760455485635",
-      "image": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120222_66_caf_em_dobro.jpg?alt=media&token=482be582-4410-4b9c-87fb-44fbe9ebd307",
-      "isRecurring": true,
-      "regulation": "Bora aproveitar! Café em dose dupla acontece nos dias terça-feira e quarta-feira das 09:00 às 11:00. Venha nos visitar!",
-      "startTime": "09:00",
-      "title": "Café em dose dupla"
+      "enabled": true
     },
     "1764082930773": {
       "clubLevels": [

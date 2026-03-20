@@ -1,43 +1,13 @@
 {
   "_metadata": {
     "collection": "Store_Configs",
-    "exportedAt": "2025-11-26T16:18:41.229Z",
+    "exportedAt": "2026-03-20T15:35:29.852Z",
     "documentCount": 1
   },
   "documents": {
     "config": {
-      "address": "Rua Manuel Muniz Falcão, La Playa - Corrêas~|~Petrópolis - RJ~|~25720-075",
-      "clubLevels": [
-        {
-          "clubCoinsExpirationDays": 45,
-          "happyHourMultiplier": 5,
-          "levelName": "starter",
-          "requiredClientScore": 0
-        },
-        {
-          "clubCoinsExpirationDays": 60,
-          "happyHourMultiplier": 7,
-          "levelName": "platinum",
-          "requiredClientScore": 2000
-        },
-        {
-          "clubCoinsExpirationDays": 70,
-          "happyHourMultiplier": 10,
-          "levelName": "gold",
-          "requiredClientScore": 8000
-        },
-        {
-          "clubCoinsExpirationDays": 365,
-          "happyHourMultiplier": 15,
-          "levelName": "black",
-          "requiredClientScore": 20000
-        }
-      ],
-      "globalClubCoinsPercentage": 2,
-      "latlng": {
-        "latitude": -22.449876522279848,
-        "longitude": -43.14301930976656
-      },
+      "id": null,
+      "storeStatus": true,
       "minimumOrderValue": 0,
       "openingHours": {
         "0": "Fechado",
@@ -49,8 +19,88 @@
         "6": "09:00 - 23:00",
         "7": "09:00 - 22:00"
       },
-      "storeStatus": true,
-      "whatsappContact": "(22) 12312-3212"
+      "latlng": {
+        "latitude": -22.449876522279848,
+        "longitude": -43.14301930976656
+      },
+      "location": {
+        "_type": "geopoint",
+        "_latitude": -22.9068,
+        "_longitude": -43.1729
+      },
+      "whatsappContact": "(22) 12312-3212",
+      "birthdayBonusEnabled": true,
+      "payment": {
+        "gateways": {
+          "asaas": {
+            "apiKey": "$aact_hmlg_000MzkwODA2MWY2OGM3MWRlMDU2NWM3MzJlNzZmNGZhZGY6OmVjOTU0MWNiLTk4NjUtNDA5MC1hNTY1LTVjOTY0NzIwNWIwYjo6JGFhY2hfOWUwNGVmZWItOGYwYi00MjM3LTg5N2ItYzhiZWQ1ZmEwYjY2"
+          }
+        },
+        "routing": {
+          "pix": "asaas",
+          "card": "asaas",
+          "enableFallback": false
+        },
+        "callbackBaseUrl": "https://loyalty-cloud-service.vercel.app",
+        "isProduction": false,
+        "enabled": true,
+        "split": {
+          "recipients": {
+            "asaas": {
+              "platformRecipientId": "15158660-aaf9-4025-81f2-03eca1d2eaae",
+              "partnerRecipientId": "e3400c85-5dc8-4df7-8ef4-2ab406db1f0a"
+            }
+          },
+          "delivery": {
+            "fixedFeeCents": 99,
+            "feePercentage": 5
+          },
+          "events": {
+            "fixedFeeCents": 99,
+            "feePercentage": 3
+          },
+          "ecommerce": {
+            "fixedFeeCents": 99,
+            "feePercentage": 5
+          },
+          "subscription": {
+            "fixedFeeCents": 0,
+            "feePercentage": 0
+          },
+          "enabled": true
+        }
+      },
+      "referralBonusScore": 300,
+      "globalClubCoinsPercentage": 3,
+      "pointsPerReal": 111,
+      "birthdayBonusAmountReais": 30,
+      "address": "Rua Manuel Muniz Falcão - Corrêas~|~Petrópolis - RJ~|~25720-075~|~244~|~La Playa",
+      "clubLevels": [
+        {
+          "requiredClientScore": 0,
+          "levelName": "starter",
+          "happyHourMultiplier": 5,
+          "clubCoinsExpirationDays": 45
+        },
+        {
+          "clubCoinsExpirationDays": 60,
+          "happyHourMultiplier": 7,
+          "levelName": "platinum",
+          "requiredClientScore": 2000
+        },
+        {
+          "requiredClientScore": 8000,
+          "levelName": "gold",
+          "happyHourMultiplier": 10,
+          "clubCoinsExpirationDays": 70
+        },
+        {
+          "happyHourMultiplier": 15,
+          "clubCoinsExpirationDays": 365,
+          "requiredClientScore": 20000,
+          "levelName": "black"
+        }
+      ]
     }
   }
 }

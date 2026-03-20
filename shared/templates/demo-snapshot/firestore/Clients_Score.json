@@ -1,10 +1,65 @@
 {
   "_metadata": {
     "collection": "Clients_Score",
-    "exportedAt": "2025-11-26T16:18:40.675Z",
-    "documentCount": 5
+    "exportedAt": "2026-03-20T15:35:29.558Z",
+    "documentCount": 19
   },
   "documents": {
+    "0711fbf6-f8b9-43c5-bff3-e99a0e8dbe8d": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-03T14:51:52.594Z"
+      },
+      "id": "0711fbf6-f8b9-43c5-bff3-e99a0e8dbe8d",
+      "scorePoints": 110,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "173bbd74-5af1-4e93-8814-e9648d903686",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "1a138d1a-d331-4421-90f0-2d7f4ad2cdaa": {
+      "id": "1a138d1a-d331-4421-90f0-2d7f4ad2cdaa",
+      "userId": "Hz8pV4fkeyYDtecashVyU5XRKao2",
+      "scorePoints": 41,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "dd2c66e5-6250-4444-baba-da335831bb94",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-09T03:19:04.742Z"
+      }
+    },
+    "2604a91d-a333-4761-8f86-22b28b573ae0": {
+      "id": "2604a91d-a333-4761-8f86-22b28b573ae0",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "scorePoints": 20,
+      "scoreType": "suggestion",
+      "sourceConsumptionId": "1767107174762",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-30T15:21:13.621Z"
+      }
+    },
+    "42ba903d-bb66-4ae2-bc5d-b8b823024089": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-05T01:44:46.774Z"
+      },
+      "id": "42ba903d-bb66-4ae2-bc5d-b8b823024089",
+      "scorePoints": 10,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "f2244c6b-1438-44c5-9697-c8ca0188e7d4",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "4ad528b8-ce0d-4bb7-817c-98a46f687131": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-27T22:59:38.908Z"
+      },
+      "id": "4ad528b8-ce0d-4bb7-817c-98a46f687131",
+      "scorePoints": 20,
+      "scoreType": "suggestion",
+      "sourceConsumptionId": "2IQwsFpOZiYDhJqyesMb",
+      "userId": "Hz8pV4fkeyYDtecashVyU5XRKao2"
+    },
     "6c4b5548-35cd-405a-b138-685e8c8b14c4": {
       "createdAt": {
         "_type": "timestamp",
@@ -15,6 +70,18 @@
       "scoreType": "purchase",
       "sourceConsumptionId": "2a741ce7-7e11-495b-aa28-8afacc85e546",
       "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "7Mcu4B0MGMZWMOpm5NxJ": {
+      "clubId": "FE07",
+      "description": "Perfil completo",
+      "scorePoints": 100,
+      "scoreType": "profile_completion",
+      "sourceId": "profile_completion",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-01T14:47:07.906Z"
+      }
     },
     "7d76c62e-dcdb-4f74-a7a1-bed3318b2247": {
       "createdAt": {
@@ -27,7 +94,30 @@
       "sourceConsumptionId": "dff04e49-10d5-4230-b556-5ffb9c18b8c5",
       "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
     },
+    "8f6f3bfc-9809-4294-bb7c-02230c189264": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-03T14:53:02.485Z"
+      },
+      "id": "8f6f3bfc-9809-4294-bb7c-02230c189264",
+      "scorePoints": 110,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "7070eace-4bb6-4c11-842e-ea958ba8d171",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "9fab4906-2c77-40fc-b23a-b029414de27a": {
+      "id": "9fab4906-2c77-40fc-b23a-b029414de27a",
+      "userId": "Hz8pV4fkeyYDtecashVyU5XRKao2",
+      "scorePoints": 10,
+      "scoreType": "purchase",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-16T18:47:32.774Z"
+      },
+      "sourceConsumptionId": "343c73a9-6b74-42f9-be31-66a5295dfd0d"
+    },
     "JgFAvhcyiCJvXWzFn5bE": {
+      "clubId": "FE07",
       "description": "Perfil completo",
       "scorePoints": 100,
       "scoreType": "profile_completion",
@@ -36,6 +126,30 @@
       "createdAt": {
         "_type": "timestamp",
         "_value": "2025-11-26T14:15:22.456Z"
+      }
+    },
+    "McKAHxqLnnszYQVL5Yew": {
+      "clubId": "27FB",
+      "description": "Perfil completo",
+      "scorePoints": 100,
+      "scoreType": "profile_completion",
+      "sourceId": "profile_completion",
+      "userId": "Hz8pV4fkeyYDtecashVyU5XRKao2",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-27T22:41:49.203Z"
+      }
+    },
+    "XeZomhA2SKAcsjUGAFMQ": {
+      "clubId": "FE07",
+      "description": "Perfil completo",
+      "scorePoints": 100,
+      "scoreType": "profile_completion",
+      "sourceId": "profile_completion",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2026-01-14T12:32:34.568Z"
       }
     },
     "a4dfe5b4-bb47-497b-b75e-a53cf69617c4": {
@@ -49,6 +163,28 @@
       "sourceConsumptionId": "5aa1dc73-0433-4a26-83fb-bdfc79956bcc",
       "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
     },
+    "c08bc50f-4200-4ddf-99ff-8e4f98ea899d": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-05T02:44:39.982Z"
+      },
+      "id": "c08bc50f-4200-4ddf-99ff-8e4f98ea899d",
+      "scorePoints": 10,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "4f74ebc0-b85a-48f6-b00c-92774f192133",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "c746680a-bc60-44a8-82a5-7868bac12dbd": {
+      "id": "c746680a-bc60-44a8-82a5-7868bac12dbd",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "scorePoints": 60,
+      "scoreType": "purchase",
+      "sourceConsumptionId": "6fab88d4-94ca-4a8a-b409-44b64b5b073a",
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-28T16:39:34.828Z"
+      }
+    },
     "d2e7da0d-8e62-4216-8538-752bb20a1bee": {
       "createdAt": {
         "_type": "timestamp",
@@ -59,6 +195,29 @@
       "scoreType": "purchase",
       "sourceConsumptionId": "6ccaa4dc-cc99-47d5-a6b3-4134ef3cdf87",
       "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "df6cf3b3-dfb5-4dec-ac7f-37e7d2474aa9": {
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-12-03T14:33:26.314Z"
+      },
+      "id": "df6cf3b3-dfb5-4dec-ac7f-37e7d2474aa9",
+      "scorePoints": 333,
+      "scoreType": "adjustment",
+      "sourceConsumptionId": "2c2e455a-3d8f-42b8-946d-b20397059061",
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1"
+    },
+    "n1z4GRkajsIo1WOFmW0I": {
+      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
+      "clubId": "loyalty-hub-1f47c",
+      "scorePoints": 333,
+      "scoreType": "birthday",
+      "sourceConsumptionId": null,
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2026-01-18T14:23:29.062Z"
+      },
+      "description": "Presente de Aniversário"
     }
   }
 }

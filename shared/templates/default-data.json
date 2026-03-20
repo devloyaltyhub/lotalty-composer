@@ -26,8 +26,7 @@
         }
       ],
       "image": "",
-      "enabled": true,
-      "inventory": 100
+      "enabled": true
     },
     "prod_002": {
       "id": "prod_002",
@@ -41,8 +40,7 @@
         }
       ],
       "image": "",
-      "enabled": true,
-      "inventory": 100
+      "enabled": true
     },
     "prod_003": {
       "id": "prod_003",
@@ -56,8 +54,7 @@
         }
       ],
       "image": "",
-      "enabled": true,
-      "inventory": 50
+      "enabled": true
     },
     "prod_004": {
       "id": "prod_004",
@@ -71,8 +68,7 @@
         }
       ],
       "image": "",
-      "enabled": true,
-      "inventory": 80
+      "enabled": true
     },
     "prod_005": {
       "id": "prod_005",
@@ -86,8 +82,7 @@
         }
       ],
       "image": "",
-      "enabled": true,
-      "inventory": 40
+      "enabled": true
     }
   },
   "Store_Configs": {

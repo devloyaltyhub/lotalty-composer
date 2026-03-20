@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "exportedAt": "2025-11-26T16:18:48.916Z",
+  "exportedAt": "2026-03-20T15:35:35.774Z",
   "sourceProject": {
     "projectId": "loyalty-hub-1f47c",
     "storageBucket": "loyalty-hub-1f47c.firebasestorage.app"
@@ -16,11 +16,11 @@
         "filePath": "firestore/Categories.json"
       },
       "Clients_Score": {
-        "documentCount": 5,
+        "documentCount": 19,
         "filePath": "firestore/Clients_Score.json"
       },
       "Consumptions": {
-        "documentCount": 5,
+        "documentCount": 6,
         "filePath": "firestore/Consumptions.json"
       },
       "Happy_Hours": {
@@ -28,11 +28,11 @@
         "filePath": "firestore/Happy_Hours.json"
       },
       "Image_Mappings": {
-        "documentCount": 13,
+        "documentCount": 11,
         "filePath": "firestore/Image_Mappings.json"
       },
       "Products": {
-        "documentCount": 4,
+        "documentCount": 6,
         "filePath": "firestore/Products.json"
       },
       "Store_Configs": {
@@ -40,28 +40,28 @@
         "filePath": "firestore/Store_Configs.json"
       },
       "Users": {
-        "documentCount": 1,
+        "documentCount": 2,
         "filePath": "firestore/Users.json"
       },
       "Users_Admin": {
-        "documentCount": 1,
+        "documentCount": 3,
         "filePath": "firestore/Users_Admin.json"
       }
     },
-    "totalDocuments": 40
+    "totalDocuments": 58
   },
   "storage": {
     "paths": {
       "gallery": {
-        "fileCount": 13,
-        "totalSizeBytes": 3943687
+        "fileCount": 10,
+        "totalSizeBytes": 1482097
       },
       "profile_photos": {
-        "fileCount": 1,
-        "totalSizeBytes": 32697
+        "fileCount": 2,
+        "totalSizeBytes": 69669
       }
     },
-    "totalFiles": 14,
-    "totalSizeBytes": 3976384
+    "totalFiles": 12,
+    "totalSizeBytes": 1551766
   }
 }

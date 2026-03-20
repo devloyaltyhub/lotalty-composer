@@ -1,38 +1,92 @@
 {
   "_metadata": {
     "collection": "Users",
-    "exportedAt": "2025-11-26T16:18:41.395Z",
-    "documentCount": 1
+    "exportedAt": "2026-03-20T15:35:29.901Z",
+    "documentCount": 2
   },
   "documents": {
-    "2GJwqHeoKGgYJTCEjYrbbnydflg1": {
-      "creationTime": "2025-11-25T15:27:42.139Z",
+    "Hz8pV4fkeyYDtecashVyU5XRKao2": {
+      "creationTime": "2025-11-27T22:35:22.016Z",
+      "lastSignInTime": "2025-11-27T22:35:22.016Z",
       "softDeleted": false,
-      "userId": "2GJwqHeoKGgYJTCEjYrbbnydflg1",
-      "lastSignInTime": "2025-11-25T15:27:42.139Z",
-      "email": "contato@loyaltyhub.club",
-      "name": "Loyalty Hub User",
-      "emailVerified": true,
-      "acceptanceTermsIp": "123.45.678.90",
-      "cpf": "260.370.830-96",
-      "birthday": "25/11/2000",
+      "userId": "Hz8pV4fkeyYDtecashVyU5XRKao2",
+      "acceptanceTermsIp": "191.0.124.92",
+      "fcmToken": "f0K_Zgoh8UHepHZBNG_S7W:APA91bHL6Lq_ZXQdoQDojlYv7UlNnviNJzcJz6-uQrmFpKotZOKe1gzefXgNROT3DPEtnP__H9cizdAmLy0tIyPBlI4-oVn8hD1Gm6oolJnvX0KwigGBAGk",
+      "cpf": "168.007.497-02",
+      "gender": "Feminino",
+      "phone": "(22) 98832-2223",
       "dietaryAttributes": [
-        "lactoseFree"
+        "noRestrictions"
       ],
-      "gender": "Masculino",
-      "phone": "(22) 22222-2222",
-      "club": {
-        "totalConsumed": 313,
-        "currentYearConsumption": 313,
-        "totalClubCoins": 140,
-        "clientScore": 795
-      },
-      "fcmToken": "eg2eChvRYkQtjBCurppLrr:APA91bE1OlRJO_aGmqtj5NIu8Kbzv5Kfg0RejtR44FTIUIWdyeDTdDVb1qvU4bd0F72LNDTYIeipcwqGgLyUYRIaL5Eay7ul1lbybm07rWbemZBOtvTnugE",
-      "profilePhoto": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/profile_photos%2F2GJwqHeoKGgYJTCEjYrbbnydflg1.jpg?alt=media&token=placeholder",
-      "viewedNotifications": [],
       "lastAccess": {
         "_type": "timestamp",
-        "_value": "2025-11-26T16:08:38.695Z"
+        "_value": "2025-12-01T16:54:04.699Z"
+      },
+      "birthday": {
+        "_type": "timestamp",
+        "_value": "1999-03-24T03:00:00.000Z"
+      },
+      "createdAt": {
+        "_type": "timestamp",
+        "_value": "2025-11-27T22:35:22.016Z"
+      },
+      "id": "",
+      "isActive": true,
+      "email": "stellasathler@outlook.com",
+      "club": {
+        "totalConsumed": 41.240000000000045,
+        "clientScore": 240,
+        "totalClubCoins": 92,
+        "currentYearConsumption": 41.240000000000045
+      },
+      "totalConsumed": 10,
+      "clientScore": 10,
+      "totalClubCoins": 111,
+      "currentYearConsumption": 10,
+      "name": "Victor é gay"
+    },
+    "g0HlcddUnzYWlxpCDMYoqUNQ5e02": {
+      "lastSignInTime": "2026-03-18T19:06:39.296Z",
+      "acceptanceTermsIp": "179.236.201.120",
+      "creationTime": "2026-03-18T19:06:39.296Z",
+      "name": "Leonardo Marinho",
+      "cpf": "168.077.957-50",
+      "softDeleted": false,
+      "userId": "g0HlcddUnzYWlxpCDMYoqUNQ5e02",
+      "email": "leonardomarinho.nf@gmail.com",
+      "device": {
+        "appVersion": "0.1.1",
+        "os": "Android 16",
+        "sdkVersion": "36",
+        "buildNumber": "14",
+        "device": "Google sdk_gphone64_x86_64"
+      },
+      "clientId": "E66K1V",
+      "club": {
+        "totalClubCoins": 111,
+        "totalConsumed": 0,
+        "currentYearConsumption": 0,
+        "clientScore": 0
+      },
+      "favoriteProductIds": [
+        "182739848944",
+        "5152125125125"
+      ],
+      "viewedNotifications": [
+        "4574f300b6574692bf0b"
+      ],
+      "fcmToken": "eiQ3Vkn9RSKbCRa3BHw4Ki:APA91bGh8fLmMY-q42wbwyzZ1PDBm2-2RhdF9NutbPqTPLP3JAwMtzdhxe27LTBD8hBgd5rC4VfvTfm_bCbfvgZUW9GbVbE6lj2wvQf0-33LGni6bH9_0gA",
+      "lastActiveAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-20T15:32:44.596Z"
+      },
+      "fcmTokenUpdatedAt": {
+        "_type": "timestamp",
+        "_value": "2026-03-20T15:32:44.596Z"
+      },
+      "lastAccess": {
+        "_type": "timestamp",
+        "_value": "2026-03-20T15:32:44.706Z"
       }
     }
   }

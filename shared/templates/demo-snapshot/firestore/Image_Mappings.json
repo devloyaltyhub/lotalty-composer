@@ -1,15 +1,15 @@
 {
   "_metadata": {
     "collection": "Image_Mappings",
-    "exportedAt": "2025-11-26T16:18:40.987Z",
-    "documentCount": 13
+    "exportedAt": "2026-03-20T15:35:29.734Z",
+    "documentCount": 11
   },
   "documents": {
-    "gallery_img_20251001_105138_783_espresso": {
-      "createdAt": "2025-10-01T10:51:43.654458",
-      "displayName": "espresso",
-      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251001_105138_783_espresso.jpg?alt=media&token=7befc4e0-c540-421c-9ade-dbee302b92af",
-      "id": "gallery_img_20251001_105138_783_espresso"
+    "gallery_img_20250811_144724_574_enid": {
+      "createdAt": "2025-08-11T14:47:27.699182",
+      "displayName": "enid",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20250811_144724_574_enid.jpg?alt=media&token=d1f39425-5915-47b2-a20c-fca56aeaa276",
+      "id": "gallery_img_20250811_144724_574_enid"
     },
     "gallery_img_20251001_110604_865_frape_capuccino": {
       "createdAt": "2025-10-01T11:06:08.742450",
@@ -37,24 +37,6 @@
       "displayName": "Açaí",
       "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251020_220812_866_aa.jpg?alt=media&token=ec71ca52-5470-4046-9977-f62b0e2b4681",
       "id": "gallery_img_20251020_220812_866_aa"
-    },
-    "gallery_img_20251121_080136_923_paula": {
-      "createdAt": {
-        "_type": "timestamp",
-        "_value": "2025-11-21T11:02:00.038Z"
-      },
-      "displayName": "paula",
-      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080136_923_paula.jpg?alt=media&token=8a7bb0d4-7f76-451b-8016-7ee4b1d4cc9d",
-      "id": "gallery_img_20251121_080136_923_paula"
-    },
-    "gallery_img_20251121_080451_649_ricardo": {
-      "createdAt": {
-        "_type": "timestamp",
-        "_value": "2025-11-21T11:05:14.008Z"
-      },
-      "displayName": "ricardo",
-      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251121_080451_649_ricardo.jpg?alt=media&token=69c67dca-56a5-4bb6-b472-8c3cb9b7f0d5",
-      "id": "gallery_img_20251121_080451_649_ricardo"
     },
     "gallery_img_20251125_120118_989_hotdog": {
       "createdAt": {
@@ -92,23 +74,23 @@
       "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251125_120553_633_promo.jpg?alt=media&token=0578f67d-c70f-4dfd-8e5e-ac65d70489c7",
       "id": "gallery_img_20251125_120553_633_promo"
     },
-    "gallery_img_20251126_112409_333_loja_1": {
+    "gallery_img_20251226_134531_914_testecompressao": {
+      "id": "gallery_img_20251226_134531_914_testecompressao",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251226_134531_914_testecompressao.jpg?alt=media&token=4fb30b95-5dd7-4b3e-a255-8106b50bc9b1",
+      "displayName": "testecompressao",
       "createdAt": {
         "_type": "timestamp",
-        "_value": "2025-11-26T14:24:19.493Z"
-      },
-      "displayName": "loja 1",
-      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112409_333_loja_1.jpg?alt=media&token=ff612b7c-3d85-42af-bd0c-81aa3ae6a126",
-      "id": "gallery_img_20251126_112409_333_loja_1"
+        "_value": "2025-12-26T16:45:34.238Z"
+      }
     },
-    "gallery_img_20251126_112435_65_loja_2": {
+    "gallery_img_20260307_201253_203_rodela-lgbt2": {
+      "id": "gallery_img_20260307_201253_203_rodela-lgbt2",
+      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20260307_201253_203_rodela-lgbt2.jpg?alt=media&token=88814dfa-a13d-4dd8-b926-3cb0ccd961a5",
+      "displayName": "rodela-lgbt2",
       "createdAt": {
         "_type": "timestamp",
-        "_value": "2025-11-26T14:24:52.808Z"
-      },
-      "displayName": "loja 2",
-      "fileName": "https://firebasestorage.googleapis.com/v0/b/loyalty-hub-1f47c.firebasestorage.app/o/gallery%2Fimg_20251126_112435_65_loja_2.jpg?alt=media&token=f5e01843-cddc-48e4-8821-70291fc913b9",
-      "id": "gallery_img_20251126_112435_65_loja_2"
+        "_value": "2026-03-07T23:12:54.968Z"
+      }
     }
   }
 }
