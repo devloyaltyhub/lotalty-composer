@@ -147,6 +147,11 @@ service cloud.firestore {
         allow read: if isAdmin() || isOwner(userId);
         allow write: if isAdmin();
       }
+
+      // Addresses subcollection - user manages own delivery addresses
+      match /Addresses/{addressId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // ==========================================
@@ -290,6 +295,20 @@ service cloud.firestore {
     match /Orders_Invoiced/{docId} {
       allow read: if isAdmin() || (isAppUser() && resource.data.cpf == getUserCpf());
       allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Drivers Collection - Admin only
+    // ==========================================
+    match /Drivers/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // Delivery Trips Collection - Admin manages
+    // ==========================================
+    match /DeliveryTrips/{docId} {
+      allow read, write: if isAdmin();
     }
 
     // ==========================================
