@@ -2005,6 +2005,69 @@ lane :revoke_apns_key do |options|
   end
 end
 
+# ==========================================
+# LOYALTY-DRIVER LANES
+# ==========================================
+
+DRIVER_APP_PATH = File.expand_path('../../../loyalty-driver', __dir__)
+
+desc "Build Driver Android AAB"
+lane :driver_android_build do
+  UI.message("🔨 Building Driver Android release")
+
+  Dir.chdir(DRIVER_APP_PATH) do
+    sh("flutter pub get")
+    sh("flutter build appbundle --release")
+  end
+
+  UI.success("✅ Driver Android AAB built successfully")
+end
+
+desc "Deploy Driver to Play Store (Internal)"
+lane :driver_android_deploy_internal do
+  UI.message("📤 Deploying Driver to Play Store (Internal)")
+
+  aab_path = "#{DRIVER_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+  validate_build_artifact(aab_path, "Driver Android")
+
+  with_retry("Upload Driver para Play Store (Internal)") do
+    upload_to_play_store(
+      package_name: 'club.loyaltyhub.loyalty_driver',
+      track: 'internal',
+      aab: aab_path,
+      json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  UI.success("✅ Driver deployed to Internal Testing!")
+end
+
+desc "Deploy Driver to Play Store (Production)"
+lane :driver_android_deploy_production do
+  UI.message("📤 Deploying Driver to Play Store (Production)")
+
+  aab_path = "#{DRIVER_APP_PATH}/build/app/outputs/bundle/release/app-release.aab"
+  validate_build_artifact(aab_path, "Driver Android")
+
+  with_retry("Upload Driver para Play Store (Production)") do
+    upload_to_play_store(
+      package_name: 'club.loyaltyhub.loyalty_driver',
+      track: 'production',
+      release_status: 'completed',
+      aab: aab_path,
+      json_key: ENV['GOOGLE_PLAY_JSON_KEY'],
+      skip_upload_metadata: true,
+      skip_upload_images: true,
+      skip_upload_screenshots: true
+    )
+  end
+
+  UI.success("✅ Driver released to Production!")
+end
+
 # Error handling
 error do |lane, exception|
   UI.error("❌ Error in lane '#{lane}':")

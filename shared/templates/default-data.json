@@ -130,7 +130,13 @@
           "clubCoinsExpirationDays": 89,
           "happyHourMultiplier": 15
         }
-      ]
+      ],
+      "ecommerce": {
+        "enabledModalities": ["delivery"],
+        "deliveryFee": 5,
+        "minimumOrderValue": 15,
+        "estimatedDeliveryMinutes": 45
+      }
     }
   }
 }

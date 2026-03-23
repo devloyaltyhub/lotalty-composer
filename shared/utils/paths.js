@@ -32,6 +32,7 @@ const LOYALTY_APP_ROOT = path.join(LOYALTYHUB_ROOT, 'loyalty-app');
 const LOYALTY_CREDENTIALS_ROOT = path.join(LOYALTYHUB_ROOT, 'loyalty-credentials');
 const LOYALTY_ADMIN_ROOT = path.join(LOYALTYHUB_ROOT, 'loyalty-admin-main');
 const LOYALTY_CLOUD_SERVICE_ROOT = path.join(LOYALTYHUB_ROOT, 'loyalty-cloud-service');
+const LOYALTY_DRIVER_ROOT = path.join(LOYALTYHUB_ROOT, 'loyalty-driver');
 
 // =============================================================================
 // LOYALTY-COMPOSER DIRECTORIES
@@ -124,6 +125,7 @@ module.exports = {
   LOYALTY_CREDENTIALS_ROOT,
   LOYALTY_ADMIN_ROOT,
   LOYALTY_CLOUD_SERVICE_ROOT,
+  LOYALTY_DRIVER_ROOT,
 
   // Compose directories
   SHARED_ASSETS_DIR,
