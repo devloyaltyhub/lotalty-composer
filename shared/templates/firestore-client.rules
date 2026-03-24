@@ -358,6 +358,22 @@ service cloud.firestore {
     }
 
     // ==========================================
+    // AI Campaign Log - Dedup de campanhas IA enviadas
+    // ==========================================
+    match /AI_Campaign_Log/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // AI Insights - Insights gerados pela IA (afinidade, clima, cohort)
+    // ==========================================
+    match /AI_Insights/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
     // Default: Deny all other collections
     // ==========================================
     match /{document=**} {
