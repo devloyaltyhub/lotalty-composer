@@ -131,21 +131,25 @@ async function main() {
               message: 'O que deseja fazer?',
               choices: [
                 { name: 'Build e Deploy (Play Store internal)', value: 'full' },
+                { name: 'Deploy para Production', value: 'production' },
                 { name: 'Apenas Build (AAB)', value: 'build-only' },
+                { name: 'Shorebird Release (OTA)', value: 'shorebird-release' },
+                { name: 'Shorebird Patch (OTA)', value: 'shorebird-patch' },
               ],
             },
           ])
         ).action;
 
-    if (action === 'full') {
+    if (action === 'full' || action === 'production') {
       const nextVersion = incrementBuildNumber();
       logger.keyValue('Nova versao', nextVersion);
 
+      const track = action === 'production' ? 'production' : 'internal';
       const { confirm } = await inquirer.prompt([
         {
           type: 'confirm',
           name: 'confirm',
-          message: `Build e deploy do Driver v${nextVersion}?`,
+          message: `Build e deploy do Driver v${nextVersion} (${track})?`,
           default: true,
         },
       ]);
@@ -156,10 +160,22 @@ async function main() {
       }
 
       await buildAndroid();
-      await deployToPlayStore();
+
+      if (action === 'production') {
+        logger.info('Deploying to Play Store (production)...');
+        exec('fastlane driver_android_deploy_production', { cwd: FASTLANE_DIR });
+        logger.success('Deployed to Play Store production');
+      } else {
+        await deployToPlayStore();
+      }
 
       exec(`git add pubspec.yaml && git commit -m "chore: bump driver to v${nextVersion}"`);
-      logger.success(`Deploy concluido! Driver v${nextVersion}`);
+      logger.success(`Deploy concluido! Driver v${nextVersion} (${track})`);
+    } else if (action === 'shorebird-release' || action === 'shorebird-patch') {
+      logger.info('Redirecionando para Shorebird CLI do Driver...');
+      const command = action === 'shorebird-release' ? 'release' : 'patch';
+      const shorebirdScript = path.join(__dirname, 'shorebird-driver.js');
+      execSync(`node ${shorebirdScript} ${command}`, { stdio: 'inherit' });
     } else {
       const { confirm } = await inquirer.prompt([
         {

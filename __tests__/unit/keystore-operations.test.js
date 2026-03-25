@@ -123,9 +123,9 @@ describe('keystore-operations', () => {
       expect(writeCall).toBeDefined();
       const writtenContent = writeCall[1];
 
-      // Check paths were transformed
-      expect(writtenContent).toContain('debug.storeFile=./app/keystore-debug.jks');
-      expect(writtenContent).toContain('release.storeFile=./app/keystore-release.jks');
+      // Check paths were transformed (paths are relative to android/app/ where build.gradle resolves)
+      expect(writtenContent).toContain('debug.storeFile=keystore-debug.jks');
+      expect(writtenContent).toContain('release.storeFile=keystore-release.jks');
 
       // Check passwords were preserved
       expect(writtenContent).toContain('debug.storePassword=debug123');
@@ -216,10 +216,10 @@ describe('keystore-operations', () => {
       const writeCall = fs.writeFileSync.mock.calls.find(
         (call) => call[0].includes('key.properties')
       );
-      expect(writeCall[1]).toContain('debug.storeFile=./app/keystore-debug.jks');
+      expect(writeCall[1]).toContain('debug.storeFile=keystore-debug.jks');
     });
 
-    test('updates release.storeFile to ./app/keystore-release.jks', () => {
+    test('updates release.storeFile to keystore-release.jks', () => {
       fs.existsSync.mockReturnValue(true);
       fs.copyFileSync.mockImplementation(() => {});
       fs.readFileSync.mockReturnValue(
@@ -232,7 +232,7 @@ describe('keystore-operations', () => {
       const writeCall = fs.writeFileSync.mock.calls.find(
         (call) => call[0].includes('key.properties')
       );
-      expect(writeCall[1]).toContain('release.storeFile=./app/keystore-release.jks');
+      expect(writeCall[1]).toContain('release.storeFile=keystore-release.jks');
     });
   });
 

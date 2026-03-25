@@ -103,6 +103,7 @@ async function setupAppConfig(config, firebaseClient) {
     featureFlags: config.featureFlags,
     clarityProjectId: config.clarityProjectId,
     clientCode: config.clientCode,
+    clientName: config.clientName,
     planType: config.planType || 'profissional',
     planLimits: getPlanLimits(config.planType || 'profissional'),
   });

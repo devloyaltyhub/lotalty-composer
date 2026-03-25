@@ -1,6 +1,10 @@
 /**
  * Tests for generate-android-keystore.js
  * Tests Android keystore generation and validation
+ *
+ * Note: generate-android-keystore.js now delegates to:
+ * - android/keystore-operations.js (keytool, fingerprints, validation)
+ * - android/credentials-helpers.js (paths, passwords, properties)
  */
 
 jest.mock('child_process', () => ({
@@ -12,6 +16,9 @@ jest.mock('fs', () => ({
   mkdirSync: jest.fn(),
   writeFileSync: jest.fn(),
   chmodSync: jest.fn(),
+  stat: jest.fn(),
+  readFileSync: jest.fn(),
+  readdirSync: jest.fn(),
 }));
 
 jest.mock('crypto', () => ({
@@ -27,6 +34,49 @@ jest.mock('chalk', () => ({
   gray: jest.fn((str) => str),
   white: jest.fn((str) => str),
 }));
+
+// Mock logger to prevent winston from trying to use mocked fs
+jest.mock('../../shared/utils/logger', () => ({
+  info: jest.fn(),
+  warn: jest.fn(),
+  error: jest.fn(),
+  debug: jest.fn(),
+  success: jest.fn(),
+  section: jest.fn(),
+  blank: jest.fn(),
+  keyValue: jest.fn(),
+  startSpinner: jest.fn(),
+  succeedSpinner: jest.fn(),
+  failSpinner: jest.fn(),
+}));
+
+// Mock error-handler to prevent it from loading logger
+jest.mock('../../shared/utils/error-handler', () => ({
+  ErrorHandler: { retry: jest.fn((fn) => fn()) },
+  ValidationError: class ValidationError extends Error {
+    constructor(message, metadata) {
+      super(message);
+      this.metadata = metadata;
+    }
+  },
+  GitError: class GitError extends Error {},
+}));
+
+// Mock input-validator to prevent loading chain
+jest.mock('../../01-client-setup/shared/input-validator', () => ({
+  validateEnvironmentVariables: jest.fn(),
+}));
+
+// Mock paths to provide LOYALTY_CREDENTIALS_ROOT
+jest.mock('../../shared/utils/paths', () => {
+  const path = require('path');
+  const mockRoot = path.resolve(__dirname, '..', '..', '..', 'loyalty-credentials');
+  return {
+    LOYALTY_CREDENTIALS_ROOT: mockRoot,
+    COMPOSE_ROOT: path.resolve(__dirname, '..', '..'),
+    getClientConfigPath: jest.fn(),
+  };
+});
 
 const { execSync } = require('child_process');
 const fs = require('fs');

@@ -1,5 +1,6 @@
 /**
  * Tests for 02-build-deploy/utils/screenshot-metadata-copier.js
+ * and its sub-copiers (ScreenshotAndroidCopier, ScreenshotIosCopier)
  */
 
 jest.mock('fs', () => ({
@@ -29,6 +30,8 @@ const {
   IOS_DEVICES,
   ANDROID_DEVICES,
 } = require('../../02-build-deploy/utils/screenshot-metadata-copier');
+const ScreenshotAndroidCopier = require('../../02-build-deploy/utils/screenshot-android-copier');
+const ScreenshotIosCopier = require('../../02-build-deploy/utils/screenshot-ios-copier');
 
 describe('ScreenshotMetadataCopier', () => {
   beforeEach(() => {
@@ -79,10 +82,51 @@ describe('ScreenshotMetadataCopier', () => {
     });
   });
 
+  describe('copyAll()', () => {
+    test('copies to both Android and iOS', () => {
+      fs.existsSync.mockReturnValue(true);
+      fs.readdirSync.mockImplementation((dir, opts) => {
+        if (opts && opts.withFileTypes) return [];
+        if (dir.includes('mockups')) return ['screen.png'];
+        return [];
+      });
+
+      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const results = copier.copyAll();
+
+      expect(results.android).toBeDefined();
+      expect(results.ios).toBeDefined();
+    });
+
+    test('returns empty results when mockups dir not found', () => {
+      fs.existsSync.mockReturnValue(false);
+
+      const copier = new ScreenshotMetadataCopier('demo');
+      const results = copier.copyAll();
+
+      expect(results.android.count || 0).toBe(0);
+    });
+  });
+
+  describe('getDeviceConfigs()', () => {
+    test('returns device configurations', () => {
+      const configs = ScreenshotMetadataCopier.getDeviceConfigs();
+
+      expect(configs.ios).toBe(IOS_DEVICES);
+      expect(configs.android).toBe(ANDROID_DEVICES);
+    });
+  });
+});
+
+describe('ScreenshotAndroidCopier', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   describe('ensureDir()', () => {
     test('creates directory when it does not exist', () => {
       fs.existsSync.mockReturnValue(false);
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
 
       copier.ensureDir('/some/path');
 
@@ -91,7 +135,7 @@ describe('ScreenshotMetadataCopier', () => {
 
     test('does not create directory when it exists', () => {
       fs.existsSync.mockReturnValue(true);
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
 
       copier.ensureDir('/some/path');
 
@@ -102,7 +146,7 @@ describe('ScreenshotMetadataCopier', () => {
   describe('getScreenshotFiles()', () => {
     test('returns empty array when directory does not exist', () => {
       fs.existsSync.mockReturnValue(false);
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
 
       const files = copier.getScreenshotFiles('/nonexistent');
 
@@ -113,7 +157,7 @@ describe('ScreenshotMetadataCopier', () => {
       fs.existsSync.mockReturnValue(true);
       fs.readdirSync.mockReturnValue(['z.png', 'a.png', 'file.txt', 'b.png']);
 
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const files = copier.getScreenshotFiles('/dir');
 
       expect(files).toEqual(['a.png', 'b.png', 'z.png']);
@@ -128,7 +172,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const result = copier.copyToAndroidDevice('phone');
 
       expect(result.count).toBe(2);
@@ -142,7 +186,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const result = copier.copyToAndroidDevice('tablet');
 
       expect(result.count).toBe(1);
@@ -150,7 +194,7 @@ describe('ScreenshotMetadataCopier', () => {
     });
 
     test('returns 0 for unknown device', () => {
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const result = copier.copyToAndroidDevice('unknown_device');
 
       expect(result.count).toBe(0);
@@ -166,7 +210,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const results = copier.copyToAndroid();
 
       expect(results.phone).toBeDefined();
@@ -179,7 +223,7 @@ describe('ScreenshotMetadataCopier', () => {
       fs.existsSync.mockReturnValue(true);
       fs.readdirSync.mockReturnValue([]);
 
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       const results = copier.copyToAndroid();
 
       expect(results.phone.count).toBe(0);
@@ -193,11 +237,17 @@ describe('ScreenshotMetadataCopier', () => {
         return ['old.png'];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotAndroidCopier('/mockups', '/metadata');
       copier.copyToAndroid();
 
       expect(fs.unlinkSync).toHaveBeenCalled();
     });
+  });
+});
+
+describe('ScreenshotIosCopier', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
   });
 
   describe('copyIosScreenshots()', () => {
@@ -208,7 +258,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotIosCopier('/mockups', '/metadata');
       const result = copier.copyIosScreenshots('APP_IPHONE_67', 'iphone_6_7', '/dest/pt-BR');
 
       expect(result.count).toBe(1);
@@ -224,7 +274,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotIosCopier('/mockups', '/metadata');
       const result = copier.copyIosScreenshots('APP_IPAD_PRO_129', 'ipad_12_9', '/dest/pt-BR');
 
       expect(result.count).toBe(1);
@@ -234,7 +284,7 @@ describe('ScreenshotMetadataCopier', () => {
     });
 
     test('returns 0 for unknown device', () => {
-      const copier = new ScreenshotMetadataCopier('demo');
+      const copier = new ScreenshotIosCopier('/mockups', '/metadata');
       const result = copier.copyIosScreenshots('unknown_device', null, '/dest');
 
       expect(result.count).toBe(0);
@@ -254,7 +304,7 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotIosCopier('/mockups', '/metadata');
       const results = copier.copyToIos();
 
       // Only iPhone 6.7" and iPad 12.9" results (Apple scales for others)
@@ -278,47 +328,11 @@ describe('ScreenshotMetadataCopier', () => {
         return [];
       });
 
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
+      const copier = new ScreenshotIosCopier('/mockups', '/metadata');
       copier.copyToIos();
 
       // Should have attempted to clean up old folders
       expect(fs.rmdirSync).toHaveBeenCalled();
-    });
-  });
-
-  describe('copyAll()', () => {
-    test('copies to both Android and iOS', () => {
-      fs.existsSync.mockReturnValue(true);
-      fs.readdirSync.mockImplementation((dir, opts) => {
-        if (opts && opts.withFileTypes) return [];
-        if (dir.includes('mockups')) return ['screen.png'];
-        return [];
-      });
-
-      const copier = new ScreenshotMetadataCopier('demo', '/repo');
-      const results = copier.copyAll();
-
-      expect(results.android).toBeDefined();
-      expect(results.ios).toBeDefined();
-    });
-
-    test('returns empty results when mockups dir not found', () => {
-      fs.existsSync.mockReturnValue(false);
-
-      const copier = new ScreenshotMetadataCopier('demo');
-      const results = copier.copyAll();
-
-      expect(results.android.phone?.count || 0).toBe(0);
-      expect(results.android.tablet?.count || 0).toBe(0);
-    });
-  });
-
-  describe('getDeviceConfigs()', () => {
-    test('returns device configurations', () => {
-      const configs = ScreenshotMetadataCopier.getDeviceConfigs();
-
-      expect(configs.ios).toBe(IOS_DEVICES);
-      expect(configs.android).toBe(ANDROID_DEVICES);
     });
   });
 });

@@ -193,6 +193,56 @@ const SCRIPTS = {
     args: ['--build-only'],
   },
 
+  // Vercel Setup & Deploys
+  SETUP_VERCEL: {
+    name: 'Setup Vercel',
+    description: 'Configurar pre-requisitos para deploy Vercel: token, link, git config',
+    category: CATEGORIES.VALIDATION,
+    script: '02-build-deploy/cli/setup-vercel.js',
+  },
+  DEPLOY_VERCEL: {
+    name: 'Deploy Web (Vercel)',
+    description: 'Deploy projetos web para Vercel: Admin Angular, Website, Cloud Service',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-vercel.js',
+  },
+  DEPLOY_ADMIN_ANGULAR: {
+    name: 'Deploy Admin Angular',
+    description: 'Deploy do Admin Angular para Vercel (producao)',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-vercel.js',
+    args: ['--project=admin'],
+  },
+  DEPLOY_WEBSITE: {
+    name: 'Deploy Website',
+    description: 'Deploy do Website Next.js para Vercel (producao)',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-vercel.js',
+    args: ['--project=website'],
+  },
+  DEPLOY_CLOUD: {
+    name: 'Deploy Cloud Service',
+    description: 'Deploy do Cloud Service Next.js para Vercel (producao)',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/deploy-vercel.js',
+    args: ['--project=cloud'],
+  },
+
+  // Build Modules
+  BUILD_MODULES: {
+    name: 'Build Modules',
+    description: 'Build de todos os loyalty_modules Node + sync para cloud-service',
+    category: CATEGORIES.BUILD_DEPLOY,
+    script: '02-build-deploy/cli/build-modules.js',
+  },
+  CHECK_MODULES: {
+    name: 'Verificar Modules',
+    description: 'Verificar se os dists dos loyalty_modules estao atualizados',
+    category: CATEGORIES.VALIDATION,
+    script: '02-build-deploy/cli/build-modules.js',
+    args: ['--check'],
+  },
+
   // Data Management
   EXPORT_DEMO_DATA: {
     name: 'Exportar Dados Demo',
@@ -205,6 +255,12 @@ const SCRIPTS = {
     description: 'Enviar notificação push para todos os usuários de um cliente',
     category: CATEGORIES.CLIENT_OPS,
     script: '03-data-management/cli/send-push-notification.js',
+  },
+  REWARD_USER: {
+    name: 'Premiar Usuário',
+    description: 'Creditar ClubCoins + push de agradecimento (bug report, sugestão, feedback, etc)',
+    category: CATEGORIES.CLIENT_OPS,
+    script: '03-data-management/cli/reward-user.js',
   },
 
   // Backup & Restore
@@ -327,12 +383,36 @@ const WORKFLOWS = {
     ],
   },
   DEPLOY_ADMIN: {
-    name: '🚀 Deploy Admin',
-    description: 'Build e deploy do Admin Web para GitHub Pages',
+    name: '🚀 Deploy Admin Flutter (GitHub Pages)',
+    description: 'Build e deploy do Admin Flutter Web para GitHub Pages',
     category: CATEGORIES.WORKFLOWS,
     confirmStart: true,
     steps: [
       { action: 'deploy', script: SCRIPTS.DEPLOY_ADMIN },
+    ],
+  },
+  DEPLOY_WEB_ALL: {
+    name: '🌐 Deploy Web Projects (Vercel)',
+    description: 'Deploy de todos os projetos web: Admin Angular + Website + Cloud Service',
+    category: CATEGORIES.WORKFLOWS,
+    confirmStart: true,
+    steps: [
+      { action: 'check-modules', script: SCRIPTS.CHECK_MODULES },
+      { action: 'build-modules', script: SCRIPTS.BUILD_MODULES },
+      { action: 'deploy-web', script: SCRIPTS.DEPLOY_VERCEL },
+    ],
+  },
+  DEPLOY_ECOSYSTEM: {
+    name: '🌍 Deploy Ecossistema Completo',
+    description: 'Deploy de TODOS os projetos: Mobile + Admin Flutter + Web (Vercel)',
+    category: CATEGORIES.WORKFLOWS,
+    confirmStart: true,
+    steps: [
+      { action: 'preflight', script: SCRIPTS.PREFLIGHT_CHECK },
+      { action: 'build-modules', script: SCRIPTS.BUILD_MODULES },
+      { action: 'deploy-mobile', script: SCRIPTS.DEPLOY_CLIENT },
+      { action: 'deploy-admin-flutter', script: SCRIPTS.DEPLOY_ADMIN },
+      { action: 'deploy-web', script: SCRIPTS.DEPLOY_VERCEL },
     ],
   },
 };

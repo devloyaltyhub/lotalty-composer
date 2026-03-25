@@ -119,9 +119,10 @@ service cloud.firestore {
 
     // ==========================================
     // Users_Admin Collection - Admin users only
+    // Self-read allowed for login verification (avoids circular dependency)
     // ==========================================
     match /Users_Admin/{docId} {
-      allow read: if isAdmin();
+      allow read: if isAdmin() || isOwner(docId);
       allow write: if isAdmin();
     }
 
@@ -371,6 +372,60 @@ service cloud.firestore {
     match /AI_Insights/{docId} {
       allow read: if isAdmin();
       allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // AI Daily Insights - Insights diários gerados para o lojista
+    // ==========================================
+    match /AI_Daily_Insights/{date}/insights/{insightId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Insight Interactions - Aceite/rejeição + métricas de interação
+    // ==========================================
+    match /AI_Insight_Interactions/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ==========================================
+    // AI Merchant Learning - Perfil de aprendizado do merchant
+    // ==========================================
+    match /AI_Merchant_Learning/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Merchant History - Histórico mensal agregado
+    // ==========================================
+    match /AI_Merchant_History/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Merchant Settings - Preferências do lojista no Insights
+    // ==========================================
+    match /AI_Merchant_Settings/{doc} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ==========================================
+    // AI Data Lake - Série temporal de dados externos + internos
+    // ==========================================
+    match /AI_Data_Lake/{date} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Data Lake Merchant - Série temporal de métricas internas
+    // ==========================================
+    match /AI_Data_Lake_Merchant/{projectId}/{date} {
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
 
     // ==========================================

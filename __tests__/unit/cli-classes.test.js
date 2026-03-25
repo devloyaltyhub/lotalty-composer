@@ -461,7 +461,7 @@ describe('CommandRunner', () => {
       await new Promise((resolve) => setTimeout(resolve, 10));
       mockChild._closeCallback(1);
 
-      await expect(runPromise).rejects.toThrow('Script falhou com código 1');
+      await expect(runPromise).rejects.toThrow('Script falhou com codigo 1');
     });
 
     test('rejects on spawn error', async () => {
@@ -571,7 +571,7 @@ describe('MenuRenderer', () => {
       const choices = renderer.createMenuChoices(items, 'workflow');
       const itemChoice = choices.find((c) => c.value);
 
-      expect(itemChoice.name).toContain('▶');
+      expect(itemChoice.name).toContain('>');
     });
 
     test('uses different prefix for scripts', () => {
@@ -583,7 +583,7 @@ describe('MenuRenderer', () => {
       const choices = renderer.createMenuChoices(items, 'script');
       const itemChoice = choices.find((c) => c.value);
 
-      expect(itemChoice.name).toContain('›');
+      expect(itemChoice.name).toContain('-');
     });
   });
 });

@@ -40,11 +40,12 @@ class AppConfigSetup {
    * @param {Object} config.featureFlags - Feature flags object
    * @param {string} config.clarityProjectId - Clarity project ID
    * @param {string} config.clientCode - Client code for logging
+   * @param {string} config.clientName - Client display name (used in push notifications)
    * @param {string} config.planType - Subscription plan type
    * @param {Object} config.planLimits - Plan-based limits
    */
   async setupAppConfig(config) {
-    const { featureFlags, clarityProjectId, clientCode, planType, planLimits } = config;
+    const { featureFlags, clarityProjectId, clientCode, clientName, planType, planLimits } = config;
 
     console.log(chalk.blue("\n📡 Setting up App Config (Firestore)..."));
 
@@ -52,6 +53,7 @@ class AppConfigSetup {
       const configData = {
         featureFlags: featureFlags || {},
         clarityProjectId: clarityProjectId || "",
+        storeName: clientName || clientCode || "",
         planType: planType || "profissional",
         planLimits: planLimits || {},
         versionarte: getDefaultVersionarte(),

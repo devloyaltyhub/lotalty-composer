@@ -1,6 +1,10 @@
 /**
  * Tests for git-credentials-manager.js
  * Tests Git operations for the loyalty-credentials repository
+ *
+ * Note: The manager delegates low-level git operations to git-executor.js.
+ * Methods like isGitInitialized, hasUncommittedChanges, hasAnyCommits
+ * are on the git-executor module, not on the manager instance.
  */
 
 const path = require('path');
@@ -49,8 +53,28 @@ jest.mock('../../shared/utils/error-handler', () => ({
   },
 }));
 
+// Mock git-executor (the sub-module that GitCredentialsManager now delegates to)
+jest.mock('../../01-client-setup/steps/git-executor', () => ({
+  execGit: jest.fn(),
+  isGitInitialized: jest.fn(),
+  hasUncommittedChanges: jest.fn(),
+  hasAnyCommits: jest.fn(),
+  hasRemote: jest.fn(),
+  getTrackedFiles: jest.fn(),
+  getStagedChanges: jest.fn(),
+}));
+
+// Mock git-commit-messages
+jest.mock('../../01-client-setup/steps/git-commit-messages', () => ({
+  androidKeystoreCommitMessage: jest.fn((code, name) => `Add Android keystores for ${name}`),
+  iosProfilesCommitMessage: jest.fn((code, name) => `Add iOS profiles for ${name}`),
+  initialCommitMessage: jest.fn(() => 'Initial commit'),
+  escapeCommitMessage: jest.fn((msg) => msg),
+}));
+
 const { execSync } = require('child_process');
 const fs = require('fs');
+const gitExecutor = require('../../01-client-setup/steps/git-executor');
 const GitCredentialsManager = require('../../01-client-setup/steps/git-credentials-manager');
 
 describe('GitCredentialsManager', () => {
@@ -63,6 +87,15 @@ describe('GitCredentialsManager', () => {
 
     // Default: credentials repo exists
     fs.existsSync.mockReturnValue(true);
+
+    // Default: git-executor mocks
+    gitExecutor.execGit.mockReturnValue('');
+    gitExecutor.isGitInitialized.mockReturnValue(true);
+    gitExecutor.hasUncommittedChanges.mockReturnValue(false);
+    gitExecutor.hasAnyCommits.mockReturnValue(true);
+    gitExecutor.hasRemote.mockReturnValue(false);
+    gitExecutor.getTrackedFiles.mockReturnValue('');
+    gitExecutor.getStagedChanges.mockReturnValue('');
   });
 
   afterEach(() => {
@@ -94,87 +127,17 @@ describe('GitCredentialsManager', () => {
       manager = new GitCredentialsManager();
     });
 
-    test('executes git command in credentials repo', () => {
-      execSync.mockReturnValue('output');
+    test('executes git command via gitExecutor', () => {
+      gitExecutor.execGit.mockReturnValue('output');
 
       const result = manager.execGit('git status');
 
-      expect(execSync).toHaveBeenCalledWith(
+      expect(gitExecutor.execGit).toHaveBeenCalledWith(
         'git status',
-        expect.objectContaining({
-          cwd: manager.credentialsRepoPath,
-          encoding: 'utf8',
-        })
+        manager.credentialsRepoPath,
+        expect.any(Object)
       );
       expect(result).toBe('output');
-    });
-
-    test('trims output', () => {
-      execSync.mockReturnValue('  output with spaces  ');
-
-      const result = manager.execGit('git status');
-
-      expect(result).toBe('output with spaces');
-    });
-
-    test('returns empty string when output is null', () => {
-      execSync.mockReturnValue(null);
-
-      const result = manager.execGit('git status');
-
-      expect(result).toBe('');
-    });
-
-    test('uses silent stdio when silent option is true', () => {
-      execSync.mockReturnValue('');
-
-      manager.execGit('git status', { silent: true });
-
-      expect(execSync).toHaveBeenCalledWith(
-        'git status',
-        expect.objectContaining({
-          stdio: 'pipe',
-        })
-      );
-    });
-
-    test('throws GitError on failure', () => {
-      const error = new Error('git failed');
-      error.status = 1;
-      error.stderr = 'error output';
-      execSync.mockImplementation(() => {
-        throw error;
-      });
-
-      expect(() => manager.execGit('git status')).toThrow();
-    });
-  });
-
-  describe('isGitInitialized()', () => {
-    beforeEach(() => {
-      manager = new GitCredentialsManager();
-    });
-
-    test('returns true when git repo is initialized', () => {
-      execSync.mockReturnValue('.git');
-
-      const result = manager.isGitInitialized();
-
-      expect(result).toBe(true);
-      expect(execSync).toHaveBeenCalledWith(
-        'git rev-parse --git-dir',
-        expect.anything()
-      );
-    });
-
-    test('returns false when not a git repo', () => {
-      execSync.mockImplementation(() => {
-        throw new Error('not a git repository');
-      });
-
-      const result = manager.isGitInitialized();
-
-      expect(result).toBe(false);
     });
   });
 
@@ -184,57 +147,30 @@ describe('GitCredentialsManager', () => {
     });
 
     test('does nothing if already initialized', () => {
-      execSync.mockReturnValue('.git');
+      gitExecutor.isGitInitialized.mockReturnValue(true);
 
       manager.ensureGitInitialized();
 
-      // Only called once for isGitInitialized check
-      expect(execSync).toHaveBeenCalledTimes(1);
+      // Should only check, not init
+      expect(gitExecutor.isGitInitialized).toHaveBeenCalledWith(manager.credentialsRepoPath);
     });
 
     test('initializes git if not initialized', () => {
-      execSync
-        .mockImplementationOnce(() => {
-          throw new Error('not a git repo');
-        })
-        .mockReturnValue('');
+      gitExecutor.isGitInitialized.mockReturnValue(false);
+      gitExecutor.execGit.mockReturnValue('');
 
       manager.ensureGitInitialized();
 
-      expect(execSync).toHaveBeenCalledWith('git init', expect.anything());
-      expect(execSync).toHaveBeenCalledWith('git branch -M main', expect.anything());
-    });
-  });
-
-  describe('hasUncommittedChanges()', () => {
-    beforeEach(() => {
-      manager = new GitCredentialsManager();
-    });
-
-    test('returns true when there are uncommitted changes', () => {
-      execSync.mockReturnValue('M file.txt');
-
-      const result = manager.hasUncommittedChanges();
-
-      expect(result).toBe(true);
-    });
-
-    test('returns false when no uncommitted changes', () => {
-      execSync.mockReturnValue('');
-
-      const result = manager.hasUncommittedChanges();
-
-      expect(result).toBe(false);
-    });
-
-    test('returns false on error', () => {
-      execSync.mockImplementation(() => {
-        throw new Error('git error');
-      });
-
-      const result = manager.hasUncommittedChanges();
-
-      expect(result).toBe(false);
+      expect(gitExecutor.execGit).toHaveBeenCalledWith(
+        'git init',
+        manager.credentialsRepoPath,
+        expect.any(Object)
+      );
+      expect(gitExecutor.execGit).toHaveBeenCalledWith(
+        'git branch -M main',
+        manager.credentialsRepoPath,
+        expect.any(Object)
+      );
     });
   });
 
@@ -242,19 +178,19 @@ describe('GitCredentialsManager', () => {
     beforeEach(() => {
       manager = new GitCredentialsManager();
       fs.readdirSync.mockReturnValue(['keystore-debug.jks', 'keystore-release.jks']);
-      execSync.mockReturnValue('');
+      gitExecutor.isGitInitialized.mockReturnValue(true);
+      gitExecutor.getStagedChanges.mockReturnValue('staged changes');
+      gitExecutor.hasRemote.mockReturnValue(false);
     });
 
     test('commits keystore files when they exist', async () => {
-      execSync.mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValue('staged changes'); // other calls
-
       const result = await manager.commitAndroidKeystores('demo', 'Demo Client');
 
       expect(result).toBe(true);
-      expect(execSync).toHaveBeenCalledWith(
+      expect(gitExecutor.execGit).toHaveBeenCalledWith(
         expect.stringContaining('git add clients/demo/android'),
-        expect.anything()
+        manager.credentialsRepoPath,
+        expect.any(Object)
       );
     });
 
@@ -278,10 +214,7 @@ describe('GitCredentialsManager', () => {
     });
 
     test('returns false when files already committed', async () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('') // git add
-        .mockReturnValueOnce(''); // git diff --cached (no staged changes)
+      gitExecutor.getStagedChanges.mockReturnValue('');
 
       const result = await manager.commitAndroidKeystores('demo', 'Demo Client');
 
@@ -289,15 +222,13 @@ describe('GitCredentialsManager', () => {
     });
 
     test('handles push failure gracefully', async () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('') // git add
-        .mockReturnValueOnce('staged file') // git diff --cached
-        .mockReturnValueOnce('') // git commit
-        .mockReturnValueOnce('origin') // git remote
-        .mockImplementation(() => {
+      gitExecutor.hasRemote.mockReturnValue(true);
+      gitExecutor.execGit.mockImplementation((cmd) => {
+        if (cmd.includes('git push')) {
           throw new Error('push failed');
-        }); // git push
+        }
+        return '';
+      });
 
       const result = await manager.commitAndroidKeystores('demo', 'Demo Client');
 
@@ -309,12 +240,11 @@ describe('GitCredentialsManager', () => {
     beforeEach(() => {
       manager = new GitCredentialsManager();
       fs.readdirSync.mockReturnValue(['profile.mobileprovision']);
-      execSync.mockReturnValue('');
+      gitExecutor.isGitInitialized.mockReturnValue(true);
+      gitExecutor.hasRemote.mockReturnValue(false);
     });
 
     test('commits iOS profiles when they exist', async () => {
-      execSync.mockReturnValueOnce('.git'); // isGitInitialized
-
       const result = await manager.commitIOSProfiles('demo', 'Demo Client');
 
       expect(result).toBe(true);
@@ -340,14 +270,13 @@ describe('GitCredentialsManager', () => {
     });
 
     test('handles push failure gracefully', async () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('') // git add
-        .mockReturnValueOnce('') // git commit
-        .mockReturnValueOnce('origin') // git remote
-        .mockImplementation(() => {
+      gitExecutor.hasRemote.mockReturnValue(true);
+      gitExecutor.execGit.mockImplementation((cmd) => {
+        if (cmd.includes('git push')) {
           throw new Error('push failed');
-        });
+        }
+        return '';
+      });
 
       const result = await manager.commitIOSProfiles('demo', 'Demo Client');
 
@@ -358,14 +287,12 @@ describe('GitCredentialsManager', () => {
   describe('verifyCredentialsCommitted()', () => {
     beforeEach(() => {
       manager = new GitCredentialsManager();
-      execSync.mockReturnValue('');
+      gitExecutor.isGitInitialized.mockReturnValue(true);
     });
 
     test('returns android true when files are tracked', () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('keystore-debug.jks\nkeystore-release.jks') // git ls-files
-        .mockReturnValueOnce(''); // git status
+      gitExecutor.getTrackedFiles.mockReturnValue('keystore-debug.jks\nkeystore-release.jks');
+      gitExecutor.hasUncommittedChanges.mockReturnValue(false);
 
       const result = manager.verifyCredentialsCommitted('demo');
 
@@ -374,10 +301,8 @@ describe('GitCredentialsManager', () => {
     });
 
     test('returns android false when files not tracked', () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('') // git ls-files (empty)
-        .mockReturnValueOnce(''); // git status
+      gitExecutor.getTrackedFiles.mockReturnValue('');
+      gitExecutor.hasUncommittedChanges.mockReturnValue(false);
 
       const result = manager.verifyCredentialsCommitted('demo');
 
@@ -385,10 +310,9 @@ describe('GitCredentialsManager', () => {
     });
 
     test('returns uncommitted files when present', () => {
-      execSync
-        .mockReturnValueOnce('.git')
-        .mockReturnValueOnce('keystore.jks')
-        .mockReturnValueOnce('M file1.txt\nA file2.txt');
+      gitExecutor.getTrackedFiles.mockReturnValue('keystore.jks');
+      gitExecutor.hasUncommittedChanges.mockReturnValue(true);
+      gitExecutor.execGit.mockReturnValue('M file1.txt\nA file2.txt');
 
       const result = manager.verifyCredentialsCommitted('demo');
 
@@ -400,13 +324,11 @@ describe('GitCredentialsManager', () => {
     beforeEach(() => {
       manager = new GitCredentialsManager();
       fs.existsSync.mockReturnValue(true);
-      execSync.mockReturnValue('');
+      gitExecutor.isGitInitialized.mockReturnValue(true);
     });
 
     test('skips if repository already has commits', async () => {
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockReturnValueOnce('abc123'); // git log -1 (has commits)
+      gitExecutor.hasAnyCommits.mockReturnValue(true);
 
       const result = await manager.createInitialCommit();
 
@@ -417,51 +339,19 @@ describe('GitCredentialsManager', () => {
     test('creates folder structure and initial commit', async () => {
       // Mock fs.existsSync to:
       // - Return true for loyalty-credentials base path (for constructor)
-      // - Return false for subfolders (shared, profiles, clients) so they get created
-      // - Return false for .gitkeep files so they get written
+      // - Return false for subfolders so they get created
       fs.existsSync.mockImplementation((p) => {
-        // The base loyalty-credentials path exists
         if (p.endsWith('loyalty-credentials')) return true;
-        // Subfolders and .gitkeep files don't exist yet
         return false;
       });
 
-      execSync
-        .mockReturnValueOnce('.git') // isGitInitialized
-        .mockImplementationOnce(() => {
-          throw new Error('no commits');
-        }) // git log -1 (no commits)
-        .mockReturnValue(''); // other git commands
+      gitExecutor.hasAnyCommits.mockReturnValue(false);
 
       const result = await manager.createInitialCommit();
 
       expect(result).toBe(true);
       expect(fs.mkdirSync).toHaveBeenCalled();
       expect(fs.writeFileSync).toHaveBeenCalled();
-    });
-  });
-
-  describe('hasAnyCommits()', () => {
-    beforeEach(() => {
-      manager = new GitCredentialsManager();
-    });
-
-    test('returns true when commits exist', async () => {
-      execSync.mockReturnValue('abc123');
-
-      const result = await manager.hasAnyCommits();
-
-      expect(result).toBe(true);
-    });
-
-    test('returns false when no commits', async () => {
-      execSync.mockImplementation(() => {
-        throw new Error('no commits');
-      });
-
-      const result = await manager.hasAnyCommits();
-
-      expect(result).toBe(false);
     });
   });
 });

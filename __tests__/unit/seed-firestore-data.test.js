@@ -120,7 +120,7 @@ describe('DataSeeder', () => {
       const data = { name: '{{CLIENT_NAME}}' };
       const variables = { CLIENT_NAME: 'Demo Client' };
 
-      const result = seeder.replaceVariables(data, variables);
+      const result = seeder.dataTransformer.replaceVariables(data, variables);
 
       expect(result.name).toBe('Demo Client');
     });
@@ -135,7 +135,7 @@ describe('DataSeeder', () => {
         BUSINESS_TYPE: 'coffee',
       };
 
-      const result = seeder.replaceVariables(data, variables);
+      const result = seeder.dataTransformer.replaceVariables(data, variables);
 
       expect(result.name).toBe('Demo');
       expect(result.type).toBe('coffee');
@@ -151,7 +151,7 @@ describe('DataSeeder', () => {
       };
       const variables = { CLIENT_NAME: 'Nested Demo' };
 
-      const result = seeder.replaceVariables(data, variables);
+      const result = seeder.dataTransformer.replaceVariables(data, variables);
 
       expect(result.config.app.name).toBe('Nested Demo');
     });
@@ -165,7 +165,7 @@ describe('DataSeeder', () => {
         BUSINESS_TYPE: 'restaurant',
       };
 
-      const result = seeder.replaceVariables(data, variables);
+      const result = seeder.dataTransformer.replaceVariables(data, variables);
 
       expect(result.items).toEqual(['Demo', 'restaurant']);
     });
@@ -174,7 +174,7 @@ describe('DataSeeder', () => {
       const data = { name: '{{MISSING_VAR}}' };
       const variables = {};
 
-      const result = seeder.replaceVariables(data, variables);
+      const result = seeder.dataTransformer.replaceVariables(data, variables);
 
       expect(result.name).toBe('{{MISSING_VAR}}');
     });
@@ -184,7 +184,7 @@ describe('DataSeeder', () => {
     test('converts {{TIMESTAMP}} to server timestamp', () => {
       const obj = { createdAt: '{{TIMESTAMP}}' };
 
-      const result = seeder.processTimestamps(obj);
+      const result = seeder.dataTransformer.processTimestamps(obj);
 
       expect(result.createdAt).toEqual({ _serverTimestamp: true });
       expect(admin.firestore.FieldValue.serverTimestamp).toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe('DataSeeder', () => {
         },
       };
 
-      const result = seeder.processTimestamps(obj);
+      const result = seeder.dataTransformer.processTimestamps(obj);
 
       expect(result.metadata.createdAt).toEqual({ _serverTimestamp: true });
     });
@@ -210,17 +210,17 @@ describe('DataSeeder', () => {
         ],
       };
 
-      const result = seeder.processTimestamps(obj);
+      const result = seeder.dataTransformer.processTimestamps(obj);
 
       expect(result.items[0].createdAt).toEqual({ _serverTimestamp: true });
       expect(result.items[1].createdAt).toEqual({ _serverTimestamp: true });
     });
 
     test('returns primitive values unchanged', () => {
-      expect(seeder.processTimestamps('string')).toBe('string');
-      expect(seeder.processTimestamps(123)).toBe(123);
-      expect(seeder.processTimestamps(true)).toBe(true);
-      expect(seeder.processTimestamps(null)).toBe(null);
+      expect(seeder.dataTransformer.processTimestamps('string')).toBe('string');
+      expect(seeder.dataTransformer.processTimestamps(123)).toBe(123);
+      expect(seeder.dataTransformer.processTimestamps(true)).toBe(true);
+      expect(seeder.dataTransformer.processTimestamps(null)).toBe(null);
     });
 
     test('preserves non-timestamp values', () => {
@@ -230,7 +230,7 @@ describe('DataSeeder', () => {
         active: true,
       };
 
-      const result = seeder.processTimestamps(obj);
+      const result = seeder.dataTransformer.processTimestamps(obj);
 
       expect(result.name).toBe('Test');
       expect(result.count).toBe(5);

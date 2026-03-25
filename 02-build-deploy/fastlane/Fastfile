@@ -2045,6 +2045,33 @@ lane :driver_android_deploy_internal do
   UI.success("✅ Driver deployed to Internal Testing!")
 end
 
+desc "Create Shorebird release for Driver"
+lane :driver_shorebird_release do |options|
+  platform = options[:platform] || 'android'
+  UI.message("🐦 Creating Shorebird release for Driver (#{platform})")
+
+  Dir.chdir(DRIVER_APP_PATH) do
+    sh("shorebird release #{platform}")
+  end
+
+  UI.success("✅ Shorebird release created for Driver (#{platform})")
+end
+
+desc "Create Shorebird patch for Driver"
+lane :driver_shorebird_patch do |options|
+  platform = options[:platform] || 'android'
+  release_version = options[:release_version]
+  UI.user_error!("release_version is required") unless release_version
+
+  UI.message("🐦 Creating Shorebird patch for Driver (#{platform}) v#{release_version}")
+
+  Dir.chdir(DRIVER_APP_PATH) do
+    sh("shorebird patch #{platform} --release-version=#{release_version}")
+  end
+
+  UI.success("✅ Shorebird patch created for Driver (#{platform})")
+end
+
 desc "Deploy Driver to Play Store (Production)"
 lane :driver_android_deploy_production do
   UI.message("📤 Deploying Driver to Play Store (Production)")
