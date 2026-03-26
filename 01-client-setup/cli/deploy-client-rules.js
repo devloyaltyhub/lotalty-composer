@@ -106,7 +106,7 @@ async function getClients(clientId) {
 async function confirmDeployment(clients) {
   log(`\n[WARNING] Deploy de regras para ${clients.length} cliente(s):`, colors.yellow);
   for (const client of clients) {
-    const projectId = client.firebaseOptions?.projectId || client.id;
+    const projectId = client.firebaseOptions?.projectId || client.firebase_options?.projectId || client.id;
     log(`   - ${client.id || client.code} (${projectId})`, colors.cyan);
   }
 
@@ -124,7 +124,7 @@ async function confirmDeployment(clients) {
 }
 
 async function deployToClient(client, dryRun) {
-  const projectId = client.firebaseOptions?.projectId || client.id;
+  const projectId = client.firebaseOptions?.projectId || client.firebase_options?.projectId || client.id;
   const clientLabel = client.id || client.code;
 
   log(`\n[DEPLOY] ${clientLabel} (${projectId})...`, colors.cyan);
@@ -138,7 +138,11 @@ async function deployToClient(client, dryRun) {
   fs.copyFileSync(RULES_FILE_PATH, tempRulesPath);
 
   const firebaseJsonPath = path.join(tempDir, 'firebase.json');
-  fs.writeFileSync(firebaseJsonPath, JSON.stringify({ firestore: { rules: 'firestore.rules' } }, null, 2));
+  const firestoreConfig = { rules: 'firestore.rules' };
+  if (fs.existsSync(INDEXES_FILE_PATH)) {
+    firestoreConfig.indexes = 'firestore.indexes.json';
+  }
+  fs.writeFileSync(firebaseJsonPath, JSON.stringify({ firestore: firestoreConfig }, null, 2));
 
   if (fs.existsSync(INDEXES_FILE_PATH)) {
     fs.copyFileSync(INDEXES_FILE_PATH, path.join(tempDir, 'firestore.indexes.json'));
@@ -191,7 +195,7 @@ async function main() {
       log('\n[INFO] Use --all para todos os clientes ou --client <id> para um especifico.', colors.yellow);
       log('[INFO] Clientes disponiveis:', colors.cyan);
       for (const client of clients) {
-        const projectId = client.firebaseOptions?.projectId || client.id;
+        const projectId = client.firebaseOptions?.projectId || client.firebase_options?.projectId || client.id;
         log(`   - ${client.id || client.code} (${projectId})`, colors.cyan);
       }
       process.exit(0);

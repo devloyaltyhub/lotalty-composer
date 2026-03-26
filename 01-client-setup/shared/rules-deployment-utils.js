@@ -70,7 +70,7 @@ function deployRules(projectId, rulesFilePath, dryRun = false) {
       return { success: true, error: null };
     }
 
-    const command = `cd "${workingDir}" && firebase deploy --only firestore:rules --project ${projectId}`;
+    const command = `cd "${workingDir}" && firebase deploy --only firestore --project ${projectId}`;
     exec(command);
 
     return { success: true, error: null };
