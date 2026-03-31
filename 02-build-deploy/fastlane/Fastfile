@@ -189,6 +189,43 @@ def validate_ios_build_number!(api_key, bundle_id)
   true
 end
 
+# Validate version string against App Store Connect before uploading
+# Apple silently rejects uploads when the version string is already READY_FOR_SALE
+def validate_ios_version_string!(api_key, bundle_id)
+  version_string = get_app_version.split('+').first
+
+  begin
+    app = Spaceship::ConnectAPI::App.find(bundle_id)
+    unless app
+      UI.important("⚠️  App #{bundle_id} não encontrado no App Store Connect, pulando validação de versão")
+      return true
+    end
+
+    live_versions = app.get_app_store_versions
+                       .select { |v| v.app_store_state == "READY_FOR_SALE" }
+                       .map(&:version_string)
+
+    UI.message("📋 Versões READY_FOR_SALE no App Store: #{live_versions.join(', ')}")
+
+    if live_versions.include?(version_string)
+      UI.user_error!(
+        "❌ Versão #{version_string} já está READY_FOR_SALE no App Store.\n" \
+        "   A Apple rejeita uploads com a mesma version string.\n" \
+        "   Execute: cd loyalty-composer && npm run bump-patch"
+      )
+    end
+
+    UI.success("✓ Versão #{version_string} é nova (não existe como READY_FOR_SALE)")
+  rescue => e
+    if e.message.include?('já está READY_FOR_SALE')
+      raise e
+    end
+    UI.important("⚠️  Não foi possível verificar versão no App Store Connect: #{e.message}")
+    UI.message("   Continuando com versão #{version_string}...")
+  end
+  true
+end
+
 # Get debug symbols path for a client (creates directory if needed)
 # Symbols are stored per version to support Crashlytics stack trace mapping
 def get_debug_symbols_path(client_name, platform)
@@ -1040,6 +1077,9 @@ platform :ios do
 
     UI.message("🔨 Building iOS release for: #{client_name}")
 
+    # Validate version string before building (avoids wasting ~10min of build time)
+    validate_ios_version_string!(@api_key, get_bundle_id(client_name)) if @api_key
+
     # Get debug symbols path for this client/version
     symbols_path = get_debug_symbols_path(client_name, 'ios')
 
@@ -1128,6 +1168,9 @@ platform :ios do
 
     UI.message("📤 Deploying iOS app to TestFlight")
 
+    # Validate version string is not already READY_FOR_SALE (avoids silent rejection)
+    validate_ios_version_string!(@api_key, get_bundle_id(client_name)) if @api_key
+
     # Validate build number before uploading (avoids wasting builds)
     validate_ios_build_number!(@api_key, get_bundle_id(client_name)) if @api_key
 
@@ -1174,6 +1217,9 @@ platform :ios do
     UI.message("📤 Deploying iOS app to App Store")
     UI.message("   Auto-submit for review: #{auto_submit ? 'enabled' : 'disabled'}")
     UI.message("   Phased release: #{phased_release ? 'enabled' : 'disabled'}")
+
+    # Validate version string is not already READY_FOR_SALE (avoids silent rejection)
+    validate_ios_version_string!(@api_key, get_bundle_id(client_name)) if @api_key
 
     # Validate build number before uploading (avoids wasting builds)
     validate_ios_build_number!(@api_key, get_bundle_id(client_name)) if @api_key
