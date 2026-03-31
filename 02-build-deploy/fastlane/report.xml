@@ -5,22 +5,22 @@
     
     
       
-      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000736">
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.002275">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="1: google_play_track_version_codes" time="3.02914">
+      <testcase classname="fastlane.lanes" name="1: app_store_connect_api_key" time="0.006865">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="2: upload_to_play_store" time="147.117646">
+      <testcase classname="fastlane.lanes" name="2: app_store_build_number" time="1.955255">
         
       </testcase>
     
       
-      <testcase classname="fastlane.lanes" name="3: firebase crashlytics:symbols:upload --app=1:468754078810:android:49610d3dca56b11f538c63 ./../../../loyalty-app/clients/na-rede/debug-symbols/0.1.1_14/android" time="42.051399">
+      <testcase classname="fastlane.lanes" name="3: upload_to_testflight" time="158.76344">
         
       </testcase>
     

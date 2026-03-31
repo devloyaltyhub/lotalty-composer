@@ -133,6 +133,46 @@ List existing APNs keys in Apple Developer account
 
 Revoke an APNs key
 
+### driver_android_build
+
+```sh
+[bundle exec] fastlane driver_android_build
+```
+
+Build Driver Android AAB
+
+### driver_android_deploy_internal
+
+```sh
+[bundle exec] fastlane driver_android_deploy_internal
+```
+
+Deploy Driver to Play Store (Internal)
+
+### driver_shorebird_release
+
+```sh
+[bundle exec] fastlane driver_shorebird_release
+```
+
+Create Shorebird release for Driver
+
+### driver_shorebird_patch
+
+```sh
+[bundle exec] fastlane driver_shorebird_patch
+```
+
+Create Shorebird patch for Driver
+
+### driver_android_deploy_production
+
+```sh
+[bundle exec] fastlane driver_android_deploy_production
+```
+
+Deploy Driver to Play Store (Production)
+
 ----
 
 
