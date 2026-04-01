@@ -1,5 +1,6 @@
-const chalk = require("chalk");
 const admin = require("firebase-admin");
+const logger = require("../../shared/utils/logger");
+const { withRetry } = require("../../shared/utils/retry-helpers");
 
 function getDefaultVersionarte() {
   const platformConfig = {
@@ -22,10 +23,6 @@ function getDefaultVersionarte() {
   };
 }
 
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 class AppConfigSetup {
   constructor(firebaseApp) {
     if (!firebaseApp) {
@@ -45,9 +42,16 @@ class AppConfigSetup {
    * @param {Object} config.planLimits - Plan-based limits
    */
   async setupAppConfig(config) {
-    const { featureFlags, clarityProjectId, clientCode, clientName, planType, planLimits } = config;
+    const {
+      featureFlags,
+      clarityProjectId,
+      clientCode,
+      clientName,
+      planType,
+      planLimits,
+    } = config;
 
-    console.log(chalk.blue("\n📡 Setting up App Config (Firestore)..."));
+    logger.info("Setting up App Config (Firestore)...");
 
     try {
       const configData = {
@@ -63,13 +67,11 @@ class AppConfigSetup {
       const db = admin.firestore(this.app);
       await db.collection("App_Config").doc("config").set(configData);
 
-      console.log(
-        chalk.green(`  ✓ App Config document written for ${clientCode}`),
-      );
+      logger.success(`App Config document written for ${clientCode}`);
 
       await this.validateAppConfig(featureFlags, clarityProjectId);
 
-      console.log(chalk.green("✓ App Config setup completed successfully"));
+      logger.success("App Config setup completed successfully");
 
       return {
         featureFlags,
@@ -78,10 +80,7 @@ class AppConfigSetup {
         versionarte: getDefaultVersionarte(),
       };
     } catch (error) {
-      console.error(
-        chalk.red("✗ Failed to setup App Config:"),
-        error.message,
-      );
+      logger.error(`Failed to setup App Config: ${error.message}`);
       throw error;
     }
   }
@@ -90,53 +89,33 @@ class AppConfigSetup {
    * Validate that the App Config was written correctly
    */
   async validateAppConfig(expectedFeatureFlags, expectedClarityId) {
-    console.log(
-      chalk.blue("  → Validating App Config (this may take a moment)..."),
-    );
+    logger.info("Validating App Config (this may take a moment)...");
 
-    const maxRetries = 5;
-    const retryDelay = 2000;
+    try {
+      await withRetry(
+        async () => {
+          const db = admin.firestore(this.app);
+          const docSnap = await db.collection("App_Config").doc("config").get();
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        const db = admin.firestore(this.app);
-        const docSnap = await db.collection("App_Config").doc("config").get();
+          if (!docSnap.exists) {
+            throw new Error("App_Config/config document not found");
+          }
 
-        if (!docSnap.exists) {
-          throw new Error("App_Config/config document not found");
-        }
+          const data = docSnap.data();
+          this.validateDocumentFields(data);
+          this.validateFeatureFlags(data, expectedFeatureFlags);
+          this.validateClarityProjectId(data, expectedClarityId);
+        },
+        { maxRetries: 5, delayMs: 2000 },
+      );
 
-        const data = docSnap.data();
-
-        this.validateDocumentFields(data);
-        this.validateFeatureFlags(data, expectedFeatureFlags);
-        this.validateClarityProjectId(data, expectedClarityId);
-
-        console.log(chalk.green("  ✓ App Config validated successfully"));
-        return true;
-      } catch (error) {
-        if (attempt < maxRetries) {
-          console.log(
-            chalk.yellow(
-              `  ⚠ Validation attempt ${attempt}/${maxRetries} failed, retrying...`,
-            ),
-          );
-          await sleep(retryDelay);
-        } else {
-          console.log(
-            chalk.yellow(
-              "  ⚠ App Config validation timed out, but document was written",
-            ),
-          );
-          console.log(
-            chalk.yellow("    You can verify manually in Firebase Console"),
-          );
-          return false;
-        }
-      }
+      logger.success("App Config validated successfully");
+      return true;
+    } catch {
+      logger.warn("App Config validation timed out, but document was written");
+      logger.warn("You can verify manually in Firebase Console");
+      return false;
     }
-
-    return false;
   }
 
   /**
@@ -189,7 +168,7 @@ class AppConfigSetup {
   async updatePlanConfig(config) {
     const { planType, featureFlags, planLimits } = config;
 
-    console.log(chalk.blue("\n📡 Updating App Config for plan change..."));
+    logger.info("Updating App Config for plan change...");
 
     try {
       const db = admin.firestore(this.app);
@@ -204,9 +183,7 @@ class AppConfigSetup {
 
       await db.collection("App_Config").doc("config").update(updateData);
 
-      console.log(
-        chalk.green("  ✓ App Config updated for plan change"),
-      );
+      logger.success("App Config updated for plan change");
 
       return true;
     } catch (error) {

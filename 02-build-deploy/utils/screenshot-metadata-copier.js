@@ -1,16 +1,17 @@
-const fs = require('fs');
-const logger = require('../../shared/utils/logger');
+const fs = require("fs");
+const logger = require("../../shared/utils/logger");
 const {
   PROJECT_CONFIGS,
   IOS_DEVICES,
   ANDROID_DEVICES,
   getProjectConfig,
-} = require('./screenshot-device-configs');
-const ScreenshotAndroidCopier = require('./screenshot-android-copier');
-const ScreenshotIosCopier = require('./screenshot-ios-copier');
+} = require("./screenshot-device-configs");
+const ScreenshotAndroidCopier = require("./screenshot-android-copier");
+const ScreenshotIosCopier = require("./screenshot-ios-copier");
+const { removeDir } = require("./screenshot-fs-utils");
 
 class ScreenshotMetadataCopier {
-  constructor(clientCode, repoPath = process.cwd(), projectKey = 'app') {
+  constructor(clientCode, repoPath = process.cwd(), projectKey = "app") {
     this.clientCode = clientCode;
     this.repoPath = repoPath;
     this.projectKey = projectKey;
@@ -25,25 +26,14 @@ class ScreenshotMetadataCopier {
     this.generateAndroid = this.projectConfig.generateAndroid;
     this.cleanupAfterCopy = this.projectConfig.cleanupAfterCopy;
 
-    this.androidCopier = new ScreenshotAndroidCopier(this.mockupsDir, this.outputMetadataDir);
-    this.iosCopier = new ScreenshotIosCopier(this.mockupsDir, this.outputMetadataDir);
-  }
-
-  removeDir(dir) {
-    if (!fs.existsSync(dir)) {
-      return;
-    }
-
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const dirPath = `${dir}/${entry.name}`;
-      if (entry.isDirectory()) {
-        this.removeDir(dirPath);
-      } else {
-        fs.unlinkSync(dirPath);
-      }
-    }
-    fs.rmdirSync(dir);
+    this.androidCopier = new ScreenshotAndroidCopier(
+      this.mockupsDir,
+      this.outputMetadataDir,
+    );
+    this.iosCopier = new ScreenshotIosCopier(
+      this.mockupsDir,
+      this.outputMetadataDir,
+    );
   }
 
   cleanupScreenshotsDir() {
@@ -51,10 +41,10 @@ class ScreenshotMetadataCopier {
       return;
     }
 
-    logger.startSpinner('Limpando pasta temporaria de screenshots...');
+    logger.startSpinner("Limpando pasta temporaria de screenshots...");
     try {
-      this.removeDir(this.screenshotsDir);
-      logger.succeedSpinner('Pasta white_label_app/screenshots/ removida');
+      removeDir(this.screenshotsDir);
+      logger.succeedSpinner("Pasta white_label_app/screenshots/ removida");
     } catch (error) {
       logger.failSpinner(`Erro ao limpar pasta screenshots: ${error.message}`);
     }
@@ -65,17 +55,21 @@ class ScreenshotMetadataCopier {
 
     if (!fs.existsSync(this.mockupsDir)) {
       logger.error(`Diretorio de mockups nao encontrado: ${this.mockupsDir}`);
-      logger.info('Execute o pipeline de screenshots primeiro para gerar os mockups');
+      logger.info(
+        "Execute o pipeline de screenshots primeiro para gerar os mockups",
+      );
       return { android: { count: 0 }, ios: {} };
     }
 
     const results = {
-      android: this.generateAndroid ? this.androidCopier.copyToAndroid() : { skipped: true },
+      android: this.generateAndroid
+        ? this.androidCopier.copyToAndroid()
+        : { skipped: true },
       ios: this.generateIos ? this.iosCopier.copyToIos() : { skipped: true },
     };
 
     logger.blank();
-    logger.info('Screenshots copiados:');
+    logger.info("Screenshots copiados:");
 
     if (this.generateAndroid) {
       for (const [deviceKey, device] of Object.entries(ANDROID_DEVICES)) {
@@ -86,11 +80,14 @@ class ScreenshotMetadataCopier {
         logger.keyValue(`  Android Feature Graphic`, `1 arquivo (1024x500)`);
       }
     } else {
-      logger.info('  Android: ignorado (projeto não gera iOS)');
+      logger.info("  Android: ignorado (projeto não gera iOS)");
     }
 
     if (this.generateIos) {
-      const iosTotal = Object.values(results.ios).reduce((sum, r) => sum + (r?.count || 0), 0);
+      const iosTotal = Object.values(results.ios).reduce(
+        (sum, r) => sum + (r?.count || 0),
+        0,
+      );
       logger.keyValue(`  iOS (pt-BR/)`, `${iosTotal} arquivos`);
       for (const [deviceKey, device] of Object.entries(IOS_DEVICES)) {
         const count = results.ios[deviceKey]?.count || 0;
@@ -99,13 +96,15 @@ class ScreenshotMetadataCopier {
         }
       }
     } else {
-      logger.info('  iOS: ignorado (projeto não gera iOS)');
+      logger.info("  iOS: ignorado (projeto não gera iOS)");
     }
 
     logger.blank();
     logger.info(`Destino: ${this.outputMetadataDir}`);
     if (this.generateIos) {
-      logger.info(`iOS: Screenshots em metadata/ios/pt-BR/ (Fastlane detecta device por resolucao)`);
+      logger.info(
+        `iOS: Screenshots em metadata/ios/pt-BR/ (Fastlane detecta device por resolucao)`,
+      );
     }
 
     if (this.cleanupAfterCopy) {

@@ -1,19 +1,21 @@
-const admin = require('firebase-admin');
-const logger = require('../../shared/utils/logger');
-const config = require('../config');
+const admin = require("firebase-admin");
+const logger = require("../../shared/utils/logger");
+const config = require("../config");
 const {
   resolveServiceAccountPath,
   getMasterServiceAccountPath,
   getMasterProjectId,
-} = require('./firebase-path-utils');
-const { deployFirestoreRules, deployFirestoreIndexes } = require('./firebase-deploy-utils');
-const dataUtils = require('./firebase-data-utils');
+} = require("./firebase-path-utils");
+const {
+  deployFirestoreRules,
+  deployFirestoreIndexes,
+} = require("./firebase-deploy-utils");
+const dataUtils = require("./firebase-data-utils");
 
 class FirebaseClient {
   constructor() {
     this.apps = new Map();
     this.masterApp = null;
-    this.masterInitializing = null;
     this.clientInitializing = new Map();
     this.maxConnections = config.firebase.maxConnections;
     this.lastUsed = new Map();
@@ -21,69 +23,51 @@ class FirebaseClient {
     this.databaseIds = new Map();
   }
 
-  async initializeMasterFirebase() {
+  initializeMasterFirebase() {
+    if (!this.masterApp) {
+      this._initializeMaster();
+    }
+    return this.masterApp;
+  }
+
+  _initializeMaster() {
     if (this.masterApp) {
       return this.masterApp;
     }
 
-    if (this.masterInitializing) {
-      await this.masterInitializing;
-      return this.masterApp;
+    const projectId = getMasterProjectId();
+    const serviceAccountPath = getMasterServiceAccountPath();
+
+    if (!projectId) {
+      throw new Error("MASTER_FIREBASE_PROJECT_ID is not set");
     }
 
-    this.masterInitializing = this._initializeMaster();
-
-    try {
-      await this.masterInitializing;
-      return this.masterApp;
-    } finally {
-      this.masterInitializing = null;
+    if (!serviceAccountPath) {
+      throw new Error(
+        "MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set",
+      );
     }
+
+    const resolvedPath = resolveServiceAccountPath(serviceAccountPath);
+    const serviceAccount = require(resolvedPath);
+
+    this.masterApp = admin.initializeApp(
+      {
+        credential: admin.credential.cert(serviceAccount),
+        projectId: projectId,
+      },
+      "master",
+    );
+
+    logger.info(`Master Firebase initialized: ${projectId}`);
+    return this.masterApp;
   }
 
-  _initializeMaster() {
-    return new Promise((resolve, reject) => {
-      if (this.masterApp) {
-        resolve(this.masterApp);
-        return;
-      }
-
-      const projectId = getMasterProjectId();
-      const serviceAccountPath = getMasterServiceAccountPath();
-
-      if (!projectId) {
-        reject(new Error('MASTER_FIREBASE_PROJECT_ID is not set'));
-        return;
-      }
-
-      if (!serviceAccountPath) {
-        reject(
-          new Error('MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set')
-        );
-        return;
-      }
-
-      try {
-        const resolvedPath = resolveServiceAccountPath(serviceAccountPath);
-        const serviceAccount = require(resolvedPath);
-
-        this.masterApp = admin.initializeApp(
-          {
-            credential: admin.credential.cert(serviceAccount),
-            projectId: projectId,
-          },
-          'master'
-        );
-
-        logger.info(`Master Firebase initialized: ${projectId}`);
-        resolve(this.masterApp);
-      } catch (error) {
-        reject(new Error(`Failed to initialize Master Firebase: ${error.message}`));
-      }
-    });
-  }
-
-  async initializeClientFirebase(clientCode, firebaseOptions, customCredentialsPath = null) {
+  async initializeClientFirebase(
+    clientCode,
+    firebaseOptions,
+    customCredentialsPath = null,
+  ) {
     if (this.apps.has(clientCode)) {
       this.lastUsed.set(clientCode, Date.now());
       return this.apps.get(clientCode);
@@ -98,7 +82,11 @@ class FirebaseClient {
       throw new Error(`Initialization failed for ${clientCode}`);
     }
 
-    const initPromise = this._initializeClient(clientCode, firebaseOptions, customCredentialsPath);
+    const initPromise = this._initializeClient(
+      clientCode,
+      firebaseOptions,
+      customCredentialsPath,
+    );
     this.clientInitializing.set(clientCode, initPromise);
 
     try {
@@ -106,8 +94,8 @@ class FirebaseClient {
         const timeout = setTimeout(() => {
           reject(
             new Error(
-              `Firebase initialization timeout for ${clientCode} after ${config.firebase.initializationTimeout}ms`
-            )
+              `Firebase initialization timeout for ${clientCode} after ${config.firebase.initializationTimeout}ms`,
+            ),
           );
         }, config.firebase.initializationTimeout);
         this.initializationTimeouts.set(clientCode, timeout);
@@ -120,7 +108,9 @@ class FirebaseClient {
       this.apps.delete(clientCode);
       this.lastUsed.delete(clientCode);
       this._clearTimeout(clientCode);
-      logger.error(`Failed to initialize Firebase for ${clientCode}: ${error.message}`);
+      logger.error(
+        `Failed to initialize Firebase for ${clientCode}: ${error.message}`,
+      );
       throw error;
     } finally {
       this.clientInitializing.delete(clientCode);
@@ -135,7 +125,11 @@ class FirebaseClient {
     }
   }
 
-  async _initializeClient(clientCode, firebaseOptions, customCredentialsPath = null) {
+  async _initializeClient(
+    clientCode,
+    firebaseOptions,
+    customCredentialsPath = null,
+  ) {
     if (this.apps.has(clientCode)) {
       this.lastUsed.set(clientCode, Date.now());
       return this.apps.get(clientCode);
@@ -154,10 +148,12 @@ class FirebaseClient {
       serviceAccountPath = getMasterServiceAccountPath();
       if (!serviceAccountPath) {
         throw new Error(
-          'MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set'
+          "MASTER_FIREBASE_SERVICE_ACCOUNT or GOOGLE_APPLICATION_CREDENTIALS is not set",
         );
       }
-      logger.warn(`Using master service account for ${clientCode} (may cause auth issues)`);
+      logger.warn(
+        `Using master service account for ${clientCode} (may cause auth issues)`,
+      );
     }
 
     const resolvedPath = resolveServiceAccountPath(serviceAccountPath);
@@ -168,13 +164,13 @@ class FirebaseClient {
         credential: admin.credential.cert(serviceAccount),
         projectId: firebaseOptions.projectId,
       },
-      `client-${clientCode}`
+      `client-${clientCode}`,
     );
 
     this.apps.set(clientCode, app);
     this.lastUsed.set(clientCode, Date.now());
     logger.info(
-      `Client Firebase initialized: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`
+      `Client Firebase initialized: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`,
     );
     return app;
   }
@@ -206,16 +202,16 @@ class FirebaseClient {
       this.apps.delete(clientCode);
       this.lastUsed.delete(clientCode);
       logger.info(
-        `Connection closed: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`
+        `Connection closed: ${clientCode} (${this.apps.size}/${this.maxConnections} connections)`,
       );
     } catch (error) {
       logger.warn(`Failed to close connection ${clientCode}: ${error.message}`);
     }
   }
 
-  async getMasterFirestore() {
+  getMasterFirestore() {
     if (!this.masterApp) {
-      await this.initializeMasterFirebase();
+      this.initializeMasterFirebase();
     }
     return admin.firestore(this.masterApp);
   }
@@ -228,44 +224,62 @@ class FirebaseClient {
 
     const databaseId = this.databaseIds.get(clientCode);
     if (databaseId) {
-      const { getFirestore } = require('firebase-admin/firestore');
+      const { getFirestore } = require("firebase-admin/firestore");
       return getFirestore(app, databaseId);
     }
 
     return admin.firestore(app);
   }
 
-  async saveClientToMaster(clientCode, firebaseOptions, isActive = true, tinifyApiKey = null, planType = 'profissional') {
-    const firestore = await this.getMasterFirestore();
-    return dataUtils.saveClientToMaster(firestore, clientCode, firebaseOptions, isActive, tinifyApiKey, planType);
+  async saveClientToMaster(
+    clientCode,
+    firebaseOptions,
+    isActive = true,
+    tinifyApiKey = null,
+    planType = "profissional",
+  ) {
+    const firestore = this.getMasterFirestore();
+    return dataUtils.saveClientToMaster(
+      firestore,
+      clientCode,
+      firebaseOptions,
+      isActive,
+      tinifyApiKey,
+      planType,
+    );
   }
 
   async updateClientPlan(clientCode, newPlanType, previousPlanType = null) {
-    const firestore = await this.getMasterFirestore();
-    return dataUtils.updateClientPlan(firestore, clientCode, newPlanType, previousPlanType);
+    const firestore = this.getMasterFirestore();
+    return dataUtils.updateClientPlan(
+      firestore,
+      clientCode,
+      newPlanType,
+      previousPlanType,
+    );
   }
 
   async getAllClients(activeOnly = true) {
-    const firestore = await this.getMasterFirestore();
+    const firestore = this.getMasterFirestore();
     return dataUtils.getAllClients(firestore, activeOnly);
   }
 
   async getClientFromMaster(clientCode) {
-    const firestore = await this.getMasterFirestore();
+    const firestore = this.getMasterFirestore();
     return dataUtils.getClientFromMaster(firestore, clientCode);
   }
 
   async clientExists(clientCode) {
-    const firestore = await this.getMasterFirestore();
+    const firestore = this.getMasterFirestore();
     return dataUtils.clientExists(firestore, clientCode);
   }
 
-  async seedClientData(clientCode, data) {
+  seedClientData(clientCode, data) {
     const firestore = this.getClientFirestore(clientCode);
     return dataUtils.seedClientData(firestore, data);
   }
 
-  async createAdminUser(clientCode, adminData) {
+  createAdminUser(clientCode, adminData) {
     const firestore = this.getClientFirestore(clientCode);
     return dataUtils.createAdminUser(firestore, adminData);
   }

@@ -1,0 +1,35 @@
+{
+  "name": "@loyaltyhub/backup",
+  "version": "1.0.0",
+  "description": "Backup Module for Loyalty Hub - Firestore and Storage backup to GitHub",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "backup",
+    "firestore",
+    "storage",
+    "github",
+    "loyalty"
+  ],
+  "author": "Loyalty Hub",
+  "license": "UNLICENSED",
+  "private": true,
+  "peerDependencies": {
+    "firebase-admin": ">=12.0.0",
+    "pg": ">=8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/pg": "^8.16.0",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

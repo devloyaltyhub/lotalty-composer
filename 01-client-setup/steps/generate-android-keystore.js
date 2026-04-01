@@ -1,6 +1,7 @@
-const fs = require('fs');
-const path = require('path');
-const chalk = require('chalk');
+const fs = require("fs");
+const path = require("path");
+const logger = require("../../shared/utils/logger");
+const { ensureDir } = require("../../shared/utils/fs-utils");
 
 const {
   KEYSTORE_BASE_CONFIG,
@@ -9,13 +10,13 @@ const {
   getSHA256Fingerprint,
   validateKeystore,
   generateSingleKeystore,
-} = require('./android/keystore-operations');
+} = require("./android/keystore-operations");
 
 const {
   getLoyaltyCredentialsPath,
   generateReleasePassword,
   createKeystorePropertiesContent,
-} = require('./android/credentials-helpers');
+} = require("./android/credentials-helpers");
 
 /**
  * Generate Android Keystores for Client (Debug + Release)
@@ -33,14 +34,14 @@ const {
  */
 
 const DEBUG_KEYSTORE_CONFIG = {
-  password: 'android-debug-key',
-  alias: 'androiddebugkey',
-  filename: 'keystore-debug.jks',
+  password: "android-debug-key",
+  alias: "androiddebugkey",
+  filename: "keystore-debug.jks",
 };
 
 const RELEASE_KEYSTORE_CONFIG = {
-  alias: 'loyaltyhub-release',
-  filename: 'keystore-release.jks',
+  alias: "loyaltyhub-release",
+  filename: "keystore-release.jks",
 };
 
 /**
@@ -48,8 +49,8 @@ const RELEASE_KEYSTORE_CONFIG = {
  */
 function ensureClientCredentialsDir(clientCredentialsDir) {
   if (!fs.existsSync(clientCredentialsDir)) {
-    fs.mkdirSync(clientCredentialsDir, { recursive: true });
-    console.log(chalk.cyan(`   Created directory: ${clientCredentialsDir}`));
+    ensureDir(clientCredentialsDir);
+    logger.info(`Created directory: ${clientCredentialsDir}`);
   }
 }
 
@@ -58,11 +59,14 @@ function ensureClientCredentialsDir(clientCredentialsDir) {
  */
 function createDebugConfig(clientCredentialsDir) {
   return {
-    keystorePath: path.join(clientCredentialsDir, DEBUG_KEYSTORE_CONFIG.filename),
+    keystorePath: path.join(
+      clientCredentialsDir,
+      DEBUG_KEYSTORE_CONFIG.filename,
+    ),
     password: DEBUG_KEYSTORE_CONFIG.password,
     alias: DEBUG_KEYSTORE_CONFIG.alias,
-    dname: formatDname('debug'),
-    type: 'DEBUG',
+    dname: formatDname("debug"),
+    type: "DEBUG",
   };
 }
 
@@ -71,18 +75,25 @@ function createDebugConfig(clientCredentialsDir) {
  */
 function createReleaseConfig(clientCredentialsDir, clientCode) {
   return {
-    keystorePath: path.join(clientCredentialsDir, RELEASE_KEYSTORE_CONFIG.filename),
+    keystorePath: path.join(
+      clientCredentialsDir,
+      RELEASE_KEYSTORE_CONFIG.filename,
+    ),
     password: generateReleasePassword(clientCode),
     alias: RELEASE_KEYSTORE_CONFIG.alias,
-    dname: formatDname('release'),
-    type: 'RELEASE',
+    dname: formatDname("release"),
+    type: "RELEASE",
   };
 }
 
 /**
  * Sets secure file permissions on keystore files
  */
-function setSecurePermissions(keystorePropertiesPath, debugKeystorePath, releaseKeystorePath) {
+function setSecurePermissions(
+  keystorePropertiesPath,
+  debugKeystorePath,
+  releaseKeystorePath,
+) {
   fs.chmodSync(keystorePropertiesPath, 0o600);
   fs.chmodSync(debugKeystorePath, 0o600);
   fs.chmodSync(releaseKeystorePath, 0o600);
@@ -91,54 +102,74 @@ function setSecurePermissions(keystorePropertiesPath, debugKeystorePath, release
 /**
  * Displays completion summary with SHA-256 fingerprints
  */
-function displayCompletionSummary(clientCredentialsDir, debugResult, releaseResult) {
-  console.log(chalk.green('\n✅ Android keystores setup complete!'));
-  console.log(chalk.cyan('\n   Keystores saved to:'));
-  console.log(chalk.gray(`   ${clientCredentialsDir}`));
-  console.log(chalk.yellow('\n   IMPORTANT:'));
-  console.log(chalk.yellow('   - Keep the keystore files secure'));
-  console.log(
-    chalk.yellow('   - Keystores are in loyalty-credentials repo (NOT committed to loyalty-composer)')
+function displayCompletionSummary(
+  clientCredentialsDir,
+  debugResult,
+  releaseResult,
+) {
+  logger.success("Android keystores setup complete!");
+  logger.info(`Keystores saved to: ${clientCredentialsDir}`);
+  logger.warn("IMPORTANT:");
+  logger.log("   - Keep the keystore files secure");
+  logger.log(
+    "   - Keystores are in loyalty-credentials repo (NOT committed to loyalty-composer)",
   );
-  console.log(chalk.yellow('   - Register SHA-256 fingerprints in Firebase Console for App Check'));
-  console.log(chalk.yellow('\n   SHA-256 Fingerprints to add to Firebase:'));
-  console.log(chalk.white(`   Debug:   ${debugResult.sha256}`));
-  console.log(chalk.white(`   Release: ${releaseResult.sha256}`));
+  logger.log(
+    "   - Register SHA-256 fingerprints in Firebase Console for App Check",
+  );
+  logger.info("SHA-256 Fingerprints to add to Firebase:");
+  logger.keyValue("   Debug", debugResult.sha256);
+  logger.keyValue("   Release", releaseResult.sha256);
 }
 
 /**
  * Generates both debug and release keystores for a client
  */
 async function generateKeystore(clientCode, _clientsDir) {
-  console.log(chalk.blue('\n   Generating Android Keystores...'));
-  console.log(chalk.gray('   ' + '-'.repeat(47)));
+  logger.section("Generating Android Keystores");
 
   try {
     if (!checkKeytoolAvailable()) {
-      throw new Error('keytool not available');
+      throw new Error("keytool not available");
     }
 
     const credentialsPath = getLoyaltyCredentialsPath();
-    const clientCredentialsDir = path.join(credentialsPath, 'clients', clientCode, 'android');
+    const clientCredentialsDir = path.join(
+      credentialsPath,
+      "clients",
+      clientCode,
+      "android",
+    );
 
     ensureClientCredentialsDir(clientCredentialsDir);
 
     const debugConfig = createDebugConfig(clientCredentialsDir);
     const releaseConfig = createReleaseConfig(clientCredentialsDir, clientCode);
 
-    console.log(chalk.cyan('\n   Debug Keystore:'));
+    logger.info("Debug Keystore:");
     const debugResult = await generateSingleKeystore(debugConfig);
 
-    console.log(chalk.cyan('\n   Release Keystore:'));
+    logger.info("Release Keystore:");
     const releaseResult = await generateSingleKeystore(releaseConfig);
 
-    const keystorePropertiesPath = path.join(clientCredentialsDir, 'keystore.properties');
-    const propertiesContent = createKeystorePropertiesContent(clientCode, debugResult, releaseResult);
+    const keystorePropertiesPath = path.join(
+      clientCredentialsDir,
+      "keystore.properties",
+    );
+    const propertiesContent = createKeystorePropertiesContent(
+      clientCode,
+      debugResult,
+      releaseResult,
+    );
 
     fs.writeFileSync(keystorePropertiesPath, propertiesContent);
-    setSecurePermissions(keystorePropertiesPath, debugResult.keystorePath, releaseResult.keystorePath);
+    setSecurePermissions(
+      keystorePropertiesPath,
+      debugResult.keystorePath,
+      releaseResult.keystorePath,
+    );
 
-    console.log(chalk.green('\n   keystore.properties created with secure permissions'));
+    logger.success("keystore.properties created with secure permissions");
 
     displayCompletionSummary(clientCredentialsDir, debugResult, releaseResult);
 
@@ -149,7 +180,7 @@ async function generateKeystore(clientCode, _clientsDir) {
       clientCredentialsDir,
     };
   } catch (error) {
-    console.error(chalk.red('\n   Failed to generate keystores:'), error.message);
+    logger.error(`Failed to generate keystores: ${error.message}`);
     throw error;
   }
 }

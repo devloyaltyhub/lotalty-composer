@@ -16,8 +16,8 @@ const {
   FirestoreExporter,
   StorageExporter,
   GitHubBatchUploader,
-} = require('@loyaltyhub/backup');
-const { TelegramSender } = require('@loyaltyhub/reports');
+} = require('./modules/backup');
+const { TelegramSender } = require('./telegram-sender');
 const { CONFIG, validateConfig } = require('./config');
 
 const credentialsDir = join(process.cwd(), 'credentials');

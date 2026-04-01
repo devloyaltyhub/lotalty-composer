@@ -188,7 +188,7 @@ describe('business-type-manager', () => {
         const result = FileSystemService.ensureDirectoryExists('/existing/dir');
 
         expect(result).toBe(false);
-        expect(fs.mkdirSync).not.toHaveBeenCalled();
+        expect(fs.mkdirSync).toHaveBeenCalledWith('/existing/dir', { recursive: true });
       });
     });
 

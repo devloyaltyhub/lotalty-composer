@@ -1,46 +1,20 @@
-const fs = require('fs');
-const path = require('path');
-const logger = require('../../shared/utils/logger');
-const { IOS_DEVICES, SOURCE_FOLDER_MAPPING } = require('./screenshot-device-configs');
+const fs = require("fs");
+const path = require("path");
+const logger = require("../../shared/utils/logger");
+const {
+  IOS_DEVICES,
+  SOURCE_FOLDER_MAPPING,
+} = require("./screenshot-device-configs");
+const {
+  ensureDir,
+  getScreenshotFiles,
+  removeDir,
+} = require("./screenshot-fs-utils");
 
 class ScreenshotIosCopier {
   constructor(mockupsDir, outputMetadataDir) {
     this.mockupsDir = mockupsDir;
     this.outputMetadataDir = outputMetadataDir;
-  }
-
-  ensureDir(dir) {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-  }
-
-  getScreenshotFiles(sourceDir) {
-    if (!fs.existsSync(sourceDir)) {
-      return [];
-    }
-
-    return fs
-      .readdirSync(sourceDir)
-      .filter((file) => file.endsWith('.png'))
-      .sort();
-  }
-
-  removeDir(dir) {
-    if (!fs.existsSync(dir)) {
-      return;
-    }
-
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        this.removeDir(fullPath);
-      } else {
-        fs.unlinkSync(fullPath);
-      }
-    }
-    fs.rmdirSync(dir);
   }
 
   copyIosScreenshots(deviceKey, sourceSubdir, destDir) {
@@ -51,7 +25,7 @@ class ScreenshotIosCopier {
     }
 
     const sourceDir = path.join(this.mockupsDir, sourceSubdir);
-    const files = this.getScreenshotFiles(sourceDir);
+    const files = getScreenshotFiles(sourceDir);
 
     if (files.length === 0) {
       return { count: 0, files: [] };
@@ -77,19 +51,26 @@ class ScreenshotIosCopier {
   }
 
   copyToIos() {
-    logger.startSpinner('Copiando screenshots para iOS...');
+    logger.startSpinner("Copiando screenshots para iOS...");
 
-    const destDir = path.join(this.outputMetadataDir, 'ios', 'pt-BR');
-    this.ensureDir(destDir);
+    const destDir = path.join(this.outputMetadataDir, "ios", "pt-BR");
+    ensureDir(destDir);
 
-    const existingFiles = fs.readdirSync(destDir).filter((f) => f.endsWith('.png'));
+    const existingFiles = fs
+      .readdirSync(destDir)
+      .filter((f) => f.endsWith(".png"));
     existingFiles.forEach((file) => fs.unlinkSync(path.join(destDir, file)));
 
-    const oldDeviceFolders = ['APP_IPHONE_55', 'APP_IPHONE_65', 'APP_IPHONE_67', 'APP_IPAD_PRO_129'];
+    const oldDeviceFolders = [
+      "APP_IPHONE_55",
+      "APP_IPHONE_65",
+      "APP_IPHONE_67",
+      "APP_IPAD_PRO_129",
+    ];
     for (const folder of oldDeviceFolders) {
       const oldPath = path.join(destDir, folder);
       if (fs.existsSync(oldPath)) {
-        this.removeDir(oldPath);
+        removeDir(oldPath);
         logger.info(`  Removida pasta antiga: ${folder}`);
       }
     }
@@ -100,7 +81,11 @@ class ScreenshotIosCopier {
     for (const deviceKey of Object.keys(IOS_DEVICES)) {
       const sourceSubdir = SOURCE_FOLDER_MAPPING[deviceKey];
       if (sourceSubdir) {
-        results[deviceKey] = this.copyIosScreenshots(deviceKey, sourceSubdir, destDir);
+        results[deviceKey] = this.copyIosScreenshots(
+          deviceKey,
+          sourceSubdir,
+          destDir,
+        );
         totalCount += results[deviceKey].count;
       } else {
         results[deviceKey] = { count: 0, files: [] };
@@ -108,11 +93,13 @@ class ScreenshotIosCopier {
     }
 
     if (totalCount === 0) {
-      logger.failSpinner('Nenhum screenshot encontrado para iOS');
+      logger.failSpinner("Nenhum screenshot encontrado para iOS");
     } else {
       const iPhoneCount = results.APP_IPHONE_67?.count || 0;
       const iPadCount = results.APP_IPAD_PRO_129?.count || 0;
-      logger.succeedSpinner(`iOS: ${iPhoneCount} iPhone + ${iPadCount} iPad screenshots copiados para pt-BR/`);
+      logger.succeedSpinner(
+        `iOS: ${iPhoneCount} iPhone + ${iPadCount} iPad screenshots copiados para pt-BR/`,
+      );
     }
 
     return results;

@@ -3,7 +3,7 @@
  * Tests Firebase initialization and connection management
  */
 
-jest.mock('firebase-admin', () => {
+jest.mock("firebase-admin", () => {
   const mockApp = {
     delete: jest.fn().mockResolvedValue(),
   };
@@ -14,7 +14,7 @@ jest.mock('firebase-admin', () => {
         set: jest.fn().mockResolvedValue(),
         get: jest.fn().mockResolvedValue({ exists: true, data: () => ({}) }),
       })),
-      add: jest.fn().mockResolvedValue({ id: 'test-id' }),
+      add: jest.fn().mockResolvedValue({ id: "test-id" }),
     })),
     batch: jest.fn(() => ({
       set: jest.fn(),
@@ -31,7 +31,7 @@ jest.mock('firebase-admin', () => {
   };
 });
 
-jest.mock('../../shared/utils/logger', () => ({
+jest.mock("../../shared/utils/logger", () => ({
   startSpinner: jest.fn(),
   succeedSpinner: jest.fn(),
   failSpinner: jest.fn(),
@@ -40,7 +40,7 @@ jest.mock('../../shared/utils/logger', () => ({
   error: jest.fn(),
 }));
 
-jest.mock('../../01-client-setup/config', () => ({
+jest.mock("../../01-client-setup/config", () => ({
   firebase: {
     maxConnections: 5,
     initializationTimeout: 30000,
@@ -50,7 +50,7 @@ jest.mock('../../01-client-setup/config', () => ({
 // We need to test the class behavior, not the singleton
 // So we'll create a new instance for testing
 
-describe('FirebaseClient', () => {
+describe("FirebaseClient", () => {
   let FirebaseClient;
   let firebaseClient;
   let admin;
@@ -60,35 +60,35 @@ describe('FirebaseClient', () => {
     jest.resetModules();
 
     // Re-require to get fresh instance
-    admin = require('firebase-admin');
+    admin = require("firebase-admin");
 
     // Create a fresh class for testing
     FirebaseClient = class {
       constructor() {
         this.apps = new Map();
         this.masterApp = null;
-        this.masterInitializing = null;
         this.clientInitializing = new Map();
         this.maxConnections = 5;
         this.lastUsed = new Map();
         this.initializationTimeouts = new Map();
       }
 
-      async initializeMasterFirebase() {
+      initializeMasterFirebase() {
         if (this.masterApp) return this.masterApp;
-        if (this.masterInitializing) {
-          await this.masterInitializing;
-          return this.masterApp;
-        }
 
         const projectId = process.env.MASTER_FIREBASE_PROJECT_ID;
-        if (!projectId) throw new Error('MASTER_FIREBASE_PROJECT_ID is not set');
+        if (!projectId)
+          throw new Error("MASTER_FIREBASE_PROJECT_ID is not set");
 
-        this.masterApp = admin.initializeApp({}, 'master');
+        this.masterApp = admin.initializeApp({}, "master");
         return this.masterApp;
       }
 
-      async initializeClientFirebase(clientCode, firebaseOptions, customCredentialsPath) {
+      async initializeClientFirebase(
+        clientCode,
+        firebaseOptions,
+        customCredentialsPath,
+      ) {
         if (this.apps.has(clientCode)) {
           this.lastUsed.set(clientCode, Date.now());
           return this.apps.get(clientCode);
@@ -131,9 +131,9 @@ describe('FirebaseClient', () => {
         }
       }
 
-      async getMasterFirestore() {
+      getMasterFirestore() {
         if (!this.masterApp) {
-          await this.initializeMasterFirebase();
+          this.initializeMasterFirebase();
         }
         return admin.firestore(this.masterApp);
       }
@@ -144,9 +144,14 @@ describe('FirebaseClient', () => {
         return admin.firestore(app);
       }
 
-      async saveClientToMaster(clientCode, firebaseOptions, isActive, tinifyApiKey) {
+      async saveClientToMaster(
+        clientCode,
+        firebaseOptions,
+        isActive,
+        tinifyApiKey,
+      ) {
         const firestore = await this.getMasterFirestore();
-        await firestore.collection('clients').doc(clientCode).set({
+        await firestore.collection("clients").doc(clientCode).set({
           isActive,
           firebase_options: firebaseOptions,
         });
@@ -155,7 +160,7 @@ describe('FirebaseClient', () => {
 
       async getClientFromMaster(clientCode) {
         const firestore = await this.getMasterFirestore();
-        const doc = await firestore.collection('clients').doc(clientCode).get();
+        const doc = await firestore.collection("clients").doc(clientCode).get();
         if (!doc.exists) return null;
         return doc.data();
       }
@@ -176,36 +181,36 @@ describe('FirebaseClient', () => {
     };
 
     firebaseClient = new FirebaseClient();
-    process.env.MASTER_FIREBASE_PROJECT_ID = 'test-master-project';
+    process.env.MASTER_FIREBASE_PROJECT_ID = "test-master-project";
   });
 
   afterEach(() => {
     delete process.env.MASTER_FIREBASE_PROJECT_ID;
   });
 
-  describe('constructor', () => {
-    test('initializes with empty apps map', () => {
+  describe("constructor", () => {
+    test("initializes with empty apps map", () => {
       expect(firebaseClient.apps.size).toBe(0);
     });
 
-    test('initializes with null masterApp', () => {
+    test("initializes with null masterApp", () => {
       expect(firebaseClient.masterApp).toBeNull();
     });
 
-    test('sets maxConnections from config', () => {
+    test("sets maxConnections from config", () => {
       expect(firebaseClient.maxConnections).toBe(5);
     });
   });
 
-  describe('initializeMasterFirebase()', () => {
-    test('initializes master Firebase app', async () => {
+  describe("initializeMasterFirebase()", () => {
+    test("initializes master Firebase app", async () => {
       const app = await firebaseClient.initializeMasterFirebase();
 
       expect(app).toBeDefined();
       expect(admin.initializeApp).toHaveBeenCalled();
     });
 
-    test('returns existing app if already initialized', async () => {
+    test("returns existing app if already initialized", async () => {
       await firebaseClient.initializeMasterFirebase();
       await firebaseClient.initializeMasterFirebase();
 
@@ -213,129 +218,133 @@ describe('FirebaseClient', () => {
       expect(admin.initializeApp).toHaveBeenCalledTimes(1);
     });
 
-    test('throws error when MASTER_FIREBASE_PROJECT_ID not set', async () => {
+    test("throws error when MASTER_FIREBASE_PROJECT_ID not set", () => {
       delete process.env.MASTER_FIREBASE_PROJECT_ID;
 
-      await expect(firebaseClient.initializeMasterFirebase()).rejects.toThrow(
-        'MASTER_FIREBASE_PROJECT_ID is not set'
+      expect(() => firebaseClient.initializeMasterFirebase()).toThrow(
+        "MASTER_FIREBASE_PROJECT_ID is not set",
       );
     });
   });
 
-  describe('initializeClientFirebase()', () => {
-    test('initializes client Firebase app', async () => {
-      const app = await firebaseClient.initializeClientFirebase('demo', {
-        projectId: 'demo-project',
+  describe("initializeClientFirebase()", () => {
+    test("initializes client Firebase app", async () => {
+      const app = await firebaseClient.initializeClientFirebase("demo", {
+        projectId: "demo-project",
       });
 
       expect(app).toBeDefined();
-      expect(firebaseClient.apps.has('demo')).toBe(true);
+      expect(firebaseClient.apps.has("demo")).toBe(true);
     });
 
-    test('returns existing app if already initialized', async () => {
-      await firebaseClient.initializeClientFirebase('demo', {});
-      await firebaseClient.initializeClientFirebase('demo', {});
+    test("returns existing app if already initialized", async () => {
+      await firebaseClient.initializeClientFirebase("demo", {});
+      await firebaseClient.initializeClientFirebase("demo", {});
 
       expect(firebaseClient.apps.size).toBe(1);
     });
 
-    test('updates lastUsed timestamp', async () => {
-      await firebaseClient.initializeClientFirebase('demo', {});
+    test("updates lastUsed timestamp", async () => {
+      await firebaseClient.initializeClientFirebase("demo", {});
 
-      expect(firebaseClient.lastUsed.has('demo')).toBe(true);
+      expect(firebaseClient.lastUsed.has("demo")).toBe(true);
     });
 
-    test('evicts LRU when max connections reached', async () => {
+    test("evicts LRU when max connections reached", async () => {
       firebaseClient.maxConnections = 2;
 
-      await firebaseClient.initializeClientFirebase('client1', {});
-      await firebaseClient.initializeClientFirebase('client2', {});
+      await firebaseClient.initializeClientFirebase("client1", {});
+      await firebaseClient.initializeClientFirebase("client2", {});
 
       // Update lastUsed for client2 to make client1 the LRU
-      firebaseClient.lastUsed.set('client1', Date.now() - 10000);
-      firebaseClient.lastUsed.set('client2', Date.now());
+      firebaseClient.lastUsed.set("client1", Date.now() - 10000);
+      firebaseClient.lastUsed.set("client2", Date.now());
 
-      await firebaseClient.initializeClientFirebase('client3', {});
+      await firebaseClient.initializeClientFirebase("client3", {});
 
-      expect(firebaseClient.apps.has('client1')).toBe(false);
-      expect(firebaseClient.apps.has('client3')).toBe(true);
+      expect(firebaseClient.apps.has("client1")).toBe(false);
+      expect(firebaseClient.apps.has("client3")).toBe(true);
     });
   });
 
-  describe('closeConnection()', () => {
-    test('closes and removes connection', async () => {
-      await firebaseClient.initializeClientFirebase('demo', {});
-      await firebaseClient.closeConnection('demo');
+  describe("closeConnection()", () => {
+    test("closes and removes connection", async () => {
+      await firebaseClient.initializeClientFirebase("demo", {});
+      await firebaseClient.closeConnection("demo");
 
-      expect(firebaseClient.apps.has('demo')).toBe(false);
-      expect(firebaseClient.lastUsed.has('demo')).toBe(false);
+      expect(firebaseClient.apps.has("demo")).toBe(false);
+      expect(firebaseClient.lastUsed.has("demo")).toBe(false);
     });
 
-    test('does nothing for non-existent connection', async () => {
-      await firebaseClient.closeConnection('nonexistent');
+    test("does nothing for non-existent connection", async () => {
+      await firebaseClient.closeConnection("nonexistent");
 
       expect(firebaseClient.apps.size).toBe(0);
     });
   });
 
-  describe('getMasterFirestore()', () => {
-    test('returns Firestore instance', async () => {
+  describe("getMasterFirestore()", () => {
+    test("returns Firestore instance", async () => {
       const firestore = await firebaseClient.getMasterFirestore();
 
       expect(firestore).toBeDefined();
       expect(admin.firestore).toHaveBeenCalled();
     });
 
-    test('initializes master if not initialized', async () => {
+    test("initializes master if not initialized", async () => {
       await firebaseClient.getMasterFirestore();
 
       expect(firebaseClient.masterApp).toBeDefined();
     });
   });
 
-  describe('getClientFirestore()', () => {
-    test('returns Firestore for initialized client', async () => {
-      await firebaseClient.initializeClientFirebase('demo', {});
-      const firestore = firebaseClient.getClientFirestore('demo');
+  describe("getClientFirestore()", () => {
+    test("returns Firestore for initialized client", async () => {
+      await firebaseClient.initializeClientFirebase("demo", {});
+      const firestore = firebaseClient.getClientFirestore("demo");
 
       expect(firestore).toBeDefined();
     });
 
-    test('throws error for uninitialized client', () => {
-      expect(() => firebaseClient.getClientFirestore('nonexistent')).toThrow(
-        'Client app not initialized: nonexistent'
+    test("throws error for uninitialized client", () => {
+      expect(() => firebaseClient.getClientFirestore("nonexistent")).toThrow(
+        "Client app not initialized: nonexistent",
       );
     });
   });
 
-  describe('saveClientToMaster()', () => {
-    test('saves client data to master Firestore', async () => {
-      const result = await firebaseClient.saveClientToMaster('demo', { projectId: 'demo' }, true);
+  describe("saveClientToMaster()", () => {
+    test("saves client data to master Firestore", async () => {
+      const result = await firebaseClient.saveClientToMaster(
+        "demo",
+        { projectId: "demo" },
+        true,
+      );
 
       expect(result).toBe(true);
     });
   });
 
-  describe('getClientFromMaster()', () => {
-    test('returns client data when exists', async () => {
-      const data = await firebaseClient.getClientFromMaster('demo');
+  describe("getClientFromMaster()", () => {
+    test("returns client data when exists", async () => {
+      const data = await firebaseClient.getClientFromMaster("demo");
 
       expect(data).toBeDefined();
     });
   });
 
-  describe('clientExists()', () => {
-    test('returns true when client exists', async () => {
-      const exists = await firebaseClient.clientExists('demo');
+  describe("clientExists()", () => {
+    test("returns true when client exists", async () => {
+      const exists = await firebaseClient.clientExists("demo");
 
       expect(exists).toBe(true);
     });
   });
 
-  describe('cleanup()', () => {
-    test('closes all connections', async () => {
-      await firebaseClient.initializeClientFirebase('client1', {});
-      await firebaseClient.initializeClientFirebase('client2', {});
+  describe("cleanup()", () => {
+    test("closes all connections", async () => {
+      await firebaseClient.initializeClientFirebase("client1", {});
+      await firebaseClient.initializeClientFirebase("client2", {});
       await firebaseClient.initializeMasterFirebase();
 
       firebaseClient.cleanup();

@@ -21,13 +21,32 @@ jest.mock("firebase-admin", () => ({
   firestore: mockFirestore,
 }));
 
-jest.mock("chalk", () => ({
-  blue: jest.fn((str) => str),
-  green: jest.fn((str) => str),
-  yellow: jest.fn((str) => str),
-  red: jest.fn((str) => str),
-  cyan: jest.fn((str) => str),
-  gray: jest.fn((str) => str),
+jest.mock("../../shared/utils/logger", () => ({
+  info: jest.fn(),
+  success: jest.fn(),
+  error: jest.fn(),
+  warn: jest.fn(),
+  section: jest.fn(),
+  startSpinner: jest.fn(),
+  succeedSpinner: jest.fn(),
+  failSpinner: jest.fn(),
+  blank: jest.fn(),
+  log: jest.fn(),
+}));
+
+jest.mock("../../shared/utils/retry-helpers", () => ({
+  withRetry: jest.fn(async (fn, options = {}) => {
+    const { maxRetries = 3 } = options;
+    let lastError;
+    for (let i = 1; i <= maxRetries; i++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+      }
+    }
+    throw lastError;
+  }),
 }));
 
 const AppConfigSetup = require("../../01-client-setup/steps/setup-app-config");

@@ -1,13 +1,12 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
+const { ensureDir } = require("../../../shared/utils/fs-utils");
 
 class FileSystemService {
   static ensureDirectoryExists(dirPath) {
-    if (!fs.existsSync(dirPath)) {
-      fs.mkdirSync(dirPath, { recursive: true });
-      return true;
-    }
-    return false;
+    const existed = fs.existsSync(dirPath);
+    ensureDir(dirPath);
+    return !existed;
   }
 
   static copyFile(sourcePath, targetPath) {
@@ -48,7 +47,7 @@ class FileSystemService {
   static writeFile(filePath, content) {
     const dir = path.dirname(filePath);
     this.ensureDirectoryExists(dir);
-    fs.writeFileSync(filePath, content, 'utf8');
+    fs.writeFileSync(filePath, content, "utf8");
   }
 }
 

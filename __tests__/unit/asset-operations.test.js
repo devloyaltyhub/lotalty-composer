@@ -339,12 +339,12 @@ flutter:
       expect(mkdirSyncSpy).toHaveBeenCalledWith('/new/dir', { recursive: true });
     });
 
-    test('does nothing if directory exists', () => {
+    test('is idempotent when directory already exists', () => {
       existsSyncSpy.mockReturnValue(true);
 
       assetOps.ensureDir('/existing/dir');
 
-      expect(mkdirSyncSpy).not.toHaveBeenCalled();
+      expect(mkdirSyncSpy).toHaveBeenCalledWith('/existing/dir', { recursive: true });
     });
   });
 

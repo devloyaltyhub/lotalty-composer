@@ -7,11 +7,11 @@
  * - android/credentials-helpers.js (paths, passwords, properties)
  */
 
-jest.mock('child_process', () => ({
+jest.mock("child_process", () => ({
   execSync: jest.fn(),
 }));
 
-jest.mock('fs', () => ({
+jest.mock("fs", () => ({
   existsSync: jest.fn(),
   mkdirSync: jest.fn(),
   writeFileSync: jest.fn(),
@@ -21,11 +21,11 @@ jest.mock('fs', () => ({
   readdirSync: jest.fn(),
 }));
 
-jest.mock('crypto', () => ({
+jest.mock("crypto", () => ({
   randomBytes: jest.fn(),
 }));
 
-jest.mock('chalk', () => ({
+jest.mock("chalk", () => ({
   blue: jest.fn((str) => str),
   green: jest.fn((str) => str),
   yellow: jest.fn((str) => str),
@@ -36,7 +36,7 @@ jest.mock('chalk', () => ({
 }));
 
 // Mock logger to prevent winston from trying to use mocked fs
-jest.mock('../../shared/utils/logger', () => ({
+jest.mock("../../shared/utils/logger", () => ({
   info: jest.fn(),
   warn: jest.fn(),
   error: jest.fn(),
@@ -44,6 +44,7 @@ jest.mock('../../shared/utils/logger', () => ({
   success: jest.fn(),
   section: jest.fn(),
   blank: jest.fn(),
+  log: jest.fn(),
   keyValue: jest.fn(),
   startSpinner: jest.fn(),
   succeedSpinner: jest.fn(),
@@ -51,7 +52,7 @@ jest.mock('../../shared/utils/logger', () => ({
 }));
 
 // Mock error-handler to prevent it from loading logger
-jest.mock('../../shared/utils/error-handler', () => ({
+jest.mock("../../shared/utils/error-handler", () => ({
   ErrorHandler: { retry: jest.fn((fn) => fn()) },
   ValidationError: class ValidationError extends Error {
     constructor(message, metadata) {
@@ -63,69 +64,77 @@ jest.mock('../../shared/utils/error-handler', () => ({
 }));
 
 // Mock input-validator to prevent loading chain
-jest.mock('../../01-client-setup/shared/input-validator', () => ({
+jest.mock("../../01-client-setup/shared/input-validator", () => ({
   validateEnvironmentVariables: jest.fn(),
 }));
 
 // Mock paths to provide LOYALTY_CREDENTIALS_ROOT
-jest.mock('../../shared/utils/paths', () => {
-  const path = require('path');
-  const mockRoot = path.resolve(__dirname, '..', '..', '..', 'loyalty-credentials');
+jest.mock("../../shared/utils/paths", () => {
+  const path = require("path");
+  const mockRoot = path.resolve(
+    __dirname,
+    "..",
+    "..",
+    "..",
+    "loyalty-credentials",
+  );
   return {
     LOYALTY_CREDENTIALS_ROOT: mockRoot,
-    COMPOSE_ROOT: path.resolve(__dirname, '..', '..'),
+    COMPOSE_ROOT: path.resolve(__dirname, "..", ".."),
     getClientConfigPath: jest.fn(),
   };
 });
 
-const { execSync } = require('child_process');
-const fs = require('fs');
-const crypto = require('crypto');
+const { execSync } = require("child_process");
+const fs = require("fs");
+const crypto = require("crypto");
 const {
   generateKeystore,
   getSHA256Fingerprint,
   validateKeystore,
   getLoyaltyCredentialsPath,
-} = require('../../01-client-setup/steps/generate-android-keystore');
+} = require("../../01-client-setup/steps/generate-android-keystore");
 
-describe('generate-android-keystore', () => {
+describe("generate-android-keystore", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, 'log').mockImplementation(() => {});
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation(() => {});
 
     // Default mocks
     fs.existsSync.mockReturnValue(true);
-    crypto.randomBytes.mockReturnValue(Buffer.from('0123456789abcdef'));
-    execSync.mockReturnValue('');
+    crypto.randomBytes.mockReturnValue(Buffer.from("0123456789abcdef"));
+    execSync.mockReturnValue("");
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
   });
 
-  describe('getLoyaltyCredentialsPath()', () => {
-    test('returns path to loyalty-credentials when it exists', () => {
+  describe("getLoyaltyCredentialsPath()", () => {
+    test("returns path to loyalty-credentials when it exists", () => {
       fs.existsSync.mockReturnValue(true);
 
       const result = getLoyaltyCredentialsPath();
 
-      expect(result).toContain('loyalty-credentials');
+      expect(result).toContain("loyalty-credentials");
     });
 
-    test('throws error when credentials repo not found', () => {
+    test("throws error when credentials repo not found", () => {
       fs.existsSync.mockReturnValue(false);
 
-      expect(() => getLoyaltyCredentialsPath()).toThrow('loyalty-credentials repository not found');
+      expect(() => getLoyaltyCredentialsPath()).toThrow(
+        "loyalty-credentials repository not found",
+      );
     });
   });
 
-  describe('getSHA256Fingerprint()', () => {
-    const keystorePath = '/path/to/keystore.jks';
-    const password = 'testpassword';
-    const alias = 'testkey';
+  describe("getSHA256Fingerprint()", () => {
+    const keystorePath = "/path/to/keystore.jks";
+    const password = "testpassword";
+    const alias = "testkey";
 
-    test('returns SHA-256 fingerprint from keytool output', async () => {
+    test("returns SHA-256 fingerprint from keytool output", async () => {
       const mockOutput = `
 Certificate fingerprints:
   SHA1: AB:CD:EF:12:34:56:78:90:AB:CD:EF:12:34:56:78:90:AB:CD:EF:12
@@ -135,45 +144,49 @@ Certificate fingerprints:
 
       const result = await getSHA256Fingerprint(keystorePath, password, alias);
 
-      expect(result).toBe('AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99');
+      expect(result).toBe(
+        "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99",
+      );
       expect(execSync).toHaveBeenCalledWith(
-        expect.stringContaining('keytool -list -v'),
-        expect.anything()
+        expect.stringContaining("keytool -list -v"),
+        expect.anything(),
       );
     });
 
-    test('throws error when fingerprint not found', async () => {
-      execSync.mockReturnValue('No fingerprint in output');
+    test("throws error when fingerprint not found", async () => {
+      execSync.mockReturnValue("No fingerprint in output");
 
-      await expect(getSHA256Fingerprint(keystorePath, password, alias)).rejects.toThrow(
-        'Could not extract SHA-256 fingerprint'
-      );
+      await expect(
+        getSHA256Fingerprint(keystorePath, password, alias),
+      ).rejects.toThrow("Could not extract SHA-256 fingerprint");
     });
 
-    test('throws error on keytool failure', async () => {
+    test("throws error on keytool failure", async () => {
       execSync.mockImplementation(() => {
-        throw new Error('keytool failed');
+        throw new Error("keytool failed");
       });
 
-      await expect(getSHA256Fingerprint(keystorePath, password, alias)).rejects.toThrow();
+      await expect(
+        getSHA256Fingerprint(keystorePath, password, alias),
+      ).rejects.toThrow();
     });
   });
 
-  describe('validateKeystore()', () => {
-    const keystorePath = '/path/to/keystore.jks';
-    const password = 'testpassword';
-    const alias = 'testkey';
+  describe("validateKeystore()", () => {
+    const keystorePath = "/path/to/keystore.jks";
+    const password = "testpassword";
+    const alias = "testkey";
 
-    test('returns true for valid keystore', async () => {
+    test("returns true for valid keystore", async () => {
       fs.existsSync.mockReturnValue(true);
-      execSync.mockReturnValue('');
+      execSync.mockReturnValue("");
 
       const result = await validateKeystore(keystorePath, password, alias);
 
       expect(result).toBe(true);
     });
 
-    test('returns false when keystore file does not exist', async () => {
+    test("returns false when keystore file does not exist", async () => {
       fs.existsSync.mockReturnValue(false);
 
       const result = await validateKeystore(keystorePath, password, alias);
@@ -181,10 +194,10 @@ Certificate fingerprints:
       expect(result).toBe(false);
     });
 
-    test('returns false when keytool fails', async () => {
+    test("returns false when keytool fails", async () => {
       fs.existsSync.mockReturnValue(true);
       execSync.mockImplementation(() => {
-        throw new Error('keytool error');
+        throw new Error("keytool error");
       });
 
       const result = await validateKeystore(keystorePath, password, alias);
@@ -193,9 +206,9 @@ Certificate fingerprints:
     });
   });
 
-  describe('generateKeystore()', () => {
-    const clientCode = 'demo';
-    const clientsDir = '/path/to/clients';
+  describe("generateKeystore()", () => {
+    const clientCode = "demo";
+    const clientsDir = "/path/to/clients";
     let keystoreCreated = {};
 
     beforeEach(() => {
@@ -203,33 +216,37 @@ Certificate fingerprints:
 
       // Mock keytool version check and keystore generation
       execSync.mockImplementation((cmd) => {
-        if (cmd === 'keytool -version') return 'keytool 11.0.0';
-        if (cmd.includes('keytool -list -v')) {
-          return 'SHA256: AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99';
+        if (cmd === "keytool -version") return "keytool 11.0.0";
+        if (cmd.includes("keytool -list -v")) {
+          return "SHA256: AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99";
         }
-        if (cmd.includes('keytool') && cmd.includes('-genkeypair')) {
+        if (cmd.includes("keytool") && cmd.includes("-genkeypair")) {
           // Mark keystore as created when keytool generates it
-          if (cmd.includes('keystore-debug.jks')) {
-            keystoreCreated['debug'] = true;
+          if (cmd.includes("keystore-debug.jks")) {
+            keystoreCreated["debug"] = true;
           }
-          if (cmd.includes('keystore-release.jks')) {
-            keystoreCreated['release'] = true;
+          if (cmd.includes("keystore-release.jks")) {
+            keystoreCreated["release"] = true;
           }
         }
-        return '';
+        return "";
       });
 
       fs.existsSync.mockImplementation((path) => {
         // Credentials repo exists
-        if (path.includes('loyalty-credentials') && !path.includes('keystore') && !path.includes('.jks')) {
+        if (
+          path.includes("loyalty-credentials") &&
+          !path.includes("keystore") &&
+          !path.includes(".jks")
+        ) {
           return true;
         }
         // Keystore files exist after generation
-        if (path.includes('keystore-debug.jks')) {
-          return keystoreCreated['debug'] || false;
+        if (path.includes("keystore-debug.jks")) {
+          return keystoreCreated["debug"] || false;
         }
-        if (path.includes('keystore-release.jks')) {
-          return keystoreCreated['release'] || false;
+        if (path.includes("keystore-release.jks")) {
+          return keystoreCreated["release"] || false;
         }
         // Client credentials directory
         if (path.includes(`clients/${clientCode}/android`)) {
@@ -239,23 +256,28 @@ Certificate fingerprints:
       });
     });
 
-    test('generates debug and release keystores', async () => {
+    test("generates debug and release keystores", async () => {
       const result = await generateKeystore(clientCode, clientsDir);
 
       expect(result.debug).toBeDefined();
       expect(result.release).toBeDefined();
-      expect(result.debug.alias).toBe('androiddebugkey');
-      expect(result.release.alias).toBe('loyaltyhub-release');
+      expect(result.debug.alias).toBe("androiddebugkey");
+      expect(result.release.alias).toBe("loyaltyhub-release");
     });
 
-    test('creates client credentials directory', async () => {
+    test("creates client credentials directory", async () => {
       fs.existsSync.mockImplementation((p) => {
         // loyalty-credentials exists
-        if (p.includes('loyalty-credentials') && !p.includes('clients/')) return true;
+        if (p.includes("loyalty-credentials") && !p.includes("clients/"))
+          return true;
         // Client dir does not exist initially
-        if (p.includes(`clients/${clientCode}/android`) && !p.includes('.jks')) return false;
+        if (p.includes(`clients/${clientCode}/android`) && !p.includes(".jks"))
+          return false;
         // Keystore files exist after generation
-        if (p.includes('.jks')) return keystoreCreated['debug'] || keystoreCreated['release'] || false;
+        if (p.includes(".jks"))
+          return (
+            keystoreCreated["debug"] || keystoreCreated["release"] || false
+          );
         return true;
       });
 
@@ -263,63 +285,63 @@ Certificate fingerprints:
 
       expect(fs.mkdirSync).toHaveBeenCalledWith(
         expect.stringContaining(`clients/${clientCode}/android`),
-        { recursive: true }
+        { recursive: true },
       );
     });
 
-    test('generates secure password for release keystore', async () => {
+    test("generates secure password for release keystore", async () => {
       await generateKeystore(clientCode, clientsDir);
 
       expect(crypto.randomBytes).toHaveBeenCalledWith(16);
     });
 
-    test('creates keystore.properties file', async () => {
+    test("creates keystore.properties file", async () => {
       await generateKeystore(clientCode, clientsDir);
 
       expect(fs.writeFileSync).toHaveBeenCalledWith(
-        expect.stringContaining('keystore.properties'),
-        expect.stringContaining('debug.storeFile')
+        expect.stringContaining("keystore.properties"),
+        expect.stringContaining("debug.storeFile"),
       );
     });
 
-    test('sets secure permissions on files', async () => {
+    test("sets secure permissions on files", async () => {
       await generateKeystore(clientCode, clientsDir);
 
       expect(fs.chmodSync).toHaveBeenCalledWith(
-        expect.stringContaining('keystore.properties'),
-        0o600
+        expect.stringContaining("keystore.properties"),
+        0o600,
       );
     });
 
-    test('throws error when keytool not available', async () => {
+    test("throws error when keytool not available", async () => {
       execSync.mockImplementation((cmd) => {
-        if (cmd === 'keytool -version') {
-          throw new Error('keytool not found');
+        if (cmd === "keytool -version") {
+          throw new Error("keytool not found");
         }
-        return '';
+        return "";
       });
 
       await expect(generateKeystore(clientCode, clientsDir)).rejects.toThrow(
-        'keytool not available'
+        "keytool not available",
       );
     });
 
-    test('throws error when loyalty-credentials not found', async () => {
+    test("throws error when loyalty-credentials not found", async () => {
       fs.existsSync.mockReturnValue(false);
 
       await expect(generateKeystore(clientCode, clientsDir)).rejects.toThrow(
-        'loyalty-credentials repository not found'
+        "loyalty-credentials repository not found",
       );
     });
 
-    test('skips existing keystores', async () => {
+    test("skips existing keystores", async () => {
       fs.existsSync.mockReturnValue(true);
       execSync.mockImplementation((cmd) => {
-        if (cmd === 'keytool -version') return 'keytool 11.0.0';
-        if (cmd.includes('keytool -list -v')) {
-          return 'SHA256: AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99';
+        if (cmd === "keytool -version") return "keytool 11.0.0";
+        if (cmd.includes("keytool -list -v")) {
+          return "SHA256: AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99";
         }
-        return '';
+        return "";
       });
 
       const result = await generateKeystore(clientCode, clientsDir);
@@ -329,28 +351,30 @@ Certificate fingerprints:
       expect(result.release.sha256).toBeDefined();
     });
 
-    test('returns keystorePropertiesPath', async () => {
+    test("returns keystorePropertiesPath", async () => {
       const result = await generateKeystore(clientCode, clientsDir);
 
-      expect(result.keystorePropertiesPath).toContain('keystore.properties');
+      expect(result.keystorePropertiesPath).toContain("keystore.properties");
     });
 
-    test('returns clientCredentialsDir', async () => {
+    test("returns clientCredentialsDir", async () => {
       const result = await generateKeystore(clientCode, clientsDir);
 
-      expect(result.clientCredentialsDir).toContain(`clients/${clientCode}/android`);
+      expect(result.clientCredentialsDir).toContain(
+        `clients/${clientCode}/android`,
+      );
     });
 
-    test('debug keystore uses standard password', async () => {
+    test("debug keystore uses standard password", async () => {
       const result = await generateKeystore(clientCode, clientsDir);
 
-      expect(result.debug.password).toBe('android-debug-key');
+      expect(result.debug.password).toBe("android-debug-key");
     });
 
-    test('release keystore uses unique password', async () => {
+    test("release keystore uses unique password", async () => {
       const result = await generateKeystore(clientCode, clientsDir);
 
-      expect(result.release.password).toContain('lh-demo-');
+      expect(result.release.password).toContain("lh-demo-");
       expect(result.release.password.length).toBeGreaterThan(15);
     });
   });

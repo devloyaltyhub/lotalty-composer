@@ -1,10 +1,12 @@
-const chalk = require('chalk');
 const {
   getAndroidAppId,
   addSHA256Fingerprint,
   addSHA256ToFirebaseApp,
-} = require('../shared/firebase-sha-utils');
-const { generateAppCheckInstructions } = require('../shared/app-check-instructions');
+} = require("../shared/firebase-sha-utils");
+const {
+  generateAppCheckInstructions,
+} = require("../shared/app-check-instructions");
+const logger = require("../../shared/utils/logger");
 
 /**
  * Register App Check SHA-256 Fingerprint
@@ -19,41 +21,44 @@ const { generateAppCheckInstructions } = require('../shared/app-check-instructio
  * Registers SHA-256 fingerprint for App Check
  * Currently this provides instructions as Firebase CLI doesn't have direct App Check API
  */
-async function registerAppCheckFingerprint(projectId, sha256Fingerprint, packageName) {
-  console.log(chalk.blue('\n🔐 Registering App Check Configuration...'));
-  console.log(chalk.gray('─'.repeat(50)));
+async function registerAppCheckFingerprint(
+  projectId,
+  sha256Fingerprint,
+  packageName,
+) {
+  logger.section("Registering App Check Configuration");
 
   try {
-    console.log(chalk.yellow('\n⚠️  App Check Registration Required:'));
-    console.log(chalk.white('\nPlease complete the following steps manually:\n'));
+    logger.warn("App Check Registration Required:");
+    logger.log("\nPlease complete the following steps manually:\n");
 
-    console.log(chalk.cyan('1. Open Firebase Console:'));
-    console.log(
-      chalk.white(`   https://console.firebase.google.com/project/${projectId}/appcheck`)
+    logger.info("1. Open Firebase Console:");
+    logger.log(
+      `   https://console.firebase.google.com/project/${projectId}/appcheck`,
     );
 
-    console.log(chalk.cyan('\n2. Enable App Check for Android App:'));
-    console.log(chalk.white(`   - Select the Android app (${packageName})`));
-    console.log(chalk.white('   - Click "Register" under Play Integrity'));
+    logger.info("\n2. Enable App Check for Android App:");
+    logger.log(`   - Select the Android app (${packageName})`);
+    logger.log('   - Click "Register" under Play Integrity');
 
-    console.log(chalk.cyan('\n3. Add SHA-256 Fingerprint:'));
-    console.log(chalk.white('   - Go to Project Settings > Your apps'));
-    console.log(chalk.white('   - Select the Android app'));
-    console.log(chalk.white('   - Add SHA certificate fingerprint:'));
-    console.log(chalk.green(`\n   ${sha256Fingerprint}\n`));
+    logger.info("\n3. Add SHA-256 Fingerprint:");
+    logger.log("   - Go to Project Settings > Your apps");
+    logger.log("   - Select the Android app");
+    logger.log("   - Add SHA certificate fingerprint:");
+    logger.success(`\n   ${sha256Fingerprint}\n`);
 
-    console.log(chalk.cyan('4. Enable App Check enforcement (optional):'));
-    console.log(chalk.white('   - Go to App Check settings'));
-    console.log(chalk.white('   - Enable enforcement for Firestore, Storage, etc.'));
+    logger.info("4. Enable App Check enforcement (optional):");
+    logger.log("   - Go to App Check settings");
+    logger.log("   - Enable enforcement for Firestore, Storage, etc.");
 
-    console.log(chalk.yellow('\n📋 Configuration saved to clipboard (copy the SHA-256):'));
-    console.log(chalk.green(`${sha256Fingerprint}`));
+    logger.warn("Configuration saved to clipboard (copy the SHA-256):");
+    logger.success(sha256Fingerprint);
 
     try {
       await addSHA256ToFirebaseApp(projectId, sha256Fingerprint, packageName);
     } catch (error) {
-      console.log(chalk.yellow('\n⚠️  Could not automatically add SHA-256 to Firebase app'));
-      console.log(chalk.gray(`   ${error.message}`));
+      logger.warn("Could not automatically add SHA-256 to Firebase app");
+      logger.log(`   ${error.message}`);
     }
 
     return {
@@ -63,7 +68,7 @@ async function registerAppCheckFingerprint(projectId, sha256Fingerprint, package
       sha256: sha256Fingerprint,
     };
   } catch (error) {
-    console.error(chalk.red('\n❌ Error during App Check registration:'), error.message);
+    logger.error(`Error during App Check registration: ${error.message}`);
     throw error;
   }
 }
@@ -71,31 +76,36 @@ async function registerAppCheckFingerprint(projectId, sha256Fingerprint, package
 /**
  * Register both debug and release SHA-256 fingerprints for App Check
  */
-async function registerAppCheckFingerprints(projectId, packageName, keystoreResults) {
-  console.log(chalk.blue('\n🔐 Registering App Check SHA-256 Fingerprints...'));
-  console.log(chalk.gray('─'.repeat(50)));
+async function registerAppCheckFingerprints(
+  projectId,
+  packageName,
+  keystoreResults,
+) {
+  logger.section("Registering App Check SHA-256 Fingerprints");
 
   try {
-    console.log(chalk.cyan('\n   Getting Android app ID...'));
+    logger.info("Getting Android app ID...");
     const appId = await getAndroidAppId(projectId, packageName);
-    console.log(chalk.gray(`   App ID: ${appId}`));
+    logger.log(`   App ID: ${appId}`);
 
     const debugResult = await addSHA256Fingerprint(
       projectId,
       appId,
       keystoreResults.debug.sha256,
-      'DEBUG'
+      "DEBUG",
     );
 
     const releaseResult = await addSHA256Fingerprint(
       projectId,
       appId,
       keystoreResults.release.sha256,
-      'RELEASE'
+      "RELEASE",
     );
 
-    console.log(chalk.green('\n✅ SHA-256 fingerprints registered successfully'));
-    console.log(chalk.gray('   (Próximos passos manuais serão exibidos ao final da execução)'));
+    logger.success("SHA-256 fingerprints registered successfully");
+    logger.log(
+      "   (Proximos passos manuais serao exibidos ao final da execucao)",
+    );
 
     return {
       success: true,
@@ -106,8 +116,8 @@ async function registerAppCheckFingerprints(projectId, packageName, keystoreResu
       consoleUrl: `https://console.firebase.google.com/project/${projectId}/appcheck`,
     };
   } catch (error) {
-    console.error(chalk.red('\n❌ Failed to register App Check fingerprints'));
-    console.error(chalk.red(`   ${error.message}`));
+    logger.error("Failed to register App Check fingerprints");
+    logger.error(error.message);
     throw error;
   }
 }
