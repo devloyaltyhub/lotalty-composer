@@ -379,6 +379,42 @@ class ClientCreationWizard {
     logger.success('Firestore rules deployed');
   }
 
+  // Step 5.1: Deploy Firestore composite indexes
+  async deployFirestoreIndexes() {
+    logger.section('Deploying Firestore Composite Indexes');
+
+    const indexesPath = path.join(__dirname, '../../shared/templates/firestore.indexes.json');
+    const tempIndexesPath = path.join(this.config.clientFolder, 'firestore.indexes.json');
+
+    // Copy indexes to client folder
+    fs.copyFileSync(indexesPath, tempIndexesPath);
+
+    // Update firebase.json to include indexes
+    const firebaseJsonPath = path.join(this.config.clientFolder, 'firebase.json');
+    let firebaseJson = {};
+    if (fs.existsSync(firebaseJsonPath)) {
+      firebaseJson = JSON.parse(fs.readFileSync(firebaseJsonPath, 'utf8'));
+    }
+    firebaseJson.firestore = {
+      ...firebaseJson.firestore,
+      indexes: 'firestore.indexes.json',
+    };
+    fs.writeFileSync(firebaseJsonPath, JSON.stringify(firebaseJson, null, 2));
+
+    // Deploy indexes
+    try {
+      const { execSync } = require('child_process');
+      execSync(
+        `firebase deploy --only firestore:indexes --project ${this.config.firebaseProjectId}`,
+        { cwd: this.config.clientFolder, stdio: 'inherit' }
+      );
+      logger.success('Firestore composite indexes deployed (may take a few minutes to build)');
+    } catch (error) {
+      logger.warn(`Firestore indexes deployment failed: ${error.message}`);
+      logger.warn('Indexes can be deployed later with: node 01-client-setup/cli/deploy-firestore-indexes.js <projectId>');
+    }
+  }
+
   // Step 5.5: Setup Remote Config
   async setupRemoteConfig() {
     logger.section('Setting up Firebase Remote Config');
@@ -1201,6 +1237,9 @@ auto_update: true
 
       // Step 5: Deploy Firestore rules
       await this.executeStep('deploy_firestore_rules', () => this.deployFirestoreRules());
+
+      // Step 5.1: Deploy Firestore composite indexes
+      await this.executeStep('deploy_firestore_indexes', () => this.deployFirestoreIndexes());
 
       // Step 5.5: Generate Android Keystore for App Check
       await this.executeStep('generate_android_keystore', () => this.generateAndroidKeystore());

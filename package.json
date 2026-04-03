@@ -27,6 +27,7 @@
     "shorebird:patch": "node 02-build-deploy/cli/shorebird.js patch",
     "screenshots-admin": "node 02-build-deploy/cli/generate-screenshots-admin.js",
     "deploy-admin": "node 02-build-deploy/cli/deploy-admin-web.js",
+    "deploy-indexes": "node 01-client-setup/cli/deploy-firestore-indexes.js",
     "build-admin": "node 02-build-deploy/cli/deploy-admin-web.js --build-only",
     "increment-build": "node 02-build-deploy/increment-version.js build",
     "bump-patch": "node 02-build-deploy/increment-version.js patch",

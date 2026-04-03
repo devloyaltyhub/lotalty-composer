@@ -1,3 +1,5 @@
+// AUTO-GENERATED — Do not edit directly.
+// Source of truth: loyalty-composer/shared/templates/storage.rules
 rules_version = '2';
 
 service firebase.storage {
@@ -14,16 +16,20 @@ service firebase.storage {
 
     function isValidImage() {
       return request.resource.contentType.matches('image/.*') &&
-             request.resource.size < 10 * 1024 * 1024;
+             request.resource.size < 15 * 1024 * 1024;
     }
 
-    // === PROFILE PHOTOS (usuário gerencia própria) ===
-    match /profile_photos/{userId} {
+    // === PROFILE PHOTOS (usuario gerencia propria) ===
+    match /profile_photos/{fileName} {
       allow read: if true;
-      allow write: if isAuthenticated() && request.auth.uid == userId && isValidImage();
+      allow create, update: if isAuthenticated() &&
+                               fileName.matches('.*' + request.auth.uid + '.*') &&
+                               isValidImage();
+      allow delete: if isAuthenticated() &&
+                       fileName.matches('.*' + request.auth.uid + '.*');
     }
 
-    // === CONTEÚDO ADMIN ===
+    // === CONTEUDO ADMIN ===
     match /gallery/{fileName} {
       allow read: if true;
       allow create, update: if isAdmin() && isValidImage();

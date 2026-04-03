@@ -1,14 +1,25 @@
+// AUTO-GENERATED — Do not edit directly.
+// Source of truth: loyalty-composer/shared/templates/firestore.rules
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // === HELPERS (simples, sem micro-gerenciamento) ===
+    // ==========================================
+    // Helper Functions - Security Core
+    // ==========================================
     function isAuthenticated() {
       return request.auth != null;
     }
 
+    function isAppUser() {
+      // Note: App Check is enforced at Firebase Console level, not in Security Rules
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/Users/$(request.auth.uid));
+    }
+
     function isAdmin() {
+      // Admin must be authenticated and have Users_Admin document
       return isAuthenticated() &&
              exists(/databases/$(database)/documents/Users_Admin/$(request.auth.uid));
     }
@@ -17,87 +28,407 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // === USERS_ADMIN ===
+    function getUserCpf() {
+      return get(/databases/$(database)/documents/Users/$(request.auth.uid)).data.cpf;
+    }
+
+    // ==========================================
+    // Validation Functions - Data Integrity
+    // ==========================================
+    function isValidConsumption(data) {
+      // Validate required fields exist
+      let hasRequiredFields = data.keys().hasAll([
+        'userId', 'amount', 'createdAt', 'clubCoinsPoints',
+        'clubCoinsPercentage', 'clubCoinsValid'
+      ]);
+
+      // Validate data types and value ranges
+      let validTypes =
+        data.userId is string &&
+        data.amount is number && data.amount >= 0 && data.amount <= 100000 &&
+        data.clubCoinsPoints is number && data.clubCoinsPoints >= -1000000 && data.clubCoinsPoints <= 10000 &&
+        data.clubCoinsPercentage is number && data.clubCoinsPercentage >= 0 && data.clubCoinsPercentage <= 100 &&
+        data.clubCoinsValid is bool &&
+        data.createdAt is timestamp;
+
+      // Prevent backdating (max 30min past, max 5min future)
+      let validTimestamp =
+        data.createdAt <= request.time + duration.value(5, 'm') &&
+        data.createdAt >= request.time - duration.value(30, 'm');
+
+      return hasRequiredFields && validTypes && validTimestamp;
+    }
+
+    function canUpdateUserFields(newData, oldData) {
+      // Fields that users are allowed to update
+      // System fields like club points, email, etc. are protected
+      let systemFields = ['userId', 'club', 'totalConsumed', 'clientScore',
+                         'softDeleted', 'creationTime', 'email'];
+
+      // Check if any system field was modified
+      let systemFieldsModified = newData.diff(oldData).affectedKeys().hasAny(systemFields);
+
+      // Prevent soft delete manipulation (users can't "revive" deleted accounts)
+      let softDeleteProtected = !oldData.exists ||
+                               !('softDeleted' in oldData) ||
+                               oldData.softDeleted == false ||
+                               newData.softDeleted == true;
+
+      return !systemFieldsModified && softDeleteProtected;
+    }
+
+    function canSelfToggleSoftDelete(newData, oldData) {
+      // Allow owner to soft-delete (or undo on failed deletion rollback)
+      return newData.diff(oldData).affectedKeys().hasOnly(['softDeleted']) &&
+             newData.softDeleted is bool;
+    }
+
+    function canUpdateClubScore(newData, oldData) {
+      // Allow updating ONLY club.clientScore field (for profile completion rewards)
+      let onlyClubModified = newData.diff(oldData).affectedKeys().hasOnly(['club']);
+      let clubsExist = (oldData.club is map) && (newData.club is map);
+      let onlyClientScoreChanged = clubsExist &&
+                                   newData.club.diff(oldData.club).affectedKeys().hasOnly(['clientScore']);
+      let validScore = newData.club.clientScore is number &&
+                       newData.club.clientScore >= 0 &&
+                       newData.club.clientScore <= 1000000;
+      let oldScore = (oldData.club.clientScore is number) ? oldData.club.clientScore : 0;
+      let scoreIncreased = newData.club.clientScore >= oldScore;
+
+      return onlyClubModified && onlyClientScoreChanged && validScore && scoreIncreased;
+    }
+
+    function canUpdateClubCoins(newData, oldData) {
+      // Allow updating ONLY club.totalClubCoins (for check-in rewards)
+      let onlyClubModified = newData.diff(oldData).affectedKeys().hasOnly(['club']);
+      let clubsExist = (oldData.club is map) && (newData.club is map);
+      let onlyCoinsChanged = clubsExist &&
+                             newData.club.diff(oldData.club).affectedKeys().hasOnly(['totalClubCoins']);
+      let validCoins = newData.club.totalClubCoins is number;
+
+      return onlyClubModified && onlyCoinsChanged && validCoins;
+    }
+
+    // ==========================================
+    // Users_Admin Collection - Admin users only
+    // ==========================================
     match /Users_Admin/{docId} {
+      allow read: if isAdmin() || isOwner(docId);
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Users Collection (App Users/Customers)
+    // ==========================================
+    match /Users/{userId} {
+      allow get: if isAdmin() || isOwner(userId) || isAppUser();
+      allow list: if isAdmin() || isAppUser() || isAuthenticated();
+
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if (isOwner(userId) && canUpdateUserFields(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canUpdateClubScore(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canUpdateClubCoins(request.resource.data, resource.data)) ||
+                       (isOwner(userId) && canSelfToggleSoftDelete(request.resource.data, resource.data)) ||
+                       isAdmin();
+      allow delete: if isAdmin();
+
+      match /Notifications/{docId} {
+        allow read: if isAdmin() || isOwner(userId);
+        allow write: if isAdmin();
+      }
+
+      match /Addresses/{addressId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ==========================================
+    // Products Collection - Public catalog data
+    // ==========================================
+    match /Products/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Categories Collection - Public catalog data
+    // ==========================================
+    match /Categories/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Orders Collection - User sees own (by cpf), admin sees all
+    // ==========================================
+    match /Orders/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.cpf == getUserCpf());
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
+                       request.resource.data.cpf == getUserCpf() &&
+                       request.resource.data.keys().hasAll(['cpf', 'orderIssuer', 'items', 'deliveryModality', 'paymentMethod', 'status', 'createdOn', 'subtotal', 'total']));
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Coupons Collection - Users read, admin manages
+    // ==========================================
+    match /Coupons/{docId} {
+      allow read: if isAppUser();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Campaigns Collection - Public marketing data
+    // ==========================================
+    match /Campaigns/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Happy Hours Collection - Public marketing data
+    // ==========================================
+    match /Happy_Hours/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Store Configs Collection - Public store settings
+    // ==========================================
+    match /Store_Configs/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Image Mappings / Gallery Collection - Public gallery
+    // ==========================================
+    match /Image_Mappings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Consumptions Collection - Validated writes
+    // ==========================================
+    match /Consumptions/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       isValidConsumption(request.resource.data));
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Consumption Collection (legacy) - Validated writes
+    // ==========================================
+    match /Consumption/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() ||
+                       (isAppUser() &&
+                       request.resource.data.userId == request.auth.uid &&
+                       isValidConsumption(request.resource.data));
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Store Consumption Collection - Admin only
+    // ==========================================
+    match /Store_Consumption/{docId} {
+      allow read: if isAdmin();
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Clients Score Collection - User sees own
+    // ==========================================
+    match /Clients_Score/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create: if isAppUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Notifications Collection - Privacy protected
+    // ==========================================
+    match /Notifications/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create, update: if isAdmin();
+      allow delete: if isAdmin() || (isAppUser() && resource.data.userId != null && resource.data.userId == request.auth.uid);
+    }
+
+    // ==========================================
+    // Payments Collection - Admin creates, user sees own
+    // ==========================================
+    match /Payments/{paymentId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create: if isAdmin() || (isAppUser() && request.resource.data.userId == request.auth.uid);
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ==========================================
+    // Orders Invoiced Collection - Admin manages invoices
+    // ==========================================
+    match /Orders_Invoiced/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.cpf == getUserCpf());
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Drivers Collection - Admin only
+    // ==========================================
+    match /Drivers/{docId} {
       allow read, write: if isAdmin();
     }
 
-    // === USERS (público para validar clubId no registro) ===
-    match /Users/{userId} {
+    // ==========================================
+    // Delivery Trips Collection - Admin manages
+    // ==========================================
+    match /DeliveryTrips/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // PDV Integrations Collection - Admin only
+    // ==========================================
+    match /Pdv_Integrations/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // Birthday Gifts Collection - System manages, user sees own
+    // ==========================================
+    match /Birthday_Gifts/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow write: if isAdmin();
+    }
+
+    // ==========================================
+    // Affiliates Collection - Used by Referral (Indique e Ganhe) system
+    // ==========================================
+    match /Affiliates/{docId} {
+      allow read: if isAdmin() || isAppUser();
+      allow create: if isAdmin() || (isAppUser() && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // ==========================================
+    // App Config Collection - Feature flags, plan, versionarte
+    // ==========================================
+    match /App_Config/{docId} {
       allow read: if true;
-      allow create: if isOwner(userId);
-      allow update, delete: if isOwner(userId) || isAdmin();
-    }
-
-    // === CONSUMPTIONS (apenas admin escreve) ===
-    match /Consumptions/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
       allow write: if isAdmin();
     }
 
-    // === CLIENTS_SCORE (app pode criar para si, admin pode tudo) ===
-    match /Clients_Score/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAdmin() ||
-                      (isAuthenticated() && request.resource.data.userId == request.auth.uid);
-      allow update, delete: if isAdmin();
+    // ==========================================
+    // Customer Flow Collection - Admin manages business mode
+    // ==========================================
+    match /Customer_Flow/{docId} {
+      allow read, write: if isAdmin();
     }
 
-    // === NOTIFICATIONS ===
-    match /Notifications/{docId} {
-      allow read: if isAdmin() ||
-                    resource.data.isGlobal == true ||
-                    resource.data.clubId == null ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid) ||
-                    (isAuthenticated() && resource.data.targetUserIds != null &&
-                     request.auth.uid in resource.data.targetUserIds);
+    // ==========================================
+    // Customer Flow History Collection - Admin views adjustment history
+    // ==========================================
+    match /Customer_Flow_History/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // AI Campaign Log - Dedup de campanhas IA enviadas
+    // ==========================================
+    match /AI_Campaign_Log/{docId} {
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
 
-    // === SUGGESTIONS_BOX ===
-    match /Suggestions_Box/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
-      allow update, delete: if isAdmin();
-    }
-
-    // === ORDERS ===
-    match /Orders/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow update, delete: if isAdmin();
-    }
-
-    // === CONTEÚDO PÚBLICO (leitura livre, escrita admin) ===
-    match /Products/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Categories/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Campaigns/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Happy_Hours/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Store_Configs/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Team_Members/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Team/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Our_Story/{docId} { allow read: if true; allow write: if isAdmin(); }
-    match /Image_Mappings/{docId} { allow read: if true; allow write: if isAdmin(); }
-
-    // === LEGACY ===
-    match /Consumption/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
+    // ==========================================
+    // AI Insights - Insights gerados pela IA (afinidade, clima, cohort)
+    // ==========================================
+    match /AI_Insights/{docId} {
+      allow read: if isAdmin();
       allow write: if isAdmin();
     }
-    match /Suggestions/{docId} {
-      allow read: if isAdmin() ||
-                    (isAuthenticated() && resource.data.userId == request.auth.uid);
-      allow create: if isAuthenticated();
+
+    // ==========================================
+    // AI Daily Insights - Insights diarios gerados para o lojista
+    // ==========================================
+    match /AI_Daily_Insights/{date}/insights/{insightId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Insight Interactions - Aceite/rejeicao + metricas de interacao
+    // ==========================================
+    match /AI_Insight_Interactions/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ==========================================
+    // AI Merchant Learning - Perfil de aprendizado do merchant
+    // ==========================================
+    match /AI_Merchant_Learning/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Merchant History - Historico mensal agregado
+    // ==========================================
+    match /AI_Merchant_History/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Merchant Settings - Preferencias do lojista no Insights
+    // ==========================================
+    match /AI_Merchant_Settings/{doc} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ==========================================
+    // AI Data Lake - Serie temporal de dados externos + internos
+    // ==========================================
+    match /AI_Data_Lake/{date} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // AI Data Lake Merchant - Serie temporal de metricas internas
+    // ==========================================
+    match /AI_Data_Lake_Merchant/{projectId}/{date} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ==========================================
+    // CheckIns Collection - User creates own, admin reads all
+    // ==========================================
+    match /CheckIns/{docId} {
+      allow read: if isAdmin() || (isAppUser() && resource.data.userId == request.auth.uid);
+      allow create: if isAppUser() && request.resource.data.userId == request.auth.uid;
       allow update, delete: if isAdmin();
     }
-    match /Store_Consumption/{docId} { allow read, write: if isAdmin(); }
 
-    // === DEFAULT DENY ===
+    // ==========================================
+    // Sales Funnels Collection - Admin manages
+    // ==========================================
+    match /SalesFunnels/{docId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ==========================================
+    // Default: Deny all other collections
+    // ==========================================
     match /{document=**} {
       allow read, write: if false;
     }
